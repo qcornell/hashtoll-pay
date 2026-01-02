@@ -74,27 +74,59 @@
       pointer-events:none;
     }
 
-    /* === INNER GLASS CARD (dark + blur + subtle shine) === */
+    /* === INNER GLASS CARD (true glass = low alpha + strong blur) === */
     .glass-card {
       position: relative;
       border-radius: 28px;
+
+      /* true glass = low alpha + soft gradients */
       background:
-        linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.00) 45%),
-        rgba(8,10,20,0.72); /* increased from 0.58 */
-      border: 1px solid rgba(255,255,255,0.10);
-      backdrop-filter: blur(18px) saturate(140%);
-      -webkit-backdrop-filter: blur(18px) saturate(140%);
+        linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02) 45%, rgba(255,255,255,0.00) 100%),
+        rgba(10,14,30,0.30); /* <-- THIS is the "see-through" part */
+
+      border: 1px solid rgba(255,255,255,0.16);
+
+      /* stronger blur makes it feel like real glass */
+      backdrop-filter: blur(26px) saturate(160%);
+      -webkit-backdrop-filter: blur(26px) saturate(160%);
+
       box-shadow:
-        0 25px 70px rgba(0,0,0,0.55),
-        0 0 0 1px rgba(255,255,255,0.04) inset;
+        0 28px 90px rgba(0,0,0,0.50),
+        0 0 0 1px rgba(255,255,255,0.08) inset;
+
       overflow: hidden;
-      z-index: 1; /* make sure it's above the border */
+      z-index: 1;
+    }
+
+    /* shiny glass highlights inside the card */
+    .glass-card::before {
+      content:"";
+      position:absolute;
+      inset:0;
+      border-radius: 28px;
+
+      background:
+        radial-gradient(900px 220px at 18% 0%,
+          rgba(255,255,255,0.22),
+          rgba(255,255,255,0.06) 35%,
+          rgba(255,255,255,0.00) 60%),
+        radial-gradient(700px 240px at 100% 65%,
+          rgba(168,85,247,0.14),
+          rgba(168,85,247,0.00) 60%),
+        linear-gradient(135deg,
+          rgba(59,130,246,0.10),
+          rgba(236,72,153,0.06),
+          rgba(255,255,255,0.00) 60%);
+
+      opacity: 1;
+      pointer-events:none;
+      z-index: 1;
     }
 
     /* keep content above overlays */
     .glass-card > * { position: relative; z-index: 2; }
 
-    /* slightly stronger, nicer texture dots (like the image) */
+    /* more subtle texture dots (closer to the image) */
     .glass-noise::after {
       content:"";
       position:absolute;
@@ -102,7 +134,7 @@
       border-radius: 28px;
       background-image: radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
       background-size: 44px 44px;
-      opacity: 0.10;
+      opacity: 0.06; /* reduced from 0.10 */
       mix-blend-mode: overlay;
       pointer-events:none;
       z-index: 1;
