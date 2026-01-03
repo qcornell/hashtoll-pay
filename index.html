@@ -16,14 +16,34 @@
   <style>
     * { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
 
-    /* Your custom background image */
+    /* BLUR-FRIENDLY BACKGROUND (Fixed Layer Trick) */
     body {
       min-height: 100vh;
-      background-image: url('home_bg.png');
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
       overflow-x: hidden;
+      background: #070816; /* fallback */
+    }
+
+    /* Put the image on a fixed layer behind everything */
+    body::before {
+      content:"";
+      position: fixed;
+      inset: 0;
+      background: url('home_bg.png') center/cover no-repeat;
+      z-index: -2;
+      transform: translateZ(0);
+    }
+
+    /* Optional: subtle cinematic glow so the glass pops */
+    body::after {
+      content:"";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(1200px 700px at 50% 10%, rgba(255,255,255,0.10), transparent 60%),
+        radial-gradient(900px 600px at 80% 40%, rgba(168,85,247,0.12), transparent 62%),
+        radial-gradient(900px 600px at 15% 60%, rgba(59,130,246,0.10), transparent 60%);
+      z-index: -1;
+      pointer-events: none;
     }
 
     /* === NEON BORDER FRAME (border-only, no fill) === */
@@ -75,107 +95,135 @@
       pointer-events:none;
     }
 
-    /* === SOFTER BLUR FOR BALANCED GLASS (More See-Through) === */
+    /* === REAL GLASS CARD === */
     .glass-card {
       position: relative;
       border-radius: 28px;
 
-      /* Even more transparent base */
-      background: rgba(22, 18, 45, 0.10);
+      /* Key: much lighter tint, so the background shows through */
+      background:
+        linear-gradient(180deg,
+          rgba(255,255,255,0.10),
+          rgba(255,255,255,0.02) 55%,
+          rgba(255,255,255,0.00) 100%),
+        rgba(18, 16, 40, 0.10);
 
-      /* Milder blur for frost without haze */
-      backdrop-filter: blur(24px) saturate(170%) contrast(1.02);
-      -webkit-backdrop-filter: blur(24px) saturate(170%) contrast(1.02);
+      /* Key: LOWER blur than 36px (big blur = fog panel) */
+      backdrop-filter: blur(18px) saturate(140%) contrast(1.03);
+      -webkit-backdrop-filter: blur(18px) saturate(140%) contrast(1.03);
 
-      /* NO big drop shadow */
-      box-shadow: none;
+      border: 1px solid rgba(255,255,255,0.14);
+
+      /* Shiny inner rim like the mock */
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.20),
+        inset 0 18px 30px rgba(255,255,255,0.06),
+        inset 0 -22px 34px rgba(0,0,0,0.22);
 
       overflow: hidden;
-      z-index: 1;
+      isolation: isolate; /* helps keep blend effects from "washing" children */
     }
 
-    /* SUBTLER SPARKLE HIGHLIGHTS */
+    /* Subtle sparkle/texture that stays behind content */
     .glass-card::before {
       content:"";
       position:absolute;
       inset:0;
       border-radius: inherit;
-
       background:
         radial-gradient(900px 260px at 20% 0%,
-          rgba(255,255,255,0.18),
-          rgba(255,255,255,0.04) 35%,
+          rgba(255,255,255,0.20),
+          rgba(255,255,255,0.05) 38%,
           rgba(255,255,255,0.00) 62%),
-        radial-gradient(900px 340px at 100% 70%,
-          rgba(168,85,247,0.08),
-          rgba(168,85,247,0.00) 65%),
-        radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
-
-      background-size: 100% 100%, 100% 100%, 46px 46px;
-      opacity: 0.45;
-      mix-blend-mode: overlay;
+        radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
+      background-size: 100% 100%, 46px 46px;
+      opacity: 0.22;          /* keep this LOW */
+      mix-blend-mode: overlay; /* nice glass shimmer */
       pointer-events:none;
       z-index: 1;
     }
 
-    /* ENHANCED CRISP RIM (Premium Depth) */
+    /* Ultra-thin "edge sparkle" */
     .glass-card::after {
       content:"";
       position:absolute;
       inset:0;
       border-radius: inherit;
-
       box-shadow:
-        inset 0 0 0 1px rgba(255,255,255,0.26),  /* Brighter inner line */
-        inset 0 20px 30px rgba(255,255,255,0.10), /* Enhanced top shine */
-        inset 0 -20px 30px rgba(0,0,0,0.16);     /* Softer bottom depth */
-
+        inset 0 0 0 1px rgba(255,255,255,0.16),
+        inset 0 0 22px rgba(255,255,255,0.06);
       pointer-events:none;
       z-index: 2;
     }
 
-    /* keep real content above the overlays */
     .glass-card > * { position: relative; z-index: 3; }
 
-    /* LIGHTER TRANSPARENT INPUTS */
-    .field {
-      background: rgba(10, 12, 30, 0.14);
-      border: 1px solid rgba(255,255,255,0.12);
-      color: rgba(255,255,255,0.95);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
-    }
-    .field:focus {
-      outline:none;
-      border-color: rgba(99,102,241,0.60);
-      box-shadow: 0 0 0 4px rgba(99,102,241,0.22);
+    /* === CRISP GLASS BUTTONS === */
+    .btn-primary, .btn-ghost {
+      position: relative;
+      overflow: hidden;
+
+      /* Buttons get their OWN glass */
+      backdrop-filter: blur(10px) saturate(140%);
+      -webkit-backdrop-filter: blur(10px) saturate(140%);
+
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow:
+        0 14px 32px rgba(0,0,0,0.22),
+        inset 0 1px 0 rgba(255,255,255,0.22);
     }
 
-    /* Primary button */
-    .btn-primary {
-      background: linear-gradient(135deg, rgba(59,130,246,0.95), rgba(99,102,241,0.90));
-      box-shadow:
-        0 18px 45px rgba(59,130,246,0.25),
-        0 0 0 1px rgba(255,255,255,0.08) inset;
+    /* Top shine strip */
+    .btn-primary::before, .btn-ghost::before {
+      content:"";
+      position:absolute;
+      inset:0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.00) 55%);
+      opacity: 0.55;
+      pointer-events:none;
     }
+
+    .btn-primary {
+      background: linear-gradient(135deg, rgba(48,120,255,0.95), rgba(110,94,255,0.90));
+    }
+
     .btn-primary:hover:not(:disabled) { 
       filter: brightness(1.06); 
       transform: translateY(-1px);
     }
     .btn-primary:active:not(:disabled) { transform: translateY(0); }
 
-    /* GHOST BUTTON WITH PURPLE HINT */
     .btn-ghost {
-      background: rgba(168,85,247,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset;
+      /* A bit more "solid" than before so it stays crisp */
+      background: rgba(20, 18, 52, 0.18);
       color: rgba(255,255,255,0.80);
     }
+
     .btn-ghost:hover:not(:disabled) {
-      background: rgba(168,85,247,0.08);
+      background: rgba(20, 18, 52, 0.28);
     }
+
     .btn-ghost:disabled {
-      opacity: 0.40;
+      opacity: 0.55; /* don't fade it too hard */
       cursor: not-allowed;
+    }
+
+    /* === INPUTS: DARKER THAN CARD, STILL GLASSY === */
+    .field {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)),
+        rgba(10, 12, 30, 0.22);
+      backdrop-filter: blur(10px) saturate(140%);
+      -webkit-backdrop-filter: blur(10px) saturate(140%);
+      border: 1px solid rgba(255,255,255,0.14);
+      color: rgba(255,255,255,0.92);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+    }
+
+    .field:focus {
+      outline:none;
+      border-color: rgba(99,102,241,0.60);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.22);
     }
 
     /* QR Code styling */
