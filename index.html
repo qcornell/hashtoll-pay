@@ -1,186 +1,273 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HashToll Pay - Hedera Payment Links</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HashToll Payment</title>
+    <style>
+        /* --- CSS VARIABLES --- */
+        :root {
+            /* Dimensions */
+            --ht-card-width: 440px;
 
-  <!-- Tailwind CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+            /* Colors extracted from reference */
+            --ht-primary-blue: #446bf2;
+            /* Bright blue for main button */
+            --ht-primary-hover: #3655c4;
+            --ht-orange-accent: #ff7844;
+            --ht-logo-max-width: 260px;
+            /* For the logo icon */
 
-  <!-- Inter font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+            /* Glass/Input Colors */
+            --ht-input-bg: rgba(255, 255, 255, 0.08);
+            --ht-text-white: #ffffff;
+            --ht-text-muted: rgba(255, 255, 255, 0.6);
 
-  <style>
-    * { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+            /* Spacing */
+            --ht-radius: 14px;
+        }
 
-    :root{
-      /* ===== Quick tuning knobs ===== */
-      --card-radius: 28px;
-      --card-bg: rgba(10, 18, 80, 0.42);        /* main “tinted glass” */
-      --card-border: rgba(255,255,255,0.16);
-      --card-outline: rgba(255,255,255,0.28);
-      --card-blur: 14px;                        /* set to 0px for “no blur” look */
-      --card-shadow: 0 26px 80px rgba(0,0,0,0.55);
+        /* --- DEMO BACKGROUND (Ignore this block if dropping into existing site) --- */
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: url('home_bg.png') no-repeat center center/cover;
+            color: var(--ht-text-white);
+        }
 
-      --btn-radius: 18px;
-      --btn-primary: linear-gradient(90deg, #4B7CF6 0%, #3B66CC 100%);
-      --btn-shadow: 0 10px 26px rgba(0,0,0,0.30);
-    }
+        /* --- CARD COMPONENT START --- */
+        .ht-card {
+            width: 100%;
+            max-width: var(--ht-card-width);
+            position: relative;
+            padding: 40px 40px 50px 40px;
+            /* Adjust padding to fit inside the bg image borders */
+            box-sizing: border-box;
 
-    /* Background */
-    body {
-      min-height: 100vh;
-      overflow-x: hidden;
-      background: #070816;
-      color: #fff;
-    }
-    body::before {
-      content:"";
-      position: fixed;
-      inset: 0;
-      background: url('home_bg.png') center/cover no-repeat;
-      z-index: -2;
-      transform: translateZ(0);
-    }
-    body::after {
-      content:"";
-      position: fixed;
-      inset: 0;
-      background:
-        radial-gradient(1200px 700px at 50% 10%, rgba(255,255,255,0.10), transparent 60%),
-        radial-gradient(900px 600px at 80% 40%, rgba(168,85,247,0.12), transparent 62%),
-        radial-gradient(900px 600px at 15% 60%, rgba(59,130,246,0.10), transparent 60%);
-      z-index: -1;
-      pointer-events: none;
-    }
+            /* The Glass Skin */
+            background-image: url('bg_card.png');
+            background-size: 100% 100%;
+            /* Stretches the glow border image to fit */
+            background-repeat: no-repeat;
 
-    /* Outer “soft glow” wrapper */
-    .neon-frame{
-      position: relative;
-      border-radius: calc(var(--card-radius) + 8px);
-      padding: 0;
-    }
-    .neon-frame::after{
-      content:"";
-      position:absolute;
-      inset:-18px;
-      border-radius: calc(var(--card-radius) + 26px);
-      background: linear-gradient(135deg,
-        rgba(59,130,246,0.55),
-        rgba(168,85,247,0.45),
-        rgba(236,72,153,0.35)
-      );
-      filter: blur(20px);
-      opacity: 0.85;
-      z-index: 0;
-      pointer-events:none;
-    }
+            /* True Blur Effect (Frost) */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
 
-    /* ===== Glass Card (reference-style) ===== */
-    .glass-card{
-      position: relative;
-      border-radius: var(--card-radius);
-      overflow: hidden;
+            /* Fallback/Correction: rounded corners to match the image border */
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
 
-      /* main tint = the “glass color” */
-      background: var(--card-bg);
+            text-align: center;
+        }
 
-      /* blur is optional */
-      backdrop-filter: blur(var(--card-blur)) saturate(1.15) contrast(1.05);
-      -webkit-backdrop-filter: blur(var(--card-blur)) saturate(1.15) contrast(1.05);
+        /* Typography */
+        .ht-logo-area {
+            margin-bottom: 35px;
+        }
 
-      border: 1px solid var(--card-border);
-      outline: 1px solid var(--card-outline);
-      outline-offset: -1px;
+        .ht-title {
+            display: inline-block;
+            width: auto;
+        }
 
-      box-shadow: var(--card-shadow), inset 0 0 0 1px rgba(255,255,255,0.05);
-      z-index: 1; /* above wrapper glow */
-    }
 
-    /* FX layer sits under content so buttons stay crisp */
-    .card-fx{
-      position:absolute;
-      inset:0;
-      pointer-events:none;
-      z-index: 0;
-    }
+        .ht-title {
+            margin: 0;
+            /* supprime les marges par défaut du h1 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
 
-    /* Subtle “glass sparkle / dust” like the reference image */
-    .card-fx::before{
-      content:"";
-      position:absolute;
-      inset:0;
-      background:
-        radial-gradient(900px 260px at 18% 0%,
-          rgba(255,255,255,0.22),
-          rgba(255,255,255,0.06) 35%,
-          rgba(255,255,255,0.00) 62%),
-        radial-gradient(900px 340px at 110% 70%,
-          rgba(168,85,247,0.18),
-          rgba(168,85,247,0.00) 65%),
-        radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
-      background-size: 100% 100%, 100% 100%, 48px 48px;
-      opacity: 0.55;
-      mix-blend-mode: overlay;
-    }
+        .ht-title img {
+            display: block;
+            width: min(var(--ht-logo-max-width), 100%);
+            /* ne dépasse jamais la carte */
+            max-width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
 
-    /* Diagonal “shine sweep” */
-    .card-fx::after{
-      content:"";
-      position:absolute;
-      inset:-40%;
-      background: linear-gradient(120deg,
-        rgba(255,255,255,0.18) 0%,
-        rgba(255,255,255,0.06) 18%,
-        rgba(255,255,255,0.00) 55%);
-      transform: rotate(8deg) translateY(-6%);
-      opacity: 0.55;
-    }
+        .ht-subtitle {
+            margin: 6px 0 0 0;
+            color: var(--ht-text-muted);
+            font-size: 0.95rem;
+            font-weight: 400;
+        }
 
-    /* Inner rim / depth (separate from the sparkle layer) */
-    .glass-card::before{
-      content:"";
-      position:absolute;
-      inset:0;
-      border-radius: inherit;
-      box-shadow:
-        inset 0 0 0 1px rgba(255,255,255,0.18),
-        inset 0 22px 30px rgba(255,255,255,0.06),
-        inset 0 -26px 34px rgba(0,0,0,0.22);
-      pointer-events:none;
-      z-index: 1;
-    }
+        /* Input Section */
+        .ht-input-group {
+            text-align: left;
+            margin-bottom: 25px;
+        }
 
-    /* ===== 4 EDGE GLINT STRIPS (their method) ===== */
-    .glint{
-      position:absolute;
-      pointer-events:none;
-      z-index: 1; /* still under content */
-      opacity: 0.85;
-    }
-    .glint.left{
-      left:0; top:14px; bottom:14px; width:3px;
-      background: linear-gradient(180deg,
-        rgba(59,130,246,0),
-        rgba(59,130,246,0.95) 35%,
-        rgba(168,85,247,0.85) 65%,
-        rgba(59,130,246,0)
-      );
-    }
-    .glint.right{
-      right:0; top:14px; bottom:14px; width:3px;
-      background: linear-gradient(180deg,
-        rgba(236,72,153,0),
-        rgba(168,85,247,0.85) 40%,
-        rgba(236,72,153,0.85) 70%,
-        rgba(236,72,153,0)
-      );
-    }
-    .glint.top{
-      top:0; left:18px; right:18px; height:3px;
-      background: linear-gradient(90deg,
-        rgba(59,130,246,0),
-        rgba(255,255,255,0.45) 18%,
+        .ht-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--ht-text-white);
+            margin-bottom: 8px;
+            opacity: 0.9;
+        }
+
+        .ht-input {
+            width: 100%;
+            box-sizing: border-box;
+            background: var(--ht-input-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--ht-radius);
+            padding: 16px;
+            font-size: 1.25rem;
+            color: var(--ht-text-white);
+            text-align: center;
+            font-weight: 500;
+            outline: none;
+            transition: 0.2s ease;
+        }
+
+        .ht-input:focus {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Buttons */
+        .ht-btn {
+            width: 100%;
+            padding: 18px;
+            border-radius: var(--ht-radius);
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 12px;
+            font-family: inherit;
+            letter-spacing: 0.3px;
+        }
+
+        /* Primary button: glossy + subtle light in the middle */
+        /* Primary button (base) */
+        .ht-btn-primary {
+            position: relative;
+            overflow: hidden;
+
+            background: linear-gradient(180deg, #5b7fff 0%, #446bf2 60%, #3655c4 100%);
+            color: #fff;
+
+            /* évite l'effet “bordure illuminée” */
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            box-shadow: 0 10px 28px rgba(68, 107, 242, 0.45);
+        }
+
+        /* petit glow localisé au centre du haut (pas sur toute la surface) */
+        .ht-btn-primary::before {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: -26px;
+
+            width: 72%;
+            height: 38px;
+            transform: translateX(-50%);
+
+            background: radial-gradient(ellipse at center,
+                    rgba(255, 255, 255, 0.90) 0%,
+                    rgba(255, 255, 255, 0.18) 40%,
+                    rgba(255, 255, 255, 0.00) 72%);
+
+            filter: blur(8px);
+            opacity: 0.9;
+            pointer-events: none;
+        }
+
+        /* petite bande de brillance fine au centre du haut */
+        .ht-btn-primary::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: -3px;
+
+            width: 74%;
+            height: 6px;
+            transform: translateX(-50%);
+
+            background: linear-gradient(90deg,
+                    rgba(255, 255, 255, 0),
+                    rgba(255, 255, 255, 0.65),
+                    rgba(255, 255, 255, 0));
+
+            border-radius: 999px;
+            opacity: 0.85;
+            pointer-events: none;
+        }
+
+        .ht-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 34px rgba(68, 107, 242, 0.55);
+        }
+
+        .ht-btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 8px 20px rgba(68, 107, 242, 0.40);
+        }
+
+
+        /* Secondary: Ghost/Glass */
+        .ht-btn-secondary {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--ht-text-muted);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .ht-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 500px) {
+            .ht-card {
+                width: 90%;
+                padding: 30px 25px 40px 25px;
+            }
+
+            .ht-title {
+                width: auto;
+            }
+        }
+
+        /* --- CARD COMPONENT END --- */
+    </style>
+</head>
+
+<body>
+
+    <div class="ht-card">
+        <div class="ht-logo-area">
+            <h1 class="ht-title">
+                <img src="logo.png" alt="">
+            </h1>
+            <p class="ht-subtitle">Create a payment link in seconds</p>
+        </div>
+
+        <div class="ht-input-group">
+            <label class="ht-label">Amount (HBAR)</label>
+            <input type="number" class="ht-input" value="50" placeholder="0.00">
+        </div>
+
+        <button class="ht-btn ht-btn-primary">Connect Wallet</button>
+        <button class="ht-btn ht-btn-secondary">Generate Payment Link</button>
+    </div>
+
+</body>
+
+</html>
