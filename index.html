@@ -30,7 +30,7 @@
     .neon-frame {
       position: relative;
       border-radius: 30px;
-      padding: 2px;            /* IMPORTANT: gives the ring space */
+      padding: 2px;
       overflow: visible;
     }
 
@@ -40,7 +40,7 @@
       position:absolute;
       inset:0;
       border-radius: inherit;
-      padding: 2px; /* border thickness */
+      padding: 2px;
       background: linear-gradient(135deg,
         rgba(59,130,246,0.95) 0%,
         rgba(168,85,247,0.85) 55%,
@@ -58,34 +58,34 @@
       z-index: 0;
     }
 
-    /* outer glow bloom (stronger + closer like the mock) */
+    /* outer glow bloom */
     .neon-frame::after {
       content:"";
       position:absolute;
-      inset:-16px;             /* closer */
+      inset:-16px;
       border-radius: 44px;
       background: linear-gradient(135deg,
         rgba(59,130,246,0.70),
         rgba(168,85,247,0.60),
         rgba(236,72,153,0.50)
       );
-      filter: blur(18px);      /* tighter = less fuzzy */
+      filter: blur(18px);
       opacity: 0.90;
       z-index: -1;
       pointer-events:none;
     }
 
-    /* === TRUE SEE-THROUGH GLASS CARD + NO DROP SHADOW === */
+    /* === SOFTER BLUR FOR BALANCED GLASS (More See-Through) === */
     .glass-card {
       position: relative;
       border-radius: 28px;
 
-      /* SUPER transparent base (lets the bg show through) */
-      background: rgba(22, 18, 45, 0.14);
+      /* Even more transparent base */
+      background: rgba(22, 18, 45, 0.10);
 
-      /* stronger blur (browser needs exaggeration) */
-      backdrop-filter: blur(36px) saturate(185%) contrast(1.05);
-      -webkit-backdrop-filter: blur(36px) saturate(185%) contrast(1.05);
+      /* Milder blur for frost without haze */
+      backdrop-filter: blur(24px) saturate(170%) contrast(1.02);
+      -webkit-backdrop-filter: blur(24px) saturate(170%) contrast(1.02);
 
       /* NO big drop shadow */
       box-shadow: none;
@@ -94,7 +94,7 @@
       z-index: 1;
     }
 
-    /* highlights + subtle sparkle (replaces old glass-noise layer) */
+    /* SUBTLER SPARKLE HIGHLIGHTS */
     .glass-card::before {
       content:"";
       position:absolute;
@@ -103,22 +103,22 @@
 
       background:
         radial-gradient(900px 260px at 20% 0%,
-          rgba(255,255,255,0.20),
-          rgba(255,255,255,0.06) 35%,
+          rgba(255,255,255,0.18),
+          rgba(255,255,255,0.04) 35%,
           rgba(255,255,255,0.00) 62%),
         radial-gradient(900px 340px at 100% 70%,
-          rgba(168,85,247,0.10),
+          rgba(168,85,247,0.08),
           rgba(168,85,247,0.00) 65%),
-        radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
+        radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
 
       background-size: 100% 100%, 100% 100%, 46px 46px;
-      opacity: 0.55;
+      opacity: 0.45;
       mix-blend-mode: overlay;
       pointer-events:none;
       z-index: 1;
     }
 
-    /* crisp inner glass edge (the shiny rim you see in the mock) */
+    /* ENHANCED CRISP RIM (Premium Depth) */
     .glass-card::after {
       content:"";
       position:absolute;
@@ -126,9 +126,9 @@
       border-radius: inherit;
 
       box-shadow:
-        inset 0 0 0 1px rgba(255,255,255,0.22),  /* sharp inner line */
-        inset 0 18px 28px rgba(255,255,255,0.08), /* top shine */
-        inset 0 -22px 32px rgba(0,0,0,0.18);     /* bottom depth */
+        inset 0 0 0 1px rgba(255,255,255,0.26),  /* Brighter inner line */
+        inset 0 20px 30px rgba(255,255,255,0.10), /* Enhanced top shine */
+        inset 0 -20px 30px rgba(0,0,0,0.16);     /* Softer bottom depth */
 
       pointer-events:none;
       z-index: 2;
@@ -137,12 +137,12 @@
     /* keep real content above the overlays */
     .glass-card > * { position: relative; z-index: 3; }
 
-    /* DARKER INPUTS (slightly glass too, not solid dark) */
+    /* LIGHTER TRANSPARENT INPUTS */
     .field {
-      background: rgba(10, 12, 30, 0.18);
-      border: 1px solid rgba(255,255,255,0.14);
-      color: rgba(255,255,255,0.92);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+      background: rgba(10, 12, 30, 0.14);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.95);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
     }
     .field:focus {
       outline:none;
@@ -163,15 +163,15 @@
     }
     .btn-primary:active:not(:disabled) { transform: translateY(0); }
 
-    /* Secondary button */
+    /* GHOST BUTTON WITH PURPLE HINT */
     .btn-ghost {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.10);
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.03) inset;
-      color: rgba(255,255,255,0.75);
+      background: rgba(168,85,247,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset;
+      color: rgba(255,255,255,0.80);
     }
     .btn-ghost:hover:not(:disabled) {
-      background: rgba(255,255,255,0.09);
+      background: rgba(168,85,247,0.08);
     }
     .btn-ghost:disabled {
       opacity: 0.40;
@@ -192,12 +192,12 @@
     <!-- CREATE MODE -->
     <div class="neon-frame w-full max-w-xl" id="createFrame">
       <div id="createMode" class="glass-card p-8 md:p-10">
-        <!-- Header -->
+        <!-- Header with Orange Accent -->
         <div class="flex items-center justify-center gap-3 mb-2">
           <div class="h-10 w-10 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-2xl">
             💎
           </div>
-          <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">HashToll Pay</h1>
+          <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight">Hash<span class="text-orange-400">Toll</span> Pay</h1>
         </div>
         <p class="text-center text-white/70 mb-8">Create a payment link in seconds</p>
 
