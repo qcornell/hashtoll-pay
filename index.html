@@ -26,11 +26,12 @@
       overflow-x: hidden;
     }
 
-    /* === NEON BORDER (border-only, no fill) === */
+    /* === NEON BORDER FRAME (border-only, no fill) === */
     .neon-frame {
       position: relative;
       border-radius: 30px;
-      overflow: visible; /* important so glow can show */
+      padding: 2px;            /* IMPORTANT: gives the ring space */
+      overflow: visible;
     }
 
     /* the actual neon border ring */
@@ -57,95 +58,91 @@
       z-index: 0;
     }
 
-    /* outer glow bloom */
+    /* outer glow bloom (stronger + closer like the mock) */
     .neon-frame::after {
       content:"";
       position:absolute;
-      inset:-22px;
+      inset:-16px;             /* closer */
       border-radius: 44px;
       background: linear-gradient(135deg,
-        rgba(59,130,246,0.55),
-        rgba(168,85,247,0.45),
-        rgba(236,72,153,0.35)
+        rgba(59,130,246,0.70),
+        rgba(168,85,247,0.60),
+        rgba(236,72,153,0.50)
       );
-      filter: blur(26px);
-      opacity: 0.75;
+      filter: blur(18px);      /* tighter = less fuzzy */
+      opacity: 0.90;
       z-index: -1;
       pointer-events:none;
     }
 
-    /* === INNER GLASS CARD (true glass = low alpha + strong blur) === */
+    /* === TRUE SEE-THROUGH GLASS CARD + NO DROP SHADOW === */
     .glass-card {
       position: relative;
       border-radius: 28px;
 
-      /* true glass = low alpha + soft gradients */
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02) 45%, rgba(255,255,255,0.00) 100%),
-        rgba(10,14,30,0.30); /* <-- THIS is the "see-through" part */
+      /* SUPER transparent base (lets the bg show through) */
+      background: rgba(22, 18, 45, 0.14);
 
-      border: 1px solid rgba(255,255,255,0.16);
+      /* stronger blur (browser needs exaggeration) */
+      backdrop-filter: blur(36px) saturate(185%) contrast(1.05);
+      -webkit-backdrop-filter: blur(36px) saturate(185%) contrast(1.05);
 
-      /* stronger blur makes it feel like real glass */
-      backdrop-filter: blur(26px) saturate(160%);
-      -webkit-backdrop-filter: blur(26px) saturate(160%);
-
-      box-shadow:
-        0 28px 90px rgba(0,0,0,0.50),
-        0 0 0 1px rgba(255,255,255,0.08) inset;
+      /* NO big drop shadow */
+      box-shadow: none;
 
       overflow: hidden;
       z-index: 1;
     }
 
-    /* shiny glass highlights inside the card */
+    /* highlights + subtle sparkle (replaces old glass-noise layer) */
     .glass-card::before {
       content:"";
       position:absolute;
       inset:0;
-      border-radius: 28px;
+      border-radius: inherit;
 
       background:
-        radial-gradient(900px 220px at 18% 0%,
-          rgba(255,255,255,0.22),
+        radial-gradient(900px 260px at 20% 0%,
+          rgba(255,255,255,0.20),
           rgba(255,255,255,0.06) 35%,
-          rgba(255,255,255,0.00) 60%),
-        radial-gradient(700px 240px at 100% 65%,
-          rgba(168,85,247,0.14),
-          rgba(168,85,247,0.00) 60%),
-        linear-gradient(135deg,
-          rgba(59,130,246,0.10),
-          rgba(236,72,153,0.06),
-          rgba(255,255,255,0.00) 60%);
+          rgba(255,255,255,0.00) 62%),
+        radial-gradient(900px 340px at 100% 70%,
+          rgba(168,85,247,0.10),
+          rgba(168,85,247,0.00) 65%),
+        radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
 
-      opacity: 1;
-      pointer-events:none;
-      z-index: 1;
-    }
-
-    /* keep content above overlays */
-    .glass-card > * { position: relative; z-index: 2; }
-
-    /* more subtle texture dots (closer to the image) */
-    .glass-noise::after {
-      content:"";
-      position:absolute;
-      inset:0;
-      border-radius: 28px;
-      background-image: radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
-      background-size: 44px 44px;
-      opacity: 0.06; /* reduced from 0.10 */
+      background-size: 100% 100%, 100% 100%, 46px 46px;
+      opacity: 0.55;
       mix-blend-mode: overlay;
       pointer-events:none;
       z-index: 1;
     }
 
-    /* DARKER INPUTS (this is a big part of the premium look) */
+    /* crisp inner glass edge (the shiny rim you see in the mock) */
+    .glass-card::after {
+      content:"";
+      position:absolute;
+      inset:0;
+      border-radius: inherit;
+
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.22),  /* sharp inner line */
+        inset 0 18px 28px rgba(255,255,255,0.08), /* top shine */
+        inset 0 -22px 32px rgba(0,0,0,0.18);     /* bottom depth */
+
+      pointer-events:none;
+      z-index: 2;
+    }
+
+    /* keep real content above the overlays */
+    .glass-card > * { position: relative; z-index: 3; }
+
+    /* DARKER INPUTS (slightly glass too, not solid dark) */
     .field {
-      background: rgba(0,0,0,0.22);
+      background: rgba(10, 12, 30, 0.18);
       border: 1px solid rgba(255,255,255,0.14);
       color: rgba(255,255,255,0.92);
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.03) inset;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
     }
     .field:focus {
       outline:none;
@@ -194,7 +191,7 @@
     
     <!-- CREATE MODE -->
     <div class="neon-frame w-full max-w-xl" id="createFrame">
-      <div id="createMode" class="glass-card glass-noise p-8 md:p-10">
+      <div id="createMode" class="glass-card p-8 md:p-10">
         <!-- Header -->
         <div class="flex items-center justify-center gap-3 mb-2">
           <div class="h-10 w-10 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-2xl">
@@ -269,7 +266,7 @@
 
     <!-- PAY MODE -->
     <div class="neon-frame w-full max-w-xl hidden" id="payFrame">
-      <div id="payMode" class="glass-card glass-noise p-8 md:p-10">
+      <div id="payMode" class="glass-card p-8 md:p-10">
         <div class="flex items-center justify-center gap-3 mb-2">
           <div class="h-10 w-10 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center text-2xl">
             💎
