@@ -16,14 +16,27 @@
   <style>
     * { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
 
-    /* BLUR-FRIENDLY BACKGROUND (Fixed Layer Trick) */
+    :root{
+      /* ===== Quick tuning knobs ===== */
+      --card-radius: 28px;
+      --card-bg: rgba(10, 18, 80, 0.42);        /* main “tinted glass” */
+      --card-border: rgba(255,255,255,0.16);
+      --card-outline: rgba(255,255,255,0.28);
+      --card-blur: 14px;                        /* set to 0px for “no blur” look */
+      --card-shadow: 0 26px 80px rgba(0,0,0,0.55);
+
+      --btn-radius: 18px;
+      --btn-primary: linear-gradient(90deg, #4B7CF6 0%, #3B66CC 100%);
+      --btn-shadow: 0 10px 26px rgba(0,0,0,0.30);
+    }
+
+    /* Background */
     body {
       min-height: 100vh;
       overflow-x: hidden;
-      background: #070816; /* fallback */
+      background: #070816;
+      color: #fff;
     }
-
-    /* Put the image on a fixed layer behind everything */
     body::before {
       content:"";
       position: fixed;
@@ -32,8 +45,6 @@
       z-index: -2;
       transform: translateZ(0);
     }
-
-    /* Optional: subtle cinematic glow so the glass pops */
     body::after {
       content:"";
       position: fixed;
@@ -46,497 +57,130 @@
       pointer-events: none;
     }
 
-    /* === ENHANCED NEON BORDER FRAME === */
-    .neon-frame {
+    /* Outer “soft glow” wrapper */
+    .neon-frame{
       position: relative;
-      border-radius: 30px;
+      border-radius: calc(var(--card-radius) + 8px);
       padding: 0;
-      overflow: visible;
     }
-
-    /* Gradient borders on each edge - inspired by reference */
-    .gradient-border-left {
-      height: 100%;
-      width: 4px;
-      position: absolute;
-      left: 0;
-      top: 0;
-      background: linear-gradient(180deg, 
-        rgba(59,130,246,0.0), 
-        rgba(168,85,247,0.95) 50%, 
-        rgba(59,130,246,0.0)
-      );
-      border-radius: 30px 0 0 30px;
-      z-index: 1;
-    }
-
-    .gradient-border-right {
-      height: 100%;
-      width: 4px;
-      position: absolute;
-      right: 0;
-      top: 0;
-      background: linear-gradient(180deg, 
-        rgba(236,72,153,0.0), 
-        rgba(168,85,247,0.95) 50%, 
-        rgba(236,72,153,0.0)
-      );
-      border-radius: 0 30px 30px 0;
-      z-index: 1;
-    }
-
-    .gradient-border-top {
-      height: 4px;
-      width: 100%;
-      position: absolute;
-      left: 0;
-      top: 0;
-      background: linear-gradient(90deg, 
-        rgba(59,130,246,0.0), 
-        rgba(59,130,246,0.95) 30%,
-        rgba(168,85,247,0.95) 70%,
-        rgba(236,72,153,0.0)
-      );
-      border-radius: 30px 30px 0 0;
-      z-index: 1;
-    }
-
-    .gradient-border-bottom {
-      height: 4px;
-      width: 100%;
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      background: linear-gradient(90deg, 
-        rgba(59,130,246,0.0), 
-        rgba(168,85,247,0.95) 30%,
-        rgba(236,72,153,0.95) 70%,
-        rgba(236,72,153,0.0)
-      );
-      border-radius: 0 0 30px 30px;
-      z-index: 1;
-    }
-
-    /* outer glow bloom */
-    .neon-frame::after {
+    .neon-frame::after{
       content:"";
       position:absolute;
-      inset:-16px;
-      border-radius: 44px;
+      inset:-18px;
+      border-radius: calc(var(--card-radius) + 26px);
       background: linear-gradient(135deg,
-        rgba(59,130,246,0.70),
-        rgba(168,85,247,0.60),
-        rgba(236,72,153,0.50)
+        rgba(59,130,246,0.55),
+        rgba(168,85,247,0.45),
+        rgba(236,72,153,0.35)
       );
-      filter: blur(18px);
-      opacity: 0.90;
+      filter: blur(20px);
+      opacity: 0.85;
       z-index: 0;
       pointer-events:none;
     }
 
-    /* === ENHANCED GLASS CARD with stronger glass effect === */
-    .glass-card {
+    /* ===== Glass Card (reference-style) ===== */
+    .glass-card{
       position: relative;
-      border-radius: 28px;
-
-      /* Enhanced glass background - darker and more saturated like reference */
-      background: rgba(6, 15, 100, 0.589);
-      
-      /* Stronger backdrop blur for premium glass effect */
-      backdrop-filter: blur(30px) saturate(180%) contrast(1.05);
-      -webkit-backdrop-filter: blur(30px) saturate(180%) contrast(1.05);
-
-      /* White outline like reference */
-      outline: 1px solid rgba(255, 255, 255, 0.4);
-      border: 3px solid rgba(255, 255, 255, 0.15);
-      
-      box-shadow: 
-        0 8px 32px rgba(1, 10, 136, 0.308),
-        inset 0 0 0 1px rgba(255,255,255,0.1);
-      
+      border-radius: var(--card-radius);
       overflow: hidden;
-      z-index: 2;
+
+      /* main tint = the “glass color” */
+      background: var(--card-bg);
+
+      /* blur is optional */
+      backdrop-filter: blur(var(--card-blur)) saturate(1.15) contrast(1.05);
+      -webkit-backdrop-filter: blur(var(--card-blur)) saturate(1.15) contrast(1.05);
+
+      border: 1px solid var(--card-border);
+      outline: 1px solid var(--card-outline);
+      outline-offset: -1px;
+
+      box-shadow: var(--card-shadow), inset 0 0 0 1px rgba(255,255,255,0.05);
+      z-index: 1; /* above wrapper glow */
     }
 
-    /* Top highlight glow - from reference */
-    .glass-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
-      z-index: 1;
+    /* FX layer sits under content so buttons stay crisp */
+    .card-fx{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      z-index: 0;
     }
 
-    /* Subtle inner glow */
-    .glass-card::after {
+    /* Subtle “glass sparkle / dust” like the reference image */
+    .card-fx::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(900px 260px at 18% 0%,
+          rgba(255,255,255,0.22),
+          rgba(255,255,255,0.06) 35%,
+          rgba(255,255,255,0.00) 62%),
+        radial-gradient(900px 340px at 110% 70%,
+          rgba(168,85,247,0.18),
+          rgba(168,85,247,0.00) 65%),
+        radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 48px 48px;
+      opacity: 0.55;
+      mix-blend-mode: overlay;
+    }
+
+    /* Diagonal “shine sweep” */
+    .card-fx::after{
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background: linear-gradient(120deg,
+        rgba(255,255,255,0.18) 0%,
+        rgba(255,255,255,0.06) 18%,
+        rgba(255,255,255,0.00) 55%);
+      transform: rotate(8deg) translateY(-6%);
+      opacity: 0.55;
+    }
+
+    /* Inner rim / depth (separate from the sparkle layer) */
+    .glass-card::before{
       content:"";
       position:absolute;
       inset:0;
       border-radius: inherit;
-      background:
-        radial-gradient(900px 260px at 50% 0%,
-          rgba(255,255,255,0.15),
-          rgba(255,255,255,0.03) 38%,
-          rgba(255,255,255,0.00) 62%);
-      opacity: 0.3;
-      mix-blend-mode: overlay;
-      pointer-events:none;
-      z-index: 1;
-    }
-
-    .glass-card > * { position: relative; z-index: 3; }
-
-    /* === ENHANCED GLASS BUTTONS === */
-    .btn-primary, .btn-ghost {
-      position: relative;
-      overflow: hidden;
-
-      /* Enhanced button glass */
-      backdrop-filter: blur(12px) saturate(150%);
-      -webkit-backdrop-filter: blur(12px) saturate(150%);
-
-      border: 1px solid rgba(255,255,255,0.2);
       box-shadow:
-        0 14px 32px rgba(0,0,0,0.22),
-        inset 0 1px 0 rgba(255,255,255,0.25);
-    }
-
-    /* Top shine strip - from reference */
-    .btn-primary::before, .btn-ghost::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+        inset 0 0 0 1px rgba(255,255,255,0.18),
+        inset 0 22px 30px rgba(255,255,255,0.06),
+        inset 0 -26px 34px rgba(0,0,0,0.22);
+      pointer-events:none;
       z-index: 1;
     }
 
-    /* Subtle inner glow on buttons */
-    .btn-primary::after, .btn-ghost::after {
-      content:"";
+    /* ===== 4 EDGE GLINT STRIPS (their method) ===== */
+    .glint{
       position:absolute;
-      inset:0;
-      background: linear-gradient(180deg, rgba(255,255,255,0.15), rgba(255,255,255,0.00) 55%);
-      opacity: 0.4;
       pointer-events:none;
-      z-index: 0;
+      z-index: 1; /* still under content */
+      opacity: 0.85;
     }
-
-    .btn-primary {
-      /* Enhanced gradient like reference */
-      background: linear-gradient(90deg, #4B7CF6 0%, #3B66CC 100%);
-      box-shadow: 0 4px 15px rgba(75, 124, 246, 0.4);
+    .glint.left{
+      left:0; top:14px; bottom:14px; width:3px;
+      background: linear-gradient(180deg,
+        rgba(59,130,246,0),
+        rgba(59,130,246,0.95) 35%,
+        rgba(168,85,247,0.85) 65%,
+        rgba(59,130,246,0)
+      );
     }
-
-    .btn-primary:hover:not(:disabled) { 
-      filter: brightness(1.1); 
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(75, 124, 246, 0.6);
+    .glint.right{
+      right:0; top:14px; bottom:14px; width:3px;
+      background: linear-gradient(180deg,
+        rgba(236,72,153,0),
+        rgba(168,85,247,0.85) 40%,
+        rgba(236,72,153,0.85) 70%,
+        rgba(236,72,153,0)
+      );
     }
-    .btn-primary:active:not(:disabled) { 
-      transform: scale(0.98);
-    }
-
-    .btn-ghost {
-      /* Darker glass like reference secondary button */
-      background: rgba(19, 18, 18, 0.315);
-      border: 1px solid rgba(255, 255, 255, 0.336);
-      color: rgba(224, 224, 228, 1);
-    }
-
-    .btn-ghost:hover:not(:disabled) {
-      background: rgba(88, 88, 88, 0.404);
-      color: rgba(255,255,255,1);
-    }
-
-    .btn-ghost:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    /* === ENHANCED INPUTS === */
-    .field {
-      /* Darker input background like reference */
-      background: rgba(0, 0, 0, 0.445);
-      
-      /* Glass effect on inputs */
-      backdrop-filter: blur(10px) saturate(140%);
-      -webkit-backdrop-filter: blur(10px) saturate(140%);
-      
-      border: 1px solid rgba(255,255,255,0.411);
-      color: rgba(255,255,255,1.0);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
-      
-      /* Remove number input arrows */
-      -moz-appearance: textfield;
-    }
-
-    /* Remove spinner arrows for Chrome, Safari, Edge */
-    .field::-webkit-outer-spin-button,
-    .field::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-
-    .field:focus {
-      outline:none;
-      border-color: #4B7CF6;
-      background: rgba(255, 255, 255, 0.12);
-      box-shadow: 0 0 0 3px rgba(75, 124, 246, 0.2);
-    }
-
-    /* White placeholder */
-    .field::placeholder {
-      color: rgba(255,255,255,0.4);
-    }
-
-    /* Logo styling */
-    .logo-image {
-      height: 80px;
-      width: auto;
-      object-fit: contain;
-    }
-
-    /* QR Code styling */
-    .qr-wrapper canvas {
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    }
-
-    /* Enhanced result box */
-    .result-box {
-      background: rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.15);
-    }
-  </style>
-</head>
-
-<body class="text-white">
-  <main class="min-h-screen flex items-center justify-center px-4 py-10">
-    
-    <!-- CREATE MODE -->
-    <div class="neon-frame w-full max-w-xl" id="createFrame">
-      <!-- Gradient borders -->
-      <div class="gradient-border-left"></div>
-      <div class="gradient-border-right"></div>
-      <div class="gradient-border-top"></div>
-      <div class="gradient-border-bottom"></div>
-
-      <div id="createMode" class="glass-card p-6 md:p-8">
-        <!-- Header with Logo -->
-        <div class="flex items-center justify-center mb-2">
-          <img src="logo.png" alt="HashToll" class="logo-image" />
-        </div>
-        <p class="text-center text-white/70 mb-8">Create a payment link in seconds</p>
-
-        <!-- Connected Wallet Info -->
-        <div id="walletInfo" class="hidden mb-5 rounded-2xl result-box p-4">
-          <div class="text-xs text-white/60 mb-1 uppercase tracking-wide">Connected</div>
-          <div id="connectedAddress" class="text-sm font-mono text-white/80"></div>
-        </div>
-
-        <!-- Form -->
-        <div class="space-y-5">
-          <div>
-            <label class="block text-sm font-semibold text-white/80 mb-2">Amount (HBAR)</label>
-            <input
-              id="amount"
-              type="number"
-              inputmode="decimal"
-              placeholder="50"
-              min="0.01"
-              step="0.01"
-              class="field w-full rounded-2xl px-5 py-4 text-center text-2xl md:text-3xl font-bold"
-            />
-          </div>
-
-          <button
-            id="connectBtn"
-            class="btn-primary w-full rounded-2xl py-4 text-lg font-semibold transition"
-          >
-            Connect Wallet
-          </button>
-
-          <button
-            id="generateBtn"
-            disabled
-            class="btn-ghost w-full rounded-2xl py-4 text-lg font-semibold transition"
-          >
-            Generate Payment Link
-          </button>
-
-          <!-- Result -->
-          <div id="result" class="hidden mt-6 space-y-4">
-            <div class="rounded-2xl result-box p-5">
-              <div class="text-sm font-semibold text-white/70 mb-3">Your Payment Link</div>
-              <div class="flex gap-2">
-                <input
-                  id="paymentLink"
-                  readonly
-                  class="field flex-1 rounded-xl px-4 py-3 text-xs font-mono"
-                  value=""
-                />
-                <button
-                  id="copyBtn"
-                  class="btn-ghost rounded-xl px-5 py-3 text-sm font-semibold whitespace-nowrap"
-                >
-                  📋 Copy
-                </button>
-              </div>
-            </div>
-
-            <!-- QR Code -->
-            <div class="qr-wrapper flex justify-center" id="qrCode"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PAY MODE -->
-    <div class="neon-frame w-full max-w-xl hidden" id="payFrame">
-      <!-- Gradient borders -->
-      <div class="gradient-border-left"></div>
-      <div class="gradient-border-right"></div>
-      <div class="gradient-border-top"></div>
-      <div class="gradient-border-bottom"></div>
-
-      <div id="payMode" class="glass-card p-6 md:p-8">
-        <div class="flex items-center justify-center mb-2">
-          <img src="logo.png" alt="HashToll" class="logo-image" />
-        </div>
-        <p class="text-center text-white/70 mb-8">Complete this payment with HashPack</p>
-
-        <!-- Payment Details -->
-        <div class="rounded-2xl result-box p-6 mb-6 space-y-4">
-          <div class="flex justify-between items-center">
-            <span class="text-sm text-white/60 uppercase tracking-wide">Amount</span>
-            <span id="payAmount" class="text-4xl font-bold text-white"></span>
-          </div>
-          <div class="flex justify-between items-start border-t border-white/10 pt-4">
-            <span class="text-sm text-white/60 uppercase tracking-wide">To</span>
-            <span id="payTo" class="text-xs font-mono text-white/80 text-right max-w-[200px] break-all"></span>
-          </div>
-        </div>
-
-        <button
-          id="payBtn"
-          class="btn-primary w-full rounded-2xl py-4 text-lg font-semibold transition"
-        >
-          Pay with HashPack
-        </button>
-
-        <!-- Success State -->
-        <div id="txResult" class="hidden text-center mt-8">
-          <div class="text-6xl mb-4">✅</div>
-          <h3 class="text-2xl font-bold text-white mb-2">Payment Successful!</h3>
-          <div id="txId" class="text-xs text-white/50 font-mono"></div>
-        </div>
-      </div>
-    </div>
-
-  </main>
-
-  <!-- QR Code Library -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-
-  <script>
-    // Parse URL to detect payment mode
-    const urlParams = new URLSearchParams(window.location.search);
-    const paymentAmount = urlParams.get('amount');
-    const recipientAddress = urlParams.get('to');
-
-    // MODE DETECTION
-    if (paymentAmount && recipientAddress) {
-      // PAY MODE
-      document.getElementById('createFrame').classList.add('hidden');
-      document.getElementById('payFrame').classList.remove('hidden');
-      document.getElementById('payAmount').textContent = `${paymentAmount} ℏ`;
-      document.getElementById('payTo').textContent = recipientAddress;
-
-      document.getElementById('payBtn').addEventListener('click', async () => {
-        try {
-          // Payment logic coming next
-          alert('Payment logic coming next!');
-        } catch (error) {
-          console.error(error);
-          alert('Payment failed: ' + error.message);
-        }
-      });
-
-    } else {
-      // CREATE MODE
-      let connectedAccountId = null;
-
-      // Connect Wallet
-      document.getElementById('connectBtn').addEventListener('click', async () => {
-        try {
-          // Simulate connection (we'll add HashConnect next)
-          connectedAccountId = '0.0.1234567';
-
-          document.getElementById('walletInfo').classList.remove('hidden');
-          document.getElementById('connectedAddress').textContent = connectedAccountId;
-          document.getElementById('connectBtn').textContent = '✓ Wallet Connected';
-          document.getElementById('connectBtn').disabled = true;
-          document.getElementById('generateBtn').disabled = false;
-        } catch (error) {
-          alert('Connection failed: ' + error.message);
-        }
-      });
-
-      // Generate Link
-      document.getElementById('generateBtn').addEventListener('click', async () => {
-        const amount = document.getElementById('amount').value;
-
-        if (!amount || amount <= 0) {
-          alert('Please enter a valid amount');
-          return;
-        }
-
-        // Generate payment link
-        const baseUrl = window.location.origin + window.location.pathname;
-        const paymentUrl = `${baseUrl}?to=${connectedAccountId}&amount=${amount}`;
-
-        // Show result
-        document.getElementById('paymentLink').value = paymentUrl;
-        document.getElementById('result').classList.remove('hidden');
-
-        // Generate QR code
-        const qrContainer = document.getElementById('qrCode');
-        qrContainer.innerHTML = '';
-        QRCode.toCanvas(paymentUrl, {
-          width: 240,
-          margin: 2,
-          color: {
-            dark: '#1a1a3e',
-            light: '#ffffff'
-          }
-        }, (err, canvas) => {
-          if (err) console.error(err);
-          qrContainer.appendChild(canvas);
-        });
-      });
-
-      // Copy link
-      document.getElementById('copyBtn').addEventListener('click', async () => {
-        const link = document.getElementById('paymentLink').value;
-        try {
-          await navigator.clipboard.writeText(link);
-          document.getElementById('copyBtn').textContent = '✓ Copied!';
-          setTimeout(() => {
-            document.getElementById('copyBtn').textContent = '📋 Copy';
-          }, 2000);
-        } catch (e) {
-          alert('Copy failed');
-        }
-      });
-    }
-  </script>
-</body>
-</html>
+    .glint.top{
+      top:0; left:18px; right:18px; height:3px;
+      background: linear-gradient(90deg,
+        rgba(59,130,246,0),
+        rgba(255,255,255,0.45) 18%,
