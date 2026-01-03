@@ -46,36 +46,75 @@
       pointer-events: none;
     }
 
-    /* === NEON BORDER FRAME (border-only, no fill) === */
+    /* === ENHANCED NEON BORDER FRAME === */
     .neon-frame {
       position: relative;
       border-radius: 30px;
-      padding: 2px;
+      padding: 0;
       overflow: visible;
     }
 
-    /* the actual neon border ring */
-    .neon-frame::before {
-      content:"";
-      position:absolute;
-      inset:0;
-      border-radius: inherit;
-      padding: 2px;
-      background: linear-gradient(135deg,
-        rgba(59,130,246,0.95) 0%,
-        rgba(168,85,247,0.85) 55%,
-        rgba(236,72,153,0.60) 100%
+    /* Gradient borders on each edge - inspired by reference */
+    .gradient-border-left {
+      height: 100%;
+      width: 4px;
+      position: absolute;
+      left: 0;
+      top: 0;
+      background: linear-gradient(180deg, 
+        rgba(59,130,246,0.0), 
+        rgba(168,85,247,0.95) 50%, 
+        rgba(59,130,246,0.0)
       );
+      border-radius: 30px 0 0 30px;
+      z-index: 1;
+    }
 
-      /* mask so ONLY the border shows */
-      -webkit-mask:
-        linear-gradient(#000 0 0) content-box,
-        linear-gradient(#000 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
+    .gradient-border-right {
+      height: 100%;
+      width: 4px;
+      position: absolute;
+      right: 0;
+      top: 0;
+      background: linear-gradient(180deg, 
+        rgba(236,72,153,0.0), 
+        rgba(168,85,247,0.95) 50%, 
+        rgba(236,72,153,0.0)
+      );
+      border-radius: 0 30px 30px 0;
+      z-index: 1;
+    }
 
-      pointer-events:none;
-      z-index: 0;
+    .gradient-border-top {
+      height: 4px;
+      width: 100%;
+      position: absolute;
+      left: 0;
+      top: 0;
+      background: linear-gradient(90deg, 
+        rgba(59,130,246,0.0), 
+        rgba(59,130,246,0.95) 30%,
+        rgba(168,85,247,0.95) 70%,
+        rgba(236,72,153,0.0)
+      );
+      border-radius: 30px 30px 0 0;
+      z-index: 1;
+    }
+
+    .gradient-border-bottom {
+      height: 4px;
+      width: 100%;
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, 
+        rgba(59,130,246,0.0), 
+        rgba(168,85,247,0.95) 30%,
+        rgba(236,72,153,0.95) 70%,
+        rgba(236,72,153,0.0)
+      );
+      border-radius: 0 0 30px 30px;
+      z-index: 1;
     }
 
     /* outer glow bloom */
@@ -91,102 +130,128 @@
       );
       filter: blur(18px);
       opacity: 0.90;
-      z-index: -1;
+      z-index: 0;
       pointer-events:none;
     }
 
-    /* === REAL GLASS CARD === */
+    /* === ENHANCED GLASS CARD with stronger glass effect === */
     .glass-card {
       position: relative;
       border-radius: 28px;
 
-      /* Glass effect with proper blur - RE-ENABLED */
-      background: rgba(0, 0, 0, 0.63);
-      backdrop-filter: blur(24px) saturate(170%) contrast(1.02);
-      -webkit-backdrop-filter: blur(24px) saturate(170%) contrast(1.02);
+      /* Enhanced glass background - darker and more saturated like reference */
+      background: rgba(6, 15, 100, 0.589);
+      
+      /* Stronger backdrop blur for premium glass effect */
+      backdrop-filter: blur(30px) saturate(180%) contrast(1.05);
+      -webkit-backdrop-filter: blur(30px) saturate(180%) contrast(1.05);
 
-      box-shadow: none;
+      /* White outline like reference */
+      outline: 1px solid rgba(255, 255, 255, 0.4);
+      border: 3px solid rgba(255, 255, 255, 0.15);
+      
+      box-shadow: 
+        0 8px 32px rgba(1, 10, 136, 0.308),
+        inset 0 0 0 1px rgba(255,255,255,0.1);
+      
       overflow: hidden;
-      z-index: 1;
+      z-index: 2;
     }
 
-    /* Subtle sparkle/texture that stays behind content */
+    /* Top highlight glow - from reference */
     .glass-card::before {
-      content:"";
-      position:absolute;
-      inset:0;
-      border-radius: inherit;
-      background:
-        radial-gradient(900px 260px at 20% 0%,
-          rgba(255,255,255,0.20),
-          rgba(255,255,255,0.05) 38%,
-          rgba(255,255,255,0.00) 62%),
-        radial-gradient(rgba(255,255,255,0.10) 1px, transparent 1px);
-      background-size: 100% 100%, 46px 46px;
-      opacity: 0.22;
-      mix-blend-mode: overlay;
-      pointer-events:none;
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
       z-index: 1;
     }
 
-    /* Ultra-thin "edge sparkle" */
+    /* Subtle inner glow */
     .glass-card::after {
       content:"";
       position:absolute;
       inset:0;
       border-radius: inherit;
-      box-shadow:
-        inset 0 0 0 1px rgba(255,255,255,0.16),
-        inset 0 0 22px rgba(255,255,255,0.06);
+      background:
+        radial-gradient(900px 260px at 50% 0%,
+          rgba(255,255,255,0.15),
+          rgba(255,255,255,0.03) 38%,
+          rgba(255,255,255,0.00) 62%);
+      opacity: 0.3;
+      mix-blend-mode: overlay;
       pointer-events:none;
-      z-index: 2;
+      z-index: 1;
     }
 
     .glass-card > * { position: relative; z-index: 3; }
 
-    /* === CRISP GLASS BUTTONS === */
+    /* === ENHANCED GLASS BUTTONS === */
     .btn-primary, .btn-ghost {
       position: relative;
       overflow: hidden;
 
-      /* Buttons get their OWN glass */
-      backdrop-filter: blur(10px) saturate(140%);
-      -webkit-backdrop-filter: blur(10px) saturate(140%);
+      /* Enhanced button glass */
+      backdrop-filter: blur(12px) saturate(150%);
+      -webkit-backdrop-filter: blur(12px) saturate(150%);
 
-      border: 1px solid rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.2);
       box-shadow:
         0 14px 32px rgba(0,0,0,0.22),
-        inset 0 1px 0 rgba(255,255,255,0.22);
+        inset 0 1px 0 rgba(255,255,255,0.25);
     }
 
-    /* Top shine strip */
+    /* Top shine strip - from reference */
     .btn-primary::before, .btn-ghost::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+      z-index: 1;
+    }
+
+    /* Subtle inner glow on buttons */
+    .btn-primary::after, .btn-ghost::after {
       content:"";
       position:absolute;
       inset:0;
-      background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.00) 55%);
-      opacity: 0.55;
+      background: linear-gradient(180deg, rgba(255,255,255,0.15), rgba(255,255,255,0.00) 55%);
+      opacity: 0.4;
       pointer-events:none;
+      z-index: 0;
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, rgba(48,120,255,0.95), rgba(110,94,255,0.90));
+      /* Enhanced gradient like reference */
+      background: linear-gradient(90deg, #4B7CF6 0%, #3B66CC 100%);
+      box-shadow: 0 4px 15px rgba(75, 124, 246, 0.4);
     }
 
     .btn-primary:hover:not(:disabled) { 
-      filter: brightness(1.06); 
+      filter: brightness(1.1); 
       transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(75, 124, 246, 0.6);
     }
-    .btn-primary:active:not(:disabled) { transform: translateY(0); }
+    .btn-primary:active:not(:disabled) { 
+      transform: scale(0.98);
+    }
 
     .btn-ghost {
-      /* Much lighter to match reference */
-      background: rgba(255, 255, 255, 0.08);
-      color: rgba(255,255,255,0.92);
+      /* Darker glass like reference secondary button */
+      background: rgba(19, 18, 18, 0.315);
+      border: 1px solid rgba(255, 255, 255, 0.336);
+      color: rgba(224, 224, 228, 1);
     }
 
     .btn-ghost:hover:not(:disabled) {
-      background: rgba(255, 255, 255, 0.12);
+      background: rgba(88, 88, 88, 0.404);
+      color: rgba(255,255,255,1);
     }
 
     .btn-ghost:disabled {
@@ -194,16 +259,16 @@
       cursor: not-allowed;
     }
 
-    /* === INPUTS: Lighter and more transparent === */
+    /* === ENHANCED INPUTS === */
     .field {
-      /* Much lighter background to match reference */
-      background: rgba(255, 255, 255, 0.08);
+      /* Darker input background like reference */
+      background: rgba(0, 0, 0, 0.445);
       
-      /* Re-enabled backdrop filter for glass effect */
+      /* Glass effect on inputs */
       backdrop-filter: blur(10px) saturate(140%);
       -webkit-backdrop-filter: blur(10px) saturate(140%);
       
-      border: 1px solid rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.411);
       color: rgba(255,255,255,1.0);
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
       
@@ -220,8 +285,9 @@
 
     .field:focus {
       outline:none;
-      border-color: rgba(99,102,241,0.60);
-      box-shadow: 0 0 0 4px rgba(99,102,241,0.22);
+      border-color: #4B7CF6;
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 0 0 3px rgba(75, 124, 246, 0.2);
     }
 
     /* White placeholder */
@@ -241,6 +307,14 @@
       border-radius: 12px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     }
+
+    /* Enhanced result box */
+    .result-box {
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
   </style>
 </head>
 
@@ -249,7 +323,12 @@
     
     <!-- CREATE MODE -->
     <div class="neon-frame w-full max-w-xl" id="createFrame">
-      <!-- Reduced padding: p-6 md:p-8 instead of p-8 md:p-10 -->
+      <!-- Gradient borders -->
+      <div class="gradient-border-left"></div>
+      <div class="gradient-border-right"></div>
+      <div class="gradient-border-top"></div>
+      <div class="gradient-border-bottom"></div>
+
       <div id="createMode" class="glass-card p-6 md:p-8">
         <!-- Header with Logo -->
         <div class="flex items-center justify-center mb-2">
@@ -258,7 +337,7 @@
         <p class="text-center text-white/70 mb-8">Create a payment link in seconds</p>
 
         <!-- Connected Wallet Info -->
-        <div id="walletInfo" class="hidden mb-5 rounded-2xl border border-white/10 bg-white/5 p-4">
+        <div id="walletInfo" class="hidden mb-5 rounded-2xl result-box p-4">
           <div class="text-xs text-white/60 mb-1 uppercase tracking-wide">Connected</div>
           <div id="connectedAddress" class="text-sm font-mono text-white/80"></div>
         </div>
@@ -295,7 +374,7 @@
 
           <!-- Result -->
           <div id="result" class="hidden mt-6 space-y-4">
-            <div class="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div class="rounded-2xl result-box p-5">
               <div class="text-sm font-semibold text-white/70 mb-3">Your Payment Link</div>
               <div class="flex gap-2">
                 <input
@@ -322,6 +401,12 @@
 
     <!-- PAY MODE -->
     <div class="neon-frame w-full max-w-xl hidden" id="payFrame">
+      <!-- Gradient borders -->
+      <div class="gradient-border-left"></div>
+      <div class="gradient-border-right"></div>
+      <div class="gradient-border-top"></div>
+      <div class="gradient-border-bottom"></div>
+
       <div id="payMode" class="glass-card p-6 md:p-8">
         <div class="flex items-center justify-center mb-2">
           <img src="logo.png" alt="HashToll" class="logo-image" />
@@ -329,7 +414,7 @@
         <p class="text-center text-white/70 mb-8">Complete this payment with HashPack</p>
 
         <!-- Payment Details -->
-        <div class="rounded-2xl border border-white/10 bg-white/5 p-6 mb-6 space-y-4">
+        <div class="rounded-2xl result-box p-6 mb-6 space-y-4">
           <div class="flex justify-between items-center">
             <span class="text-sm text-white/60 uppercase tracking-wide">Amount</span>
             <span id="payAmount" class="text-4xl font-bold text-white"></span>
