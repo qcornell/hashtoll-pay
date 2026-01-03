@@ -8,27 +8,18 @@
     <style>
         /* --- CSS VARIABLES --- */
         :root {
-            /* Dimensions */
             --ht-card-width: 440px;
-
-            /* Colors extracted from reference */
             --ht-primary-blue: #446bf2;
-            /* Bright blue for main button */
             --ht-primary-hover: #3655c4;
             --ht-orange-accent: #ff7844;
             --ht-logo-max-width: 260px;
-            /* For the logo icon */
-
-            /* Glass/Input Colors */
             --ht-input-bg: rgba(255, 255, 255, 0.08);
             --ht-text-white: #ffffff;
             --ht-text-muted: rgba(255, 255, 255, 0.6);
-
-            /* Spacing */
             --ht-radius: 14px;
         }
 
-        /* --- DEMO BACKGROUND (Ignore this block if dropping into existing site) --- */
+        /* --- BACKGROUND WITH ANIMATED PARTICLES --- */
         body {
             margin: 0;
             padding: 0;
@@ -39,48 +30,73 @@
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: url('home_bg.png') no-repeat center center/cover;
             color: var(--ht-text-white);
+            overflow: hidden;
+            position: relative;
         }
 
-        /* --- CARD COMPONENT START --- */
+        /* Particle Container */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Individual Particles */
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            animation: float linear infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) translateX(var(--drift));
+                opacity: 0;
+            }
+        }
+
+        /* --- CARD COMPONENT --- */
         .ht-card {
             width: 100%;
             max-width: var(--ht-card-width);
             position: relative;
             padding: 40px 40px 50px 40px;
-            /* Adjust padding to fit inside the bg image borders */
             box-sizing: border-box;
-
-            /* The Glass Skin */
             background-image: url('glass_bg.png');
             background-size: 100% 100%;
-            /* Stretches the glow border image to fit */
             background-repeat: no-repeat;
-
-            /* True Blur Effect (Frost) */
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-
-            /* Fallback/Correction: rounded corners to match the image border */
             border-radius: 24px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
-
             text-align: center;
+            z-index: 10;
         }
 
-        /* Typography */
         .ht-logo-area {
             margin-bottom: 35px;
         }
 
         .ht-title {
-            display: inline-block;
-            width: auto;
-        }
-
-
-        .ht-title {
             margin: 0;
-            /* supprime les marges par défaut du h1 */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -90,7 +106,6 @@
         .ht-title img {
             display: block;
             width: min(var(--ht-logo-max-width), 100%);
-            /* ne dépasse jamais la carte */
             max-width: 100%;
             height: auto;
             object-fit: contain;
@@ -103,7 +118,7 @@
             font-weight: 400;
         }
 
-        /* Input Section */
+        /* --- INPUT SECTION --- */
         .ht-input-group {
             text-align: left;
             margin-bottom: 25px;
@@ -131,6 +146,14 @@
             font-weight: 500;
             outline: none;
             transition: 0.2s ease;
+            -moz-appearance: textfield; /* Remove arrows Firefox */
+        }
+
+        /* Remove arrows Chrome/Safari */
+        .ht-input::-webkit-outer-spin-button,
+        .ht-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
         }
 
         .ht-input:focus {
@@ -138,7 +161,11 @@
             border-color: rgba(255, 255, 255, 0.3);
         }
 
-        /* Buttons */
+        .ht-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* --- BUTTONS --- */
         .ht-btn {
             width: 100%;
             padding: 18px;
@@ -153,57 +180,45 @@
             letter-spacing: 0.3px;
         }
 
-        /* Primary button: glossy + subtle light in the middle */
-        /* Primary button (base) */
+        /* Primary Button */
         .ht-btn-primary {
             position: relative;
             overflow: hidden;
-
             background: linear-gradient(180deg, #5b7fff 0%, #446bf2 60%, #3655c4 100%);
             color: #fff;
-
-            /* évite l'effet “bordure illuminée” */
             border: 1px solid rgba(255, 255, 255, 0.10);
             box-shadow: 0 10px 28px rgba(68, 107, 242, 0.45);
         }
 
-        /* petit glow localisé au centre du haut (pas sur toute la surface) */
         .ht-btn-primary::before {
             content: "";
             position: absolute;
             left: 50%;
             top: -26px;
-
             width: 72%;
             height: 38px;
             transform: translateX(-50%);
-
             background: radial-gradient(ellipse at center,
                     rgba(255, 255, 255, 0.90) 0%,
                     rgba(255, 255, 255, 0.18) 40%,
                     rgba(255, 255, 255, 0.00) 72%);
-
             filter: blur(8px);
             opacity: 0.9;
             pointer-events: none;
         }
 
-        /* petite bande de brillance fine au centre du haut */
         .ht-btn-primary::after {
             content: "";
             position: absolute;
             left: 50%;
             top: -3px;
-
             width: 74%;
             height: 6px;
             transform: translateX(-50%);
-
             background: linear-gradient(90deg,
                     rgba(255, 255, 255, 0),
                     rgba(255, 255, 255, 0.65),
                     rgba(255, 255, 255, 0));
-
             border-radius: 999px;
             opacity: 0.85;
             pointer-events: none;
@@ -219,8 +234,7 @@
             box-shadow: 0 8px 20px rgba(68, 107, 242, 0.40);
         }
 
-
-        /* Secondary: Ghost/Glass */
+        /* Secondary Button */
         .ht-btn-secondary {
             background: rgba(255, 255, 255, 0.03);
             color: var(--ht-text-muted);
@@ -233,40 +247,170 @@
             border-color: rgba(255, 255, 255, 0.25);
         }
 
-        /* Mobile Responsiveness */
+        .ht-btn-secondary:active {
+            transform: scale(0.98);
+        }
+
+        /* Disabled Button */
+        .ht-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .ht-btn:disabled:hover {
+            transform: none;
+        }
+
+        /* Mobile */
         @media (max-width: 500px) {
             .ht-card {
                 width: 90%;
                 padding: 30px 25px 40px 25px;
             }
-
-            .ht-title {
-                width: auto;
-            }
         }
-
-        /* --- CARD COMPONENT END --- */
     </style>
 </head>
 
 <body>
 
+    <!-- Animated Particles -->
+    <div class="particles" id="particles"></div>
+
     <div class="ht-card">
         <div class="ht-logo-area">
             <h1 class="ht-title">
-                <img src="logo.png" alt="">
+                <img src="logo.png" alt="HashToll">
             </h1>
             <p class="ht-subtitle">Create a payment link in seconds</p>
         </div>
 
         <div class="ht-input-group">
             <label class="ht-label">Amount (HBAR)</label>
-            <input type="number" class="ht-input" value="50" placeholder="0.00">
+            <input type="number" class="ht-input" id="amountInput" placeholder="Enter amount...">
         </div>
 
-        <button class="ht-btn ht-btn-primary">Connect Wallet</button>
-        <button class="ht-btn ht-btn-secondary">Generate Payment Link</button>
+        <button class="ht-btn ht-btn-primary" id="connectBtn">Connect Wallet</button>
+        <button class="ht-btn ht-btn-secondary" id="generateBtn" disabled>Generate Payment Link</button>
     </div>
+
+    <script>
+        // --- PARTICLE ANIMATION ---
+        const particlesContainer = document.getElementById('particles');
+        const particleCount = 40;
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            
+            // Random starting position
+            const startX = Math.random() * 100;
+            const drift = (Math.random() - 0.5) * 200;
+            const duration = 8 + Math.random() * 12;
+            const delay = Math.random() * 5;
+            const size = 2 + Math.random() * 4;
+            
+            particle.style.left = startX + '%';
+            particle.style.width = size + 'px';
+            particle.style.height = size + 'px';
+            particle.style.setProperty('--drift', drift + 'px');
+            particle.style.animationDuration = duration + 's';
+            particle.style.animationDelay = delay + 's';
+            
+            particlesContainer.appendChild(particle);
+        }
+
+        // --- TYPING ANIMATION FOR PLACEHOLDER ---
+        const input = document.getElementById('amountInput');
+        const placeholderText = 'Enter amount...';
+        let charIndex = 0;
+        let isTyping = true;
+
+        function typePlaceholder() {
+            if (document.activeElement === input) return; // Stop if user focuses
+            
+            if (isTyping) {
+                if (charIndex < placeholderText.length) {
+                    input.placeholder = placeholderText.substring(0, charIndex + 1);
+                    charIndex++;
+                } else {
+                    isTyping = false;
+                    setTimeout(typePlaceholder, 2000); // Pause before deleting
+                    return;
+                }
+            } else {
+                if (charIndex > 0) {
+                    input.placeholder = placeholderText.substring(0, charIndex - 1);
+                    charIndex--;
+                } else {
+                    isTyping = true;
+                    setTimeout(typePlaceholder, 1000); // Pause before typing again
+                    return;
+                }
+            }
+            
+            setTimeout(typePlaceholder, isTyping ? 100 : 50);
+        }
+
+        // Start typing animation
+        setTimeout(typePlaceholder, 500);
+
+        // Stop animation on focus
+        input.addEventListener('focus', () => {
+            if (!input.value) {
+                input.placeholder = 'Enter amount...';
+            }
+        });
+
+        // --- BUTTON FUNCTIONALITY ---
+        const connectBtn = document.getElementById('connectBtn');
+        const generateBtn = document.getElementById('generateBtn');
+        let isWalletConnected = false;
+
+        // Connect Wallet
+        connectBtn.addEventListener('click', () => {
+            if (!isWalletConnected) {
+                connectBtn.textContent = 'Connecting...';
+                connectBtn.disabled = true;
+                
+                // Simulate wallet connection
+                setTimeout(() => {
+                    isWalletConnected = true;
+                    connectBtn.textContent = '✓ Wallet Connected';
+                    connectBtn.style.background = 'linear-gradient(180deg, #4CAF50 0%, #45a049 100%)';
+                    generateBtn.disabled = false;
+                }, 1500);
+            }
+        });
+
+        // Generate Payment Link
+        generateBtn.addEventListener('click', () => {
+            const amount = input.value;
+            
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+            
+            generateBtn.textContent = 'Generating...';
+            generateBtn.disabled = true;
+            
+            // Simulate generation
+            setTimeout(() => {
+                alert(`Payment link generated!\nAmount: ${amount} HBAR\n\n(This is a demo - real integration coming soon)`);
+                generateBtn.textContent = 'Generate Payment Link';
+                generateBtn.disabled = false;
+            }, 1000);
+        });
+
+        // Enable Generate button when amount is entered
+        input.addEventListener('input', () => {
+            if (isWalletConnected && input.value && input.value > 0) {
+                generateBtn.disabled = false;
+            } else {
+                generateBtn.disabled = true;
+            }
+        });
+    </script>
 
 </body>
 
