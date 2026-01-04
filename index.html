@@ -7,6 +7,9 @@
     <title>HashToll Pay - Hedera Payment Links</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     
+    <!-- QR Code Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    
     <style>
         /* --- CSS VARIABLES --- */
         :root {
@@ -101,10 +104,12 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
             text-align: center;
             z-index: 10;
+            transition: all 0.4s ease;
         }
 
         .ht-logo-area {
             margin-bottom: 35px;
+            transition: all 0.3s ease;
         }
 
         .ht-title {
@@ -140,6 +145,7 @@
             margin-bottom: 20px;
             align-items: center;
             justify-content: space-between;
+            transition: all 0.3s ease;
         }
 
         .ht-account-display.active {
@@ -168,7 +174,19 @@
             background: rgba(239, 68, 68, 0.3);
         }
 
-        /* --- INPUT SECTION --- */
+        /* --- FORM SECTION --- */
+        .ht-form-section {
+            transition: all 0.4s ease;
+        }
+
+        .ht-form-section.hidden {
+            opacity: 0;
+            transform: translateY(-20px);
+            pointer-events: none;
+            position: absolute;
+            width: 100%;
+        }
+
         .ht-input-group {
             text-align: left;
             margin-bottom: 25px;
@@ -212,6 +230,65 @@
 
         .ht-input::placeholder {
             color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* --- RESULT SECTION --- */
+        .ht-result-section {
+            display: none;
+            transition: all 0.4s ease;
+        }
+
+        .ht-result-section.active {
+            display: block;
+            animation: fadeInUp 0.4s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ht-qr-container {
+            background: white;
+            padding: 16px;
+            border-radius: var(--ht-radius);
+            margin: 20px auto;
+            display: inline-block;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .ht-qr-container canvas {
+            border-radius: 8px;
+            display: block;
+        }
+
+        .ht-link-display {
+            background: var(--ht-input-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--ht-radius);
+            padding: 14px;
+            margin: 16px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: var(--ht-text-white);
+            word-break: break-all;
+            text-align: center;
+        }
+
+        .ht-action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .ht-action-buttons button {
+            flex: 1;
         }
 
         /* --- BUTTONS --- */
@@ -305,6 +382,13 @@
             transform: scale(0.98);
         }
 
+        /* Small Button (for actions) */
+        .ht-btn-small {
+            padding: 12px 16px;
+            font-size: 0.9rem;
+            margin-bottom: 0;
+        }
+
         /* Disabled Button */
         .ht-btn:disabled {
             opacity: 0.5;
@@ -373,6 +457,14 @@
                 max-width: 90%;
                 right: 5%;
             }
+
+            .ht-action-buttons {
+                flex-direction: column;
+            }
+
+            .ht-qr-container {
+                padding: 12px;
+            }
         }
     </style>
 </head>
@@ -387,7 +479,7 @@
             <h1 class="ht-title">
                 <img src="logo.png" alt="HashToll">
             </h1>
-            <p class="ht-subtitle">Create a payment link in seconds</p>
+            <p class="ht-subtitle" id="subtitle">Create a payment link in seconds</p>
         </div>
 
         <!-- Connected Account Display -->
@@ -396,13 +488,43 @@
             <button class="ht-disconnect-btn" onclick="disconnectWallet()">Disconnect</button>
         </div>
 
-        <div class="ht-input-group">
-            <label class="ht-label">Amount (HBAR)</label>
-            <input type="number" class="ht-input" id="amountInput" placeholder="Enter Amount...">
+        <!-- Form Section -->
+        <div class="ht-form-section" id="formSection">
+            <div class="ht-input-group">
+                <label class="ht-label">Amount (HBAR)</label>
+                <input type="number" class="ht-input" id="amountInput" placeholder="Enter Amount...">
+            </div>
+
+            <button class="ht-btn ht-btn-primary" id="connectBtn">Connect Wallet</button>
+            <button class="ht-btn ht-btn-secondary" id="generateBtn" disabled>Generate Payment Link</button>
         </div>
 
-        <button class="ht-btn ht-btn-primary" id="connectBtn">Connect Wallet</button>
-        <button class="ht-btn ht-btn-secondary" id="generateBtn" disabled>Generate Payment Link</button>
+        <!-- Result Section -->
+        <div class="ht-result-section" id="resultSection">
+            <div class="ht-qr-container" id="qrContainer"></div>
+            
+            <div class="ht-link-display" id="linkDisplay">
+                <!-- Link will be inserted here -->
+            </div>
+
+            <div class="ht-action-buttons">
+                <button class="ht-btn ht-btn-primary ht-btn-small" id="copyBtn">
+                    📋 Copy Link
+                </button>
+                <button class="ht-btn ht-btn-primary ht-btn-small" id="shareBtn">
+                    🔗 Share
+                </button>
+            </div>
+
+            <div class="ht-action-buttons" style="margin-top: 8px;">
+                <button class="ht-btn ht-btn-secondary ht-btn-small" id="createAnotherBtn">
+                    ← Create Another
+                </button>
+                <button class="ht-btn ht-btn-secondary ht-btn-small" id="doneBtn">
+                    ✓ Done
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Toast Container -->
@@ -589,6 +711,7 @@
         // --- STATE MANAGEMENT ---
         let accountId = null;
         let isWalletConnected = false;
+        let currentPaymentLink = null;
 
         // --- UI ELEMENTS ---
         const input = document.getElementById('amountInput');
@@ -596,6 +719,15 @@
         const generateBtn = document.getElementById('generateBtn');
         const accountDisplay = document.getElementById('accountDisplay');
         const accountIdSpan = document.getElementById('accountId');
+        const formSection = document.getElementById('formSection');
+        const resultSection = document.getElementById('resultSection');
+        const qrContainer = document.getElementById('qrContainer');
+        const linkDisplay = document.getElementById('linkDisplay');
+        const copyBtn = document.getElementById('copyBtn');
+        const shareBtn = document.getElementById('shareBtn');
+        const createAnotherBtn = document.getElementById('createAnotherBtn');
+        const doneBtn = document.getElementById('doneBtn');
+        const subtitle = document.getElementById('subtitle');
 
         // --- TOAST NOTIFICATIONS ---
         function showToast(message, type = 'info') {
@@ -705,7 +837,11 @@
             
             accountDisplay.classList.remove('active');
             
+            // Reset to form view
+            showFormView();
+            
             generateBtn.disabled = true;
+            input.value = '';
             
             showToast('Wallet disconnected', 'info');
         }
@@ -730,25 +866,17 @@
                 generateBtn.innerHTML = '<span class="spinner"></span>Generating...';
                 generateBtn.disabled = true;
                 
-                // TODO: Replace with actual API call to create payment link
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 800));
                 
-                const paymentLinkId = 'demo_' + Math.random().toString(36).substr(2, 9);
-                const paymentLink = `${window.location.origin}/pay/${paymentLinkId}`;
+                // Build payment URL with account ID and amount
+                const paymentLink = `${window.location.origin}/${accountId}/${amount}`;
+                currentPaymentLink = paymentLink;
                 
-                showToast(`Payment link created!\n${paymentLink}`, 'success');
+                // Show result view
+                showResultView(paymentLink);
                 
-                // Copy to clipboard
-                navigator.clipboard.writeText(paymentLink).then(() => {
-                    showToast('Link copied to clipboard!', 'success');
-                });
-                
-                generateBtn.innerHTML = '✓ Link Generated!';
-                
-                setTimeout(() => {
-                    generateBtn.innerHTML = 'Generate Payment Link';
-                    generateBtn.disabled = false;
-                }, 2000);
+                showToast('Payment link created successfully!', 'success');
                 
             } catch (error) {
                 console.error('Generation failed:', error);
@@ -757,6 +885,117 @@
                 generateBtn.innerHTML = 'Generate Payment Link';
                 generateBtn.disabled = false;
             }
+        }
+
+        // --- SHOW FORM VIEW ---
+        function showFormView() {
+            formSection.classList.remove('hidden');
+            resultSection.classList.remove('active');
+            subtitle.textContent = 'Create a payment link in seconds';
+            
+            // Reset generate button
+            generateBtn.innerHTML = 'Generate Payment Link';
+            updateGenerateButton();
+        }
+
+        // --- SHOW RESULT VIEW ---
+        function showResultView(paymentLink) {
+            // Hide form
+            formSection.classList.add('hidden');
+            
+            // Update subtitle
+            subtitle.textContent = 'Your payment link is ready!';
+            
+            // Display link
+            linkDisplay.textContent = paymentLink;
+            
+            // Generate QR code
+            qrContainer.innerHTML = '';
+            QRCode.toCanvas(paymentLink, { 
+                width: 240, 
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            }, (err, canvas) => {
+                if (err) {
+                    console.error('QR generation failed:', err);
+                    showToast('Failed to generate QR code', 'error');
+                    return;
+                }
+                canvas.style.borderRadius = '8px';
+                qrContainer.appendChild(canvas);
+            });
+            
+            // Show result section
+            resultSection.classList.add('active');
+        }
+
+        // --- COPY LINK ---
+        async function copyLink() {
+            if (!currentPaymentLink) return;
+            
+            try {
+                await navigator.clipboard.writeText(currentPaymentLink);
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = '✓ Copied!';
+                
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                }, 2000);
+                
+                showToast('Link copied to clipboard!', 'success');
+            } catch (error) {
+                console.error('Copy failed:', error);
+                showToast('Failed to copy link', 'error');
+            }
+        }
+
+        // --- SHARE LINK ---
+        async function shareLink() {
+            if (!currentPaymentLink) return;
+            
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: 'HashToll Payment',
+                        text: 'Pay me with HashToll:',
+                        url: currentPaymentLink
+                    });
+                    showToast('Shared successfully!', 'success');
+                } catch (error) {
+                    if (error.name !== 'AbortError') {
+                        console.error('Share failed:', error);
+                        // Fallback to copy
+                        await copyLink();
+                    }
+                }
+            } else {
+                // Fallback to copy on unsupported browsers
+                await copyLink();
+                showToast('Share not supported - link copied instead', 'info');
+            }
+        }
+
+        // --- CREATE ANOTHER ---
+        function createAnother() {
+            // Reset form
+            input.value = '';
+            currentPaymentLink = null;
+            
+            // Show form view
+            showFormView();
+        }
+
+        // --- DONE ---
+        function done() {
+            showToast('Thanks for using HashToll! 🎉', 'success');
+            
+            // Reset everything after a short delay
+            setTimeout(() => {
+                createAnother();
+            }, 1500);
         }
 
         // --- UPDATE GENERATE BUTTON STATE ---
@@ -771,6 +1010,10 @@
         // --- EVENT LISTENERS ---
         connectBtn.addEventListener('click', connectWallet);
         generateBtn.addEventListener('click', generatePaymentLink);
+        copyBtn.addEventListener('click', copyLink);
+        shareBtn.addEventListener('click', shareLink);
+        createAnotherBtn.addEventListener('click', createAnother);
+        doneBtn.addEventListener('click', done);
 
         input.addEventListener('input', () => {
             updateGenerateButton();
