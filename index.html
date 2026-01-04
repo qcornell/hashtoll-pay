@@ -7,13 +7,27 @@
     <title>HashToll Pay - Hedera Payment Links</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     
+    <!-- Open Graph / Social Media Meta Tags -->
+    <meta property="og:title" content="HashToll Pay - Instant Hedera Payment">
+    <meta property="og:description" content="Send me HBAR instantly with this payment link. Powered by Hedera.">
+    <meta property="og:image" content="https://pay.hashtoll.com/og-image.png">
+    <meta property="og:url" content="https://pay.hashtoll.com">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="HashToll Pay - Instant Hedera Payment">
+    <meta name="twitter:description" content="Send me HBAR instantly with this payment link. Powered by Hedera.">
+    <meta name="twitter:image" content="https://pay.hashtoll.com/og-image.png">
+    
     <style>
-        /* --- CSS VARIABLES --- */
+        /* --- CSS VARIABLES (Updated Colors) --- */
         :root {
             --ht-card-width: 440px;
             --ht-primary-blue: #446bf2;
             --ht-primary-hover: #3655c4;
-            --ht-orange-accent: #ff7844;
+            --ht-success-green: #26b181;
+            --ht-success-green-hover: #1f9970;
+            --ht-disconnect-red: #c15072;
+            --ht-disconnect-red-hover: #a84260;
             --ht-logo-max-width: 260px;
             --ht-input-bg: rgba(255, 255, 255, 0.08);
             --ht-text-white: #ffffff;
@@ -32,7 +46,8 @@
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: url('home_bg.png') no-repeat center center/cover;
             color: var(--ht-text-white);
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
             position: relative;
         }
 
@@ -102,6 +117,7 @@
             text-align: center;
             z-index: 10;
             transition: all 0.4s ease;
+            margin: 20px;
         }
 
         .ht-logo-area {
@@ -135,14 +151,16 @@
         /* Connected Account Display */
         .ht-account-display {
             display: none;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
+            background: rgba(38, 177, 129, 0.12);
+            border: 1px solid rgba(38, 177, 129, 0.35);
             border-radius: var(--ht-radius);
             padding: 12px 16px;
             margin-bottom: 20px;
             align-items: center;
             justify-content: space-between;
             transition: all 0.3s ease;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .ht-account-display.active {
@@ -151,24 +169,35 @@
 
         .ht-account-id {
             font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            color: #10b981;
+            font-size: 0.85rem;
+            color: var(--ht-success-green);
             font-weight: 600;
+            flex: 1;
+            min-width: 120px;
+            word-break: break-all;
         }
 
         .ht-disconnect-btn {
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid rgba(239, 68, 68, 0.4);
-            color: #ef4444;
-            padding: 4px 12px;
-            border-radius: 6px;
+            background: rgba(193, 80, 114, 0.2);
+            border: 1px solid rgba(193, 80, 114, 0.4);
+            color: var(--ht-disconnect-red);
+            padding: 6px 14px;
+            border-radius: 8px;
             font-size: 0.75rem;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            white-space: nowrap;
         }
 
         .ht-disconnect-btn:hover {
-            background: rgba(239, 68, 68, 0.3);
+            background: rgba(193, 80, 114, 0.3);
+            color: var(--ht-disconnect-red-hover);
+            transform: translateY(-1px);
+        }
+
+        .ht-disconnect-btn:active {
+            transform: translateY(0);
         }
 
         /* --- FORM SECTION --- */
@@ -181,7 +210,7 @@
             transform: translateY(-20px);
             pointer-events: none;
             position: absolute;
-            width: 100%;
+            width: calc(100% - 80px);
         }
 
         .ht-input-group {
@@ -258,11 +287,14 @@
             margin: 20px auto;
             display: inline-block;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            max-width: 100%;
         }
 
         .ht-qr-container canvas {
             border-radius: 8px;
             display: block;
+            max-width: 100%;
+            height: auto !important;
         }
 
         .ht-link-display {
@@ -272,10 +304,11 @@
             padding: 14px;
             margin: 16px 0;
             font-family: 'Courier New', monospace;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--ht-text-white);
             word-break: break-all;
             text-align: center;
+            line-height: 1.4;
         }
 
         .ht-action-buttons {
@@ -291,10 +324,10 @@
         /* --- BUTTONS --- */
         .ht-btn {
             width: 100%;
-            padding: 18px;
+            padding: 16px;
             border-radius: var(--ht-radius);
             border: none;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -359,14 +392,26 @@
 
         /* Success State */
         .ht-btn-success {
-            background: linear-gradient(180deg, #4CAF50 0%, #45a049 100%);
+            background: linear-gradient(180deg, #26b181 0%, #1f9970 100%) !important;
+            box-shadow: 0 10px 28px rgba(38, 177, 129, 0.45) !important;
+        }
+
+        .ht-btn-success::before {
+            background: radial-gradient(ellipse at center,
+                    rgba(255, 255, 255, 0.80) 0%,
+                    rgba(255, 255, 255, 0.15) 40%,
+                    rgba(255, 255, 255, 0.00) 72%) !important;
+        }
+
+        .ht-btn-success:hover:not(:disabled) {
+            box-shadow: 0 14px 34px rgba(38, 177, 129, 0.55) !important;
         }
 
         /* Secondary Button */
         .ht-btn-secondary {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.04);
             color: var(--ht-text-muted);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.12);
         }
 
         .ht-btn-secondary:hover:not(:disabled) {
@@ -381,8 +426,8 @@
 
         /* Small Button (for actions) */
         .ht-btn-small {
-            padding: 12px 16px;
-            font-size: 0.9rem;
+            padding: 13px 16px;
+            font-size: 0.88rem;
             margin-bottom: 0;
         }
 
@@ -429,38 +474,130 @@
         }
 
         .toast-success { 
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+            background: linear-gradient(135deg, #26b181 0%, #1f9970 100%); 
             color: white; 
         }
         
         .toast-error { 
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
+            background: linear-gradient(135deg, #c15072 0%, #a84260 100%); 
             color: white; 
         }
         
         .toast-info { 
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
+            background: linear-gradient(135deg, #446bf2 0%, #3655c4 100%); 
             color: white; 
         }
 
-        /* Mobile */
+        /* Mobile Optimization */
         @media (max-width: 500px) {
-            .ht-card {
-                width: 90%;
-                padding: 30px 25px 40px 25px;
-            }
-            
-            .toast {
-                max-width: 90%;
-                right: 5%;
+            body {
+                padding: 10px 0;
             }
 
-            .ht-action-buttons {
-                flex-direction: column;
+            .ht-card {
+                width: calc(100% - 20px);
+                max-width: 100%;
+                padding: 25px 20px 35px 20px;
+                margin: 10px;
+                border-radius: 20px;
+            }
+
+            .ht-logo-area {
+                margin-bottom: 25px;
+            }
+
+            .ht-title img {
+                max-width: 200px;
+            }
+
+            .ht-subtitle {
+                font-size: 0.85rem;
+            }
+
+            .ht-account-display {
+                padding: 10px 12px;
+            }
+
+            .ht-account-id {
+                font-size: 0.75rem;
+                min-width: 100px;
+            }
+
+            .ht-disconnect-btn {
+                font-size: 0.7rem;
+                padding: 5px 10px;
+            }
+
+            .ht-form-section.hidden {
+                width: calc(100% - 40px);
+            }
+
+            .ht-input {
+                font-size: 1.1rem;
+                padding: 14px;
+            }
+
+            .ht-btn {
+                padding: 14px;
+                font-size: 0.9rem;
+            }
+
+            .ht-btn-small {
+                padding: 12px;
+                font-size: 0.85rem;
             }
 
             .ht-qr-container {
                 padding: 12px;
+                width: calc(100% - 24px);
+                max-width: 280px;
+            }
+
+            .ht-qr-container canvas {
+                width: 100% !important;
+            }
+
+            .ht-link-display {
+                font-size: 0.72rem;
+                padding: 12px;
+            }
+            
+            .toast {
+                max-width: calc(100% - 40px);
+                right: 10px;
+                top: 10px;
+                font-size: 0.85rem;
+            }
+
+            .ht-action-buttons {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+
+        /* Tablet adjustments */
+        @media (min-width: 501px) and (max-width: 768px) {
+            .ht-card {
+                max-width: 90%;
+            }
+        }
+
+        /* Very small screens */
+        @media (max-width: 360px) {
+            .ht-card {
+                padding: 20px 15px 30px 15px;
+            }
+
+            .ht-title img {
+                max-width: 180px;
+            }
+
+            .ht-input {
+                font-size: 1rem;
+            }
+
+            .ht-link-display {
+                font-size: 0.68rem;
             }
         }
     </style>
@@ -489,7 +626,7 @@
         <div class="ht-form-section" id="formSection">
             <div class="ht-input-group">
                 <label class="ht-label">Amount (HBAR)</label>
-                <input type="number" class="ht-input" id="amountInput" placeholder="Enter Amount...">
+                <input type="number" class="ht-input" id="amountInput" placeholder="Enter Amount..." step="0.01" min="0">
             </div>
 
             <button class="ht-btn ht-btn-primary" id="connectBtn">Connect Wallet</button>
@@ -681,7 +818,7 @@
         console.log("✅ window.hederaConnect ready");
         console.log("✅ window.QRCode ready");
 
-        // Pre-warm init (ONLY HERE - not in load event)
+        // Pre-warm init
         ensureInitialized().catch(err => {
             console.error("❌ Pre-warm failed:", err);
         });
@@ -716,6 +853,7 @@
         let accountId = null;
         let isWalletConnected = false;
         let currentPaymentLink = null;
+        let currentAmount = null;
 
         // --- UI ELEMENTS ---
         const input = document.getElementById('amountInput');
@@ -841,7 +979,6 @@
             
             accountDisplay.classList.remove('active');
             
-            // Reset to form view
             showFormView();
             
             generateBtn.disabled = true;
@@ -870,14 +1007,12 @@
                 generateBtn.innerHTML = '<span class="spinner"></span>Generating...';
                 generateBtn.disabled = true;
                 
-                // Simulate API call
                 await new Promise(resolve => setTimeout(resolve, 800));
                 
-                // Build payment URL with account ID and amount
                 const paymentLink = `${window.location.origin}/${accountId}/${amount}`;
                 currentPaymentLink = paymentLink;
+                currentAmount = amount;
                 
-                // Show result view
                 showResultView(paymentLink);
                 
                 showToast('Payment link created successfully!', 'success');
@@ -897,23 +1032,18 @@
             resultSection.classList.remove('active');
             subtitle.textContent = 'Create a payment link in seconds';
             
-            // Reset generate button
             generateBtn.innerHTML = 'Generate Payment Link';
             updateGenerateButton();
         }
 
         // --- SHOW RESULT VIEW ---
         function showResultView(paymentLink) {
-            // Hide form
             formSection.classList.add('hidden');
             
-            // Update subtitle
             subtitle.textContent = 'Your payment link is ready!';
             
-            // Display link
             linkDisplay.textContent = paymentLink;
             
-            // Generate QR code
             qrContainer.innerHTML = '';
             
             if (!window.QRCode) {
@@ -922,8 +1052,12 @@
                 return;
             }
             
+            // Responsive QR size
+            const isMobile = window.innerWidth <= 500;
+            const qrSize = isMobile ? Math.min(240, window.innerWidth - 100) : 240;
+            
             window.QRCode.toCanvas(paymentLink, { 
-                width: 240, 
+                width: qrSize, 
                 margin: 2,
                 color: {
                     dark: '#000000',
@@ -939,8 +1073,25 @@
                 qrContainer.appendChild(canvas);
             });
             
-            // Show result section
             resultSection.classList.add('active');
+            
+            // Update meta tags for sharing
+            updateMetaTags(paymentLink, currentAmount);
+        }
+
+        // --- UPDATE META TAGS FOR SOCIAL SHARING ---
+        function updateMetaTags(link, amount) {
+            const title = `Send me ${amount} HBAR`;
+            const description = `Click to send ${amount} HBAR via HashToll Pay`;
+            
+            // Update OG tags
+            document.querySelector('meta[property="og:title"]').content = title;
+            document.querySelector('meta[property="og:description"]').content = description;
+            document.querySelector('meta[property="og:url"]').content = link;
+            
+            // Update Twitter tags
+            document.querySelector('meta[name="twitter:title"]').content = title;
+            document.querySelector('meta[name="twitter:description"]').content = description;
         }
 
         // --- COPY LINK ---
@@ -970,20 +1121,18 @@
             if (navigator.share) {
                 try {
                     await navigator.share({
-                        title: 'HashToll Payment',
-                        text: 'Pay me with HashToll:',
+                        title: `Send me ${currentAmount} HBAR`,
+                        text: `Pay me ${currentAmount} HBAR with HashToll:`,
                         url: currentPaymentLink
                     });
                     showToast('Shared successfully!', 'success');
                 } catch (error) {
                     if (error.name !== 'AbortError') {
                         console.error('Share failed:', error);
-                        // Fallback to copy
                         await copyLink();
                     }
                 }
             } else {
-                // Fallback to copy on unsupported browsers
                 await copyLink();
                 showToast('Share not supported - link copied instead', 'info');
             }
@@ -991,11 +1140,10 @@
 
         // --- CREATE ANOTHER ---
         function createAnother() {
-            // Reset form
             input.value = '';
             currentPaymentLink = null;
+            currentAmount = null;
             
-            // Show form view
             showFormView();
         }
 
@@ -1003,7 +1151,6 @@
         function done() {
             showToast('Thanks for using HashToll! 🎉', 'success');
             
-            // Reset everything after a short delay
             setTimeout(() => {
                 createAnother();
             }, 1500);
@@ -1030,11 +1177,10 @@
             updateGenerateButton();
         });
 
-        // Check for existing session on load (WITHOUT re-initializing)
+        // --- SESSION RESTORE ---
         window.addEventListener('load', async () => {
             try {
                 if (window.hederaConnect && window.hederaConnect.dAppConnector) {
-                    // Just check sessions - DON'T call init() again
                     const existingSessions = window.hederaConnect.dAppConnector.walletConnectClient?.session?.getAll() ?? [];
                     if (existingSessions.length > 0) {
                         const accounts = existingSessions[0]?.namespaces?.hedera?.accounts ?? [];
