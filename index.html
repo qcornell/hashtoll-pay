@@ -980,10 +980,10 @@
 
     <script>
         // ============================================
-        // 🔥 SUPABASE CONFIG (REPLACE WITH YOUR KEYS)
+        // 🔥 SUPABASE CONFIG
         // ============================================
         const SUPABASE_URL = 'https://pvtoczsnwamailsjjnfn.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2dG9jenNud2FtYWlsc2pqbmZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NjE1MTksImV4cCI6MjA4MzEzNzUxOX0.3mDZ3RUo7aHi25r1X1axYj0EppgXFKEY7xGvqdhDSbM';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2dG9jenNud2FtYWlsc2pqbmZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NjE1MTksImV4cCI6MjA4MzEzNzUxOX0.3mDZ3RUo7aHi25r1X1axYj0EppgXFKEY7xGvqdhDSbM';
 
         window.supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -1018,64 +1018,33 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
         }
 
         // ============================================
-        // 🔍 MIRROR NODE PAYMENT DETECTION
+        // 🔍 PAYMENT POLLING (USING EDGE FUNCTION)
         // ============================================
-        const MIRROR = "https://mainnet-public.mirrornode.hedera.com";
-
-        async function fetchJson(url, ms = 12000) {
-            const ctrl = new AbortController();
-            const t = setTimeout(() => ctrl.abort(), ms);
-            try {
-                const res = await fetch(url, { signal: ctrl.signal });
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                return await res.json();
-            } finally {
-                clearTimeout(t);
-            }
-        }
-
         let pollTimer = null;
 
         async function startPaymentPolling(invoice) {
-            const receiver = invoice.receiver_account;
-            const expectedTinybars = hbarToTinybars(invoice.amount_hbar);
-            const createdSec = Math.floor(new Date(invoice.created_at).getTime() / 1000);
-
-            if (pollTimer) clearInterval(pollTimer);
-
             const payStatus = document.getElementById("payStatus");
             payStatus.textContent = "⏳ Waiting for payment confirmation...";
             payStatus.style.background = "rgba(255,255,255,0.05)";
             payStatus.style.color = "rgba(255,255,255,0.85)";
             payStatus.style.borderLeft = "3px solid rgba(255,255,255,0.2)";
 
+            if (pollTimer) clearInterval(pollTimer);
+
             async function checkOnce() {
                 try {
-                    const url = `${MIRROR}/api/v1/transactions?account.id=${receiver}&limit=25&order=desc`;
-                    const data = await fetchJson(url);
+                    const res = await fetch('https://pvtoczsnwamailsjjnfn.supabase.co/functions/v1/mark-paid', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                        },
+                        body: JSON.stringify({ slug: invoice.slug })
+                    });
 
-                    const txs = data?.transactions || [];
-                    if (!txs.length) return;
+                    const result = await res.json();
 
-                    for (const tx of txs) {
-                        const consensus = tx.consensus_timestamp;
-                        const sec = Math.floor(Number(String(consensus).split(".")[0] || 0));
-                        if (sec && sec < createdSec) continue;
-
-                        const transfers = tx.transfers || [];
-                        const match = transfers.find(
-                            tr => tr.account === receiver && Number(tr.amount) === expectedTinybars
-                        );
-
-                        if (!match) continue;
-
-                        console.log("✅ Payment detected:", tx.transaction_id);
-
-                        await window.supabaseClient
-                            .from("invoices")
-                            .update({ status: "paid" })
-                            .eq("slug", invoice.slug);
-
+                    if (result.status === 'paid') {
                         payStatus.textContent = "✅ PAID — Payment confirmed on Hedera!";
                         payStatus.style.background = "linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15))";
                         payStatus.style.color = "#10b981";
@@ -1085,17 +1054,19 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
                         clearInterval(pollTimer);
                         pollTimer = null;
-                        return;
+                    } else {
+                        payStatus.textContent = "⚡ Checking blockchain...";
+                        payStatus.style.color = "rgba(255,255,255,0.75)";
                     }
                 } catch (err) {
                     console.warn("Poll error:", err);
-                    payStatus.textContent = "⚡ Checking blockchain...";
-                    payStatus.style.color = "rgba(255,255,255,0.75)";
+                    payStatus.textContent = "⚠️ Verification in progress...";
+                    payStatus.style.color = "rgba(255,255,255,0.65)";
                 }
             }
 
             await checkOnce();
-            pollTimer = setInterval(checkOnce, 4000);
+            pollTimer = setInterval(checkOnce, 4000); // Check every 4 seconds
         }
 
         // ============================================
