@@ -18,6 +18,9 @@
     <meta name="twitter:description" content="Send me HBAR instantly with this payment link. Powered by Hedera.">
     <meta name="twitter:image" content="https://pay.hashtoll.com/og-image.png">
     
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
         /* --- CSS VARIABLES --- */
         :root {
@@ -146,7 +149,7 @@
             font-weight: 400;
         }
 
-        /* 🔥 NEW: Modern Account Display */
+        /* 🔥 Modern Account Display */
         .ht-account-display {
             display: none;
             background: linear-gradient(135deg, rgba(56, 181, 196, 0.08) 0%, rgba(38, 177, 129, 0.08) 100%);
@@ -167,7 +170,7 @@
 
         .ht-account-id {
             font-family: 'Courier New', monospace;
-            font-size: 1.05rem; /* 🔥 Bigger font */
+            font-size: 1.05rem;
             color: var(--ht-success-green);
             font-weight: 600;
             flex: 1;
@@ -176,7 +179,6 @@
             text-shadow: 0 2px 8px rgba(56, 181, 196, 0.3);
         }
 
-        /* 🔥 NEW: Simple × Disconnect Button */
         .ht-disconnect-btn {
             background: rgba(255, 255, 255, 0.06);
             border: 1px solid rgba(255, 255, 255, 0.15);
@@ -304,6 +306,38 @@
             height: auto !important;
         }
 
+        /* 🔥 NEW: Amount Display */
+        .ht-amount-display {
+            background: linear-gradient(135deg, rgba(56, 181, 196, 0.08) 0%, rgba(38, 177, 129, 0.08) 100%);
+            border: 1px solid rgba(56, 181, 196, 0.25);
+            border-radius: var(--ht-radius);
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .ht-btn-copy-amount {
+            margin-top: 8px;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            color: rgba(255,255,255,0.8);
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .ht-btn-copy-amount:hover {
+            background: rgba(255,255,255,0.12);
+            border-color: rgba(255,255,255,0.25);
+            color: #ffffff;
+        }
+
+        .ht-btn-copy-amount:active {
+            transform: scale(0.95);
+        }
+
         .ht-link-display {
             background: var(--ht-input-bg);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -343,7 +377,6 @@
             letter-spacing: 0.3px;
         }
 
-        /* Primary Button */
         .ht-btn-primary {
             position: relative;
             overflow: hidden;
@@ -397,7 +430,6 @@
             box-shadow: 0 8px 20px rgba(68, 107, 242, 0.40);
         }
 
-        /* Success State */
         .ht-btn-success {
             background: linear-gradient(180deg, rgba(56, 181, 196, 1) 0%, rgba(38, 177, 129, 1) 100%) !important;
             box-shadow: 0 10px 28px rgba(56, 181, 196, 0.45) !important;
@@ -415,7 +447,6 @@
             transform: translateY(-2px);
         }
 
-        /* Secondary Button */
         .ht-btn-secondary {
             background: rgba(255, 255, 255, 0.04);
             color: rgba(255, 255, 255, 0.65);
@@ -437,7 +468,6 @@
             transform: scale(0.98);
         }
 
-        /* Modern Action Buttons (Copy/Share) */
         .ht-btn-action {
             position: relative;
             overflow: hidden;
@@ -479,20 +509,17 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
-        /* Small Button */
         .ht-btn-small {
             padding: 13px 16px;
             font-size: 0.88rem;
             margin-bottom: 0;
         }
 
-        /* Disabled Button */
         .ht-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
 
-        /* Spinner */
         .spinner {
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-top-color: white;
@@ -632,7 +659,7 @@
             }
 
             .ht-account-id {
-                font-size: 0.95rem; /* 🔥 Still bigger on mobile */
+                font-size: 0.95rem;
             }
 
             .ht-disconnect-btn {
@@ -748,6 +775,24 @@
         <!-- Result Section -->
         <div class="ht-result-section" id="resultSection">
             <div class="ht-qr-container" id="qrContainer"></div>
+            
+            <!-- 🔥 NEW: Amount Display -->
+            <div class="ht-amount-display" id="amountDisplay" style="display:none;">
+                <div style="font-size: 0.75rem; opacity: 0.7; margin-bottom: 4px;">
+                    SEND EXACTLY
+                </div>
+                <div style="font-size: 1.8rem; font-weight: 700; color: var(--ht-success-green); font-family: 'Courier New', monospace; letter-spacing: -0.02em;">
+                    <span id="exactAmount">0.00000000</span> HBAR
+                </div>
+                <button class="ht-btn-copy-amount" id="copyAmountBtn">
+                    📋 Copy Amount
+                </button>
+            </div>
+
+            <!-- 🔥 NEW: Payment Status -->
+            <div id="payStatus" style="margin-top: 16px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 10px; font-weight: 600; font-size: 0.9rem;">
+                ⏳ Waiting for payment...
+            </div>
             
             <div class="ht-link-display" id="linkDisplay">
                 <!-- Link will be inserted here -->
@@ -934,7 +979,197 @@
     </script>
 
     <script>
-        // --- PARTICLE ANIMATION ---
+        // ============================================
+        // 🔥 SUPABASE CONFIG (REPLACE WITH YOUR KEYS)
+        // ============================================
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // 🔥 PASTE YOUR URL HERE
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // 🔥 PASTE YOUR KEY HERE
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ============================================
+        // 💰 UNIQUE AMOUNT GENERATION
+        // ============================================
+        function hbarToTinybars(hbar) {
+            return Math.round(Number(hbar) * 100000000);
+        }
+
+        function tinybarsToHbar(tb) {
+            return (Number(tb) / 100000000).toFixed(8);
+        }
+
+        function makeUniquePayAmount(requestedHbar) {
+            const baseTb = hbarToTinybars(requestedHbar);
+            const tagTb = Math.floor(50 + Math.random() * 4950); // 50-5000 tinybars
+            const payTb = baseTb + tagTb;
+            
+            return {
+                requested_amount_hbar: Number(requestedHbar),
+                amount_hbar: Number(tinybarsToHbar(payTb)),
+                amount_tinybars: payTb
+            };
+        }
+
+        function makeSlug(len = 18) {
+            const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            const arr = new Uint8Array(len);
+            crypto.getRandomValues(arr);
+            return Array.from(arr, x => chars[x % chars.length]).join("");
+        }
+
+        // ============================================
+        // 🔍 MIRROR NODE PAYMENT DETECTION
+        // ============================================
+        const MIRROR = "https://mainnet-public.mirrornode.hedera.com";
+
+        async function fetchJson(url, ms = 12000) {
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), ms);
+            try {
+                const res = await fetch(url, { signal: ctrl.signal });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return await res.json();
+            } finally {
+                clearTimeout(t);
+            }
+        }
+
+        let pollTimer = null;
+
+        async function startPaymentPolling(invoice) {
+            const receiver = invoice.receiver_account;
+            const expectedTinybars = hbarToTinybars(invoice.amount_hbar);
+            const createdSec = Math.floor(new Date(invoice.created_at).getTime() / 1000);
+
+            if (pollTimer) clearInterval(pollTimer);
+
+            const payStatus = document.getElementById("payStatus");
+            payStatus.textContent = "⏳ Waiting for payment confirmation...";
+            payStatus.style.background = "rgba(255,255,255,0.05)";
+            payStatus.style.color = "rgba(255,255,255,0.85)";
+            payStatus.style.borderLeft = "3px solid rgba(255,255,255,0.2)";
+
+            async function checkOnce() {
+                try {
+                    const url = `${MIRROR}/api/v1/transactions?account.id=${receiver}&limit=25&order=desc`;
+                    const data = await fetchJson(url);
+
+                    const txs = data?.transactions || [];
+                    if (!txs.length) return;
+
+                    for (const tx of txs) {
+                        const consensus = tx.consensus_timestamp;
+                        const sec = Math.floor(Number(String(consensus).split(".")[0] || 0));
+                        if (sec && sec < createdSec) continue;
+
+                        const transfers = tx.transfers || [];
+                        const match = transfers.find(
+                            tr => tr.account === receiver && Number(tr.amount) === expectedTinybars
+                        );
+
+                        if (!match) continue;
+
+                        console.log("✅ Payment detected:", tx.transaction_id);
+
+                        await supabase
+                            .from("invoices")
+                            .update({ status: "paid" })
+                            .eq("slug", invoice.slug);
+
+                        payStatus.textContent = "✅ PAID — Payment confirmed on Hedera!";
+                        payStatus.style.background = "linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15))";
+                        payStatus.style.color = "#10b981";
+                        payStatus.style.borderLeft = "3px solid #10b981";
+
+                        showToast("Payment confirmed! 🎉", "success");
+
+                        clearInterval(pollTimer);
+                        pollTimer = null;
+                        return;
+                    }
+                } catch (err) {
+                    console.warn("Poll error:", err);
+                    payStatus.textContent = "⚡ Checking blockchain...";
+                    payStatus.style.color = "rgba(255,255,255,0.75)";
+                }
+            }
+
+            await checkOnce();
+            pollTimer = setInterval(checkOnce, 4000);
+        }
+
+        // ============================================
+        // 📄 LOAD INVOICE FROM URL
+        // ============================================
+        function getInvoiceSlugFromUrl() {
+            const path = window.location.pathname;
+            const match = path.match(/^\/invoice\/([a-zA-Z0-9_-]+)$/);
+            return match ? match[1] : null;
+        }
+
+        async function loadInvoiceIfPresent() {
+            const slug = getInvoiceSlugFromUrl();
+            if (!slug) return;
+
+            try {
+                formSection.classList.add("hidden");
+                subtitle.textContent = "Payment Invoice";
+
+                const { data, error } = await supabase
+                    .from("invoices")
+                    .select("slug, receiver_account, requested_amount_hbar, amount_hbar, status, created_at")
+                    .eq("slug", slug)
+                    .single();
+
+                if (error) throw error;
+
+                const invoiceUrl = `${window.location.origin}/invoice/${data.slug}`;
+
+                linkDisplay.textContent = invoiceUrl;
+                currentPaymentLink = invoiceUrl;
+                currentAmount = data.amount_hbar;
+
+                // 🔥 Show exact amount
+                const amountDisplay = document.getElementById('amountDisplay');
+                const exactAmount = document.getElementById('exactAmount');
+                const copyAmountBtn = document.getElementById('copyAmountBtn');
+                
+                amountDisplay.style.display = 'block';
+                exactAmount.textContent = Number(data.amount_hbar).toFixed(8);
+
+                copyAmountBtn.onclick = async () => {
+                    try {
+                        await navigator.clipboard.writeText(data.amount_hbar.toString());
+                        const orig = copyAmountBtn.textContent;
+                        copyAmountBtn.textContent = '✓ Copied!';
+                        setTimeout(() => copyAmountBtn.textContent = orig, 2000);
+                        showToast('Amount copied!', 'success');
+                    } catch (e) {
+                        showToast('Failed to copy', 'error');
+                    }
+                };
+
+                showResultView(invoiceUrl);
+
+                if (data.status === "paid") {
+                    payStatus.textContent = "✅ PAID — Payment confirmed on Hedera";
+                    payStatus.style.background = "linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15))";
+                    payStatus.style.color = "#10b981";
+                    payStatus.style.borderLeft = "3px solid #10b981";
+                } else {
+                    await startPaymentPolling(data);
+                }
+
+            } catch (err) {
+                console.error(err);
+                showToast("Invoice not found", "error");
+                showFormView();
+            }
+        }
+
+        // ============================================
+        // 🎨 PARTICLE ANIMATION
+        // ============================================
         const particlesContainer = document.getElementById('particles');
         const particleCount = 40;
 
@@ -958,13 +1193,14 @@
             particlesContainer.appendChild(particle);
         }
 
-        // --- STATE MANAGEMENT ---
+        // ============================================
+        // 📱 STATE MANAGEMENT
+        // ============================================
         let accountId = null;
         let isWalletConnected = false;
         let currentPaymentLink = null;
         let currentAmount = null;
 
-        // --- UI ELEMENTS ---
         const input = document.getElementById('amountInput');
         const connectBtn = document.getElementById('connectBtn');
         const generateBtn = document.getElementById('generateBtn');
@@ -980,7 +1216,9 @@
         const doneBtn = document.getElementById('doneBtn');
         const subtitle = document.getElementById('subtitle');
 
-        // --- TOAST NOTIFICATIONS ---
+        // ============================================
+        // 🍞 TOAST NOTIFICATIONS
+        // ============================================
         function showToast(message, type = 'info') {
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
@@ -1009,7 +1247,9 @@
             }, 3500);
         }
 
-        // --- TYPING ANIMATION FOR PLACEHOLDER ---
+        // ============================================
+        // ⌨️ TYPING PLACEHOLDER ANIMATION
+        // ============================================
         const placeholderText = 'Enter Amount...';
         let charIndex = 0;
         let isTyping = true;
@@ -1048,7 +1288,9 @@
             }
         });
 
-        // --- WALLET CONNECTION ---
+        // ============================================
+        // 🔐 WALLET CONNECTION
+        // ============================================
         async function connectWallet() {
             if (isWalletConnected) return;
 
@@ -1086,7 +1328,6 @@
             }
         }
 
-        // --- DISCONNECT WALLET ---
         function disconnectWallet() {
             if (!window.hederaConnect) return;
             
@@ -1112,137 +1353,169 @@
 
         window.disconnectWallet = disconnectWallet;
 
-        // --- GENERATE PAYMENT LINK ---
+        // ============================================
+        // 🔗 GENERATE PAYMENT LINK (WITH UNIQUE AMOUNTS)
+        // ============================================
         async function generatePaymentLink() {
-            const amount = input.value;
-            
-            if (!amount || amount <= 0) {
-                showToast('Please enter a valid amount', 'error');
+            const requestedAmount = Number(input.value);
+
+            if (!requestedAmount || requestedAmount <= 0) {
+                showToast("Please enter a valid amount", "error");
                 return;
             }
-            
-            if (!isWalletConnected) {
-                showToast('Please connect your wallet first', 'error');
+
+            if (!isWalletConnected || !accountId) {
+                showToast("Please connect your wallet first", "error");
                 return;
             }
-            
+
             try {
                 generateBtn.innerHTML = '<span class="spinner"></span>Generating...';
                 generateBtn.disabled = true;
-                
-                await new Promise(resolve => setTimeout(resolve, 800));
-                
-                const paymentLink = `${window.location.origin}/${accountId}/${amount}`;
+
+                // 🔥 Generate unique amount
+                const { requested_amount_hbar, amount_hbar, amount_tinybars } = 
+                    makeUniquePayAmount(requestedAmount);
+
+                const slug = makeSlug(20);
+
+                const { data, error } = await supabase
+                    .from("invoices")
+                    .insert([{
+                        slug,
+                        receiver_account: accountId,
+                        requested_amount_hbar,
+                        amount_hbar,
+                        status: "open"
+                    }])
+                    .select("slug")
+                    .single();
+
+                if (error) throw error;
+
+                const paymentLink = `${window.location.origin}/invoice/${data.slug}`;
                 currentPaymentLink = paymentLink;
-                currentAmount = amount;
+                currentAmount = amount_hbar;
+
+                // 🔥 Show exact amount
+                const amountDisplay = document.getElementById('amountDisplay');
+                const exactAmount = document.getElementById('exactAmount');
+                const copyAmountBtn = document.getElementById('copyAmountBtn');
                 
+                amountDisplay.style.display = 'block';
+                exactAmount.textContent = Number(amount_hbar).toFixed(8);
+
+                copyAmountBtn.onclick = async () => {
+                    try {
+                        await navigator.clipboard.writeText(amount_hbar.toString());
+                        const orig = copyAmountBtn.textContent;
+                        copyAmountBtn.textContent = '✓ Copied!';
+                        setTimeout(() => copyAmountBtn.textContent = orig, 2000);
+                        showToast('Amount copied!', 'success');
+                    } catch (e) {
+                        showToast('Failed to copy', 'error');
+                    }
+                };
+
                 showResultView(paymentLink);
-                
-                showToast('Payment link generated! 🎉', 'success');
-                
-            } catch (error) {
-                console.error('Generation failed:', error);
-                showToast('Failed to generate link', 'error');
-                
-                generateBtn.innerHTML = 'Generate Payment Link';
+                showToast("Invoice created! 🎉", "success");
+
+                // 🔥 Start polling for payment
+                await startPaymentPolling({
+                    slug: data.slug,
+                    receiver_account: accountId,
+                    amount_hbar: amount_hbar,
+                    created_at: new Date().toISOString()
+                });
+
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to create invoice", "error");
+                generateBtn.innerHTML = "Generate Payment Link";
                 generateBtn.disabled = false;
             }
         }
 
-        // --- SHOW FORM VIEW ---
+        // ============================================
+        // 🎨 VIEW MANAGEMENT
+        // ============================================
         function showFormView() {
             formSection.classList.remove('hidden');
             resultSection.classList.remove('active');
             subtitle.textContent = 'Create a payment link in seconds';
             
+            document.getElementById('amountDisplay').style.display = 'none';
+            document.getElementById('payStatus').textContent = '⏳ Waiting for payment...';
+            
             generateBtn.innerHTML = 'Generate Payment Link';
             updateGenerateButton();
         }
 
-     // --- SHOW RESULT VIEW WITH QR LOGO (PERFECT CIRCLE VERSION) ---
-function showResultView(paymentLink) {
-    formSection.classList.add('hidden');
-    
-    subtitle.textContent = 'Your payment link is ready!';
-    
-    linkDisplay.textContent = paymentLink;
-    
-    qrContainer.innerHTML = '';
-    
-    if (!window.QRCode) {
-        console.error('QRCode library not loaded');
-        showToast('QR code generation unavailable', 'error');
-        return;
-    }
-    
-    const isMobile = window.innerWidth <= 500;
-    const qrSize = isMobile ? Math.min(240, window.innerWidth - 100) : 240;
-    
-    // Generate QR code with HIGH error correction
-    window.QRCode.toCanvas(paymentLink, { 
-        width: qrSize, 
-        margin: 2,
-        errorCorrectionLevel: 'H', // 🔥 CRITICAL for logo overlay
-        color: {
-            dark: '#000000',
-            light: '#FFFFFF'
+        function showResultView(paymentLink) {
+            formSection.classList.add('hidden');
+            subtitle.textContent = 'Your payment link is ready!';
+            linkDisplay.textContent = paymentLink;
+            
+            qrContainer.innerHTML = '';
+            
+            if (!window.QRCode) {
+                console.error('QRCode library not loaded');
+                showToast('QR code generation unavailable', 'error');
+                return;
+            }
+            
+            const isMobile = window.innerWidth <= 500;
+            const qrSize = isMobile ? Math.min(240, window.innerWidth - 100) : 240;
+            
+            window.QRCode.toCanvas(paymentLink, { 
+                width: qrSize, 
+                margin: 2,
+                errorCorrectionLevel: 'H',
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            }, (err, canvas) => {
+                if (err) {
+                    console.error('QR generation failed:', err);
+                    showToast('Failed to generate QR code', 'error');
+                    return;
+                }
+                
+                canvas.style.borderRadius = '8px';
+                qrContainer.appendChild(canvas);
+                
+                const ctx = canvas.getContext('2d');
+                const logo = new Image();
+                logo.src = `${window.location.origin}/qr_logo.png?v=2`;
+                
+                logo.onload = () => {
+                    const logoSize = canvas.width * 0.18;
+                    const padding  = logoSize * 0.25;
+                    const circleRadius = (logoSize + padding * 2) / 2;
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height / 2;
+                    
+                    ctx.save();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, circleRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    const logoX = (canvas.width - logoSize) / 2;
+                    const logoY = (canvas.height - logoSize) / 2;
+                    ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+                    ctx.restore();
+                };
+                
+                logo.onerror = () => {
+                    console.warn('Could not load qr_logo.png');
+                };
+            });
+            
+            resultSection.classList.add('active');
         }
-    }, (err, canvas) => {
-        if (err) {
-            console.error('QR generation failed:', err);
-            showToast('Failed to generate QR code', 'error');
-            return;
-        }
-        
-        canvas.style.borderRadius = '8px';
-        
-        // 🔥 Append canvas FIRST
-        qrContainer.appendChild(canvas);
-        
-        const ctx = canvas.getContext('2d');
-        
-        const logo = new Image();
-        
-        // 🔥 Absolute URL + cache buster (bulletproof)
-        logo.src = `${window.location.origin}/qr_logo.png?v=2`;
-        
-        logo.onload = () => {
-            console.log('✅ Logo loaded successfully');
-            
-            // 🔥 NEW: Smaller logo with perfect circle background
-            const logoSize = canvas.width * 0.18;  // 18% of QR (reduced from 22%)
-            const padding  = logoSize * 0.25;      // 25% padding (reduced from 35%)
-            
-            const circleRadius = (logoSize + padding * 2) / 2;
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            
-            // 🔥 Draw perfect white circle background
-            ctx.save();
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, circleRadius, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // 🔥 Draw logo centered
-            const logoX = (canvas.width - logoSize) / 2;
-            const logoY = (canvas.height - logoSize) / 2;
-            ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
-            ctx.restore();
-            
-            console.log('✅ QR logo overlay complete');
-        };
-        
-        logo.onerror = () => {
-            console.warn('❌ Could not load qr_logo.png. Check URL:', logo.src);
-            console.warn('Make sure qr_logo.png exists in the same folder as index.html');
-        };
-    });
-    
-    resultSection.classList.add('active');
-}
 
-        // --- COPY LINK ---
         async function copyLink() {
             if (!currentPaymentLink) return;
             
@@ -1262,7 +1535,6 @@ function showResultView(paymentLink) {
             }
         }
 
-        // --- SHARE LINK ---
         async function shareLink() {
             if (!currentPaymentLink) return;
             
@@ -1286,16 +1558,19 @@ function showResultView(paymentLink) {
             }
         }
 
-        // --- CREATE ANOTHER ---
         function createAnother() {
             input.value = '';
             currentPaymentLink = null;
             currentAmount = null;
             
+            if (pollTimer) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+            }
+            
             showFormView();
         }
 
-        // --- DONE ---
         function done() {
             showToast('Thanks for using HashToll! 🎉', 'success');
             
@@ -1304,7 +1579,6 @@ function showResultView(paymentLink) {
             }, 1500);
         }
 
-        // --- UPDATE GENERATE BUTTON STATE ---
         function updateGenerateButton() {
             if (isWalletConnected && input.value && input.value > 0) {
                 generateBtn.disabled = false;
@@ -1315,7 +1589,9 @@ function showResultView(paymentLink) {
             }
         }
 
-        // --- EVENT LISTENERS ---
+        // ============================================
+        // 🎯 EVENT LISTENERS
+        // ============================================
         connectBtn.addEventListener('click', connectWallet);
         generateBtn.addEventListener('click', generatePaymentLink);
         copyBtn.addEventListener('click', copyLink);
@@ -1323,12 +1599,16 @@ function showResultView(paymentLink) {
         createAnotherBtn.addEventListener('click', createAnother);
         doneBtn.addEventListener('click', done);
 
-        input.addEventListener('input', () => {
-            updateGenerateButton();
-        });
+        input.addEventListener('input', updateGenerateButton);
 
-        // --- SESSION RESTORE ---
+        // ============================================
+        // 🔄 SESSION RESTORE & INVOICE LOAD
+        // ============================================
         window.addEventListener('load', async () => {
+            // Check if we're viewing an invoice
+            await loadInvoiceIfPresent();
+
+            // Restore wallet session
             try {
                 if (window.hederaConnect && window.hederaConnect.dAppConnector) {
                     const existingSessions = window.hederaConnect.dAppConnector.walletConnectClient?.session?.getAll() ?? [];
