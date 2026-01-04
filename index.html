@@ -978,12 +978,11 @@
         const doneBtn = document.getElementById('doneBtn');
         const subtitle = document.getElementById('subtitle');
 
-        // --- TOAST NOTIFICATIONS (UPDATED) ---
+        // --- TOAST NOTIFICATIONS ---
         function showToast(message, type = 'info') {
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
             
-            // Add icon based on type
             const icons = {
                 success: '✓',
                 error: '✕',
@@ -1002,7 +1001,6 @@
             
             document.getElementById('toast-container').appendChild(toast);
             
-            // Auto-remove with animation
             setTimeout(() => {
                 toast.classList.add('removing');
                 setTimeout(() => toast.remove(), 300);
@@ -1048,7 +1046,7 @@
             }
         });
 
-        // --- WALLET CONNECTION (NO TOAST) ---
+        // --- WALLET CONNECTION ---
         async function connectWallet() {
             if (isWalletConnected) return;
 
@@ -1070,8 +1068,6 @@
                 accountDisplay.classList.add('active');
                 
                 updateGenerateButton();
-                
-                // NO TOAST HERE - Button shows connection status
                 
             } catch (error) {
                 console.error('Connection failed:', error);
@@ -1161,7 +1157,7 @@
             updateGenerateButton();
         }
 
-        // --- SHOW RESULT VIEW ---
+        // --- SHOW RESULT VIEW WITH QR LOGO ---
         function showResultView(paymentLink) {
             formSection.classList.add('hidden');
             
@@ -1180,9 +1176,11 @@
             const isMobile = window.innerWidth <= 500;
             const qrSize = isMobile ? Math.min(240, window.innerWidth - 100) : 240;
             
+            // 🔥 FIXED: High error correction + proper logo timing
             window.QRCode.toCanvas(paymentLink, { 
                 width: qrSize, 
                 margin: 2,
+                errorCorrectionLevel: 'H', // 🆕 HIGH error correction for logo overlay
                 color: {
                     dark: '#000000',
                     light: '#FFFFFF'
@@ -1196,50 +1194,52 @@
                 
                 canvas.style.borderRadius = '8px';
                 
-                // Add logo overlay to QR code
+                // 🔥 APPEND CANVAS FIRST
+                qrContainer.appendChild(canvas);
+                
+                // 🔥 THEN add logo overlay
                 const ctx = canvas.getContext('2d');
                 const logo = new Image();
-                logo.crossOrigin = 'anonymous';
+                logo.crossOrigin = 'anonymous'; // Fix CORS
+                
+                // 🔥 Try both paths
                 logo.src = 'qr_logo.png';
                 
                 logo.onload = () => {
-                    const logoSize = canvas.width * 0.2;
+                    console.log('✅ Logo loaded successfully');
+                    
+                    const logoSize = canvas.width * 0.2; // 20% of QR size
                     const logoX = (canvas.width - logoSize) / 2;
                     const logoY = (canvas.height - logoSize) / 2;
+                    const padding = logoSize * 0.25; // White space around logo
                     
-                    // Add white background circle for logo
+                    // 🔥 IMPROVED: Rounded square background (better than circle)
+                    const bgSize = logoSize + (padding * 2);
+                    const bgX = (canvas.width - bgSize) / 2;
+                    const bgY = (canvas.height - bgSize) / 2;
+                    const cornerRadius = bgSize * 0.15;
+                    
                     ctx.fillStyle = 'white';
                     ctx.beginPath();
-                    ctx.arc(canvas.width / 2, canvas.height / 2, logoSize * 0.6, 0, 2 * Math.PI);
+                    ctx.roundRect(bgX, bgY, bgSize, bgSize, cornerRadius);
                     ctx.fill();
                     
                     // Draw logo
                     ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+                    
+                    console.log('✅ Logo overlay complete');
                 };
                 
-                logo.onerror = () => {
-                    console.warn('Logo failed to load, showing QR without logo');
+                logo.onerror = (e) => {
+                    console.warn('⚠️ Logo failed to load:', e);
+                    console.warn('Trying alternative path...');
+                    
+                    // Fallback: try absolute URL
+                    logo.src = window.location.origin + '/qr_logo.png';
                 };
-                
-                qrContainer.appendChild(canvas);
             });
             
             resultSection.classList.add('active');
-            
-            updateMetaTags(paymentLink, currentAmount);
-        }
-
-        // --- UPDATE META TAGS FOR SOCIAL SHARING ---
-        function updateMetaTags(link, amount) {
-            const title = `Send me ${amount} HBAR`;
-            const description = `Click to send ${amount} HBAR via HashToll Pay`;
-            
-            document.querySelector('meta[property="og:title"]').content = title;
-            document.querySelector('meta[property="og:description"]').content = description;
-            document.querySelector('meta[property="og:url"]').content = link;
-            
-            document.querySelector('meta[name="twitter:title"]').content = title;
-            document.querySelector('meta[name="twitter:description"]').content = description;
         }
 
         // --- COPY LINK ---
@@ -1327,7 +1327,7 @@
             updateGenerateButton();
         });
 
-        // --- SESSION RESTORE (NO TOAST) ---
+        // --- SESSION RESTORE ---
         window.addEventListener('load', async () => {
             try {
                 if (window.hederaConnect && window.hederaConnect.dAppConnector) {
@@ -1344,8 +1344,6 @@
                             
                             accountIdSpan.textContent = accountId;
                             accountDisplay.classList.add('active');
-                            
-                            // NO TOAST - Session restored silently
                         }
                     }
                 }
