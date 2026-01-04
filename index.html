@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HashToll Pay - Hedera Payment Links</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    
     <style>
         /* --- CSS VARIABLES --- */
         :root {
@@ -34,6 +36,14 @@
             position: relative;
         }
 
+        body.walletconnect-open {
+            pointer-events: none !important;
+        }
+
+        body.walletconnect-open .ht-card {
+            pointer-events: auto;
+        }
+
         /* Particle Container */
         .particles {
             position: fixed;
@@ -55,7 +65,7 @@
             border-radius: 50%;
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
             animation: float linear infinite;
-            bottom: -20px; /* Start below viewport */
+            bottom: -20px;
         }
 
         @keyframes float {
@@ -120,6 +130,44 @@
             font-weight: 400;
         }
 
+        /* Connected Account Display */
+        .ht-account-display {
+            display: none;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: var(--ht-radius);
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .ht-account-display.active {
+            display: flex;
+        }
+
+        .ht-account-id {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .ht-disconnect-btn {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #ef4444;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .ht-disconnect-btn:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
         /* --- INPUT SECTION --- */
         .ht-input-group {
             text-align: left;
@@ -148,10 +196,9 @@
             font-weight: 500;
             outline: none;
             transition: 0.2s ease;
-            -moz-appearance: textfield; /* Remove arrows Firefox */
+            -moz-appearance: textfield;
         }
 
-        /* Remove arrows Chrome/Safari */
         .ht-input::-webkit-outer-spin-button,
         .ht-input::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -226,14 +273,19 @@
             pointer-events: none;
         }
 
-        .ht-btn-primary:hover {
+        .ht-btn-primary:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 14px 34px rgba(68, 107, 242, 0.55);
         }
 
-        .ht-btn-primary:active {
+        .ht-btn-primary:active:not(:disabled) {
             transform: translateY(0);
             box-shadow: 0 8px 20px rgba(68, 107, 242, 0.40);
+        }
+
+        /* Success State */
+        .ht-btn-success {
+            background: linear-gradient(180deg, #4CAF50 0%, #45a049 100%);
         }
 
         /* Secondary Button */
@@ -243,13 +295,13 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .ht-btn-secondary:hover {
+        .ht-btn-secondary:hover:not(:disabled) {
             background: rgba(255, 255, 255, 0.08);
             color: white;
             border-color: rgba(255, 255, 255, 0.25);
         }
 
-        .ht-btn-secondary:active {
+        .ht-btn-secondary:active:not(:disabled) {
             transform: scale(0.98);
         }
 
@@ -259,8 +311,55 @@
             cursor: not-allowed;
         }
 
-        .ht-btn:disabled:hover {
-            transform: none;
+        /* Spinner */
+        .spinner {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+            font-size: 0.9rem;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .toast-success { 
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+            color: white; 
+        }
+        
+        .toast-error { 
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
+            color: white; 
+        }
+        
+        .toast-info { 
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
+            color: white; 
         }
 
         /* Mobile */
@@ -268,6 +367,11 @@
             .ht-card {
                 width: 90%;
                 padding: 30px 25px 40px 25px;
+            }
+            
+            .toast {
+                max-width: 90%;
+                right: 5%;
             }
         }
     </style>
@@ -286,6 +390,12 @@
             <p class="ht-subtitle">Create a payment link in seconds</p>
         </div>
 
+        <!-- Connected Account Display -->
+        <div class="ht-account-display" id="accountDisplay">
+            <span class="ht-account-id" id="accountId">0.0.0</span>
+            <button class="ht-disconnect-btn" onclick="disconnectWallet()">Disconnect</button>
+        </div>
+
         <div class="ht-input-group">
             <label class="ht-label">Amount (HBAR)</label>
             <input type="number" class="ht-input" id="amountInput" placeholder="Enter Amount...">
@@ -294,6 +404,162 @@
         <button class="ht-btn ht-btn-primary" id="connectBtn">Connect Wallet</button>
         <button class="ht-btn ht-btn-secondary" id="generateBtn" disabled>Generate Payment Link</button>
     </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Hedera WalletConnect SDK -->
+    <script type="module">
+        import {
+            AccountId,
+            LedgerId,
+        } from "https://esm.sh/@hashgraph/sdk@2.78.0";
+
+        import {
+            DAppConnector,
+            HederaJsonRpcMethod,
+            HederaSessionEvent,
+            HederaChainId,
+        } from "https://esm.sh/@hashgraph/hedera-wallet-connect@2.0.4?deps=@hashgraph/sdk@2.78.0";
+
+        const PROJECT_ID = "1acd173110297b885db0bad6276e6868";
+
+        const metadata = {
+            name: "HashToll Pay",
+            description: "Create Hedera Payment Links",
+            url: window.location.origin,
+            icons: [`${window.location.origin}/favicon.png`]
+        };
+
+        const dAppConnector = new DAppConnector(
+            metadata,
+            LedgerId.MAINNET,
+            PROJECT_ID,
+            Object.values(HederaJsonRpcMethod),
+            Object.values(HederaSessionEvent),
+            [HederaChainId.Mainnet]
+        );
+
+        let initialized = false;
+
+        async function ensureInitialized() {
+            if (initialized) return;
+            
+            console.log("🔄 Initializing Hedera WalletConnect...");
+            
+            try {
+                await dAppConnector.init({ logger: "error" });
+                initialized = true;
+                console.log("✅ dAppConnector initialized");
+            } catch (err) {
+                console.error("❌ Init failed:", err);
+                throw err;
+            }
+        }
+
+        const hederaConnect = {
+            dAppConnector,
+            accountId: null,
+
+            async connect() {
+                console.log("🔓 Connecting wallet...");
+                
+                await ensureInitialized();
+
+                if (this.accountId) {
+                    console.log("⚡ Already connected:", this.accountId);
+                    return this.accountId;
+                }
+
+                const cleanup = () => {
+                    document.body.classList.remove("walletconnect-open");
+                };
+
+                try {
+                    document.body.classList.add("walletconnect-open");
+
+                    const existingSessions = dAppConnector.walletConnectClient?.session?.getAll() ?? [];
+                    if (existingSessions.length > 0) {
+                        const accounts = existingSessions[0]?.namespaces?.hedera?.accounts ?? [];
+                        if (accounts.length > 0) {
+                            this.accountId = accounts[0].split(':')[2];
+                            cleanup();
+                            console.log("✅ Restored session:", this.accountId);
+                            return this.accountId;
+                        }
+                    }
+
+                    console.log("🔓 Opening HashPack modal...");
+                    dAppConnector.openModal();
+
+                    return new Promise((resolve, reject) => {
+                        let modalEverVisible = false;
+
+                        const poll = setInterval(() => {
+                            const sessions = dAppConnector.walletConnectClient?.session?.getAll() ?? [];
+                            const accounts = sessions[0]?.namespaces?.hedera?.accounts ?? [];
+
+                            if (accounts.length > 0) {
+                                clearInterval(poll);
+                                cleanup();
+                                this.accountId = accounts[0].split(':')[2];
+                                console.log("✅ Connected:", this.accountId);
+                                resolve(this.accountId);
+                                return;
+                            }
+
+                            const modal = document.querySelector(
+                                "wcm-modal, w3m-modal, [data-testid='wui-modal'], [data-testid='wcm-modal']"
+                            );
+
+                            if (modal) {
+                                const isVisible = getComputedStyle(modal).display !== "none";
+                                
+                                if (isVisible) {
+                                    modalEverVisible = true;
+                                }
+
+                                if (!isVisible && modalEverVisible && sessions.length === 0) {
+                                    clearInterval(poll);
+                                    cleanup();
+                                    reject(new Error("User closed wallet modal"));
+                                }
+                            }
+                        }, 400);
+
+                        setTimeout(() => {
+                            clearInterval(poll);
+                            cleanup();
+                            reject(new Error("⏱️ Connection timeout"));
+                        }, 90000);
+                    });
+
+                } catch (err) {
+                    cleanup();
+                    throw err;
+                }
+            },
+
+            disconnect() {
+                console.log("🔌 Disconnecting...");
+                this.accountId = null;
+                
+                try {
+                    dAppConnector.disconnectAll();
+                    console.log("✅ Disconnected");
+                } catch (err) {
+                    console.warn("⚠️ Disconnect error (non-critical):", err);
+                }
+            }
+        };
+
+        window.hederaConnect = hederaConnect;
+        console.log("✅ window.hederaConnect ready");
+
+        ensureInitialized().catch(err => {
+            console.error("❌ Pre-warm failed:", err);
+        });
+    </script>
 
     <script>
         // --- PARTICLE ANIMATION ---
@@ -304,11 +570,10 @@
             const particle = document.createElement('div');
             particle.className = 'particle';
             
-            // Random starting position (horizontal only)
             const startX = Math.random() * 100;
             const drift = (Math.random() - 0.5) * 200;
-            const duration = 10 + Math.random() * 15; // Slightly longer for smooth flow
-            const delay = Math.random() * 8; // Spread out delays more
+            const duration = 10 + Math.random() * 15;
+            const delay = Math.random() * 8;
             const size = 2 + Math.random() * 4;
             
             particle.style.left = startX + '%';
@@ -321,14 +586,38 @@
             particlesContainer.appendChild(particle);
         }
 
-        // --- TYPING ANIMATION FOR PLACEHOLDER ---
+        // --- STATE MANAGEMENT ---
+        let accountId = null;
+        let isWalletConnected = false;
+
+        // --- UI ELEMENTS ---
         const input = document.getElementById('amountInput');
+        const connectBtn = document.getElementById('connectBtn');
+        const generateBtn = document.getElementById('generateBtn');
+        const accountDisplay = document.getElementById('accountDisplay');
+        const accountIdSpan = document.getElementById('accountId');
+
+        // --- TOAST NOTIFICATIONS ---
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            
+            document.getElementById('toast-container').appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // --- TYPING ANIMATION FOR PLACEHOLDER ---
         const placeholderText = 'Enter Amount...';
         let charIndex = 0;
         let isTyping = true;
 
         function typePlaceholder() {
-            if (document.activeElement === input) return; // Stop if user focuses
+            if (document.activeElement === input) return;
             
             if (isTyping) {
                 if (charIndex < placeholderText.length) {
@@ -336,7 +625,7 @@
                     charIndex++;
                 } else {
                     isTyping = false;
-                    setTimeout(typePlaceholder, 2000); // Pause before deleting
+                    setTimeout(typePlaceholder, 2000);
                     return;
                 }
             } else {
@@ -345,7 +634,7 @@
                     charIndex--;
                 } else {
                     isTyping = true;
-                    setTimeout(typePlaceholder, 1000); // Pause before typing again
+                    setTimeout(typePlaceholder, 1000);
                     return;
                 }
             }
@@ -353,63 +642,166 @@
             setTimeout(typePlaceholder, isTyping ? 100 : 50);
         }
 
-        // Start typing animation
         setTimeout(typePlaceholder, 500);
 
-        // Stop animation on focus
         input.addEventListener('focus', () => {
             if (!input.value) {
                 input.placeholder = 'Enter amount...';
             }
         });
 
-        // --- BUTTON FUNCTIONALITY ---
-        const connectBtn = document.getElementById('connectBtn');
-        const generateBtn = document.getElementById('generateBtn');
-        let isWalletConnected = false;
+        // --- WALLET CONNECTION ---
+        async function connectWallet() {
+            if (isWalletConnected) return;
 
-        // Connect Wallet
-        connectBtn.addEventListener('click', () => {
-            if (!isWalletConnected) {
-                connectBtn.textContent = 'Connecting...';
+            try {
+                connectBtn.innerHTML = '<span class="spinner"></span>Connecting...';
                 connectBtn.disabled = true;
-                
-                // Simulate wallet connection
-                setTimeout(() => {
-                    isWalletConnected = true;
-                    connectBtn.textContent = '✓ Wallet Connected';
-                    connectBtn.style.background = 'linear-gradient(180deg, #4CAF50 0%, #45a049 100%)';
-                    generateBtn.disabled = false;
-                }, 1500);
-            }
-        });
 
-        // Generate Payment Link
-        generateBtn.addEventListener('click', () => {
+                if (!window.hederaConnect) {
+                    throw new Error('WalletConnect not loaded yet');
+                }
+
+                accountId = await window.hederaConnect.connect();
+                
+                isWalletConnected = true;
+                connectBtn.innerHTML = '✓ Wallet Connected';
+                connectBtn.classList.add('ht-btn-success');
+                
+                accountIdSpan.textContent = accountId;
+                accountDisplay.classList.add('active');
+                
+                updateGenerateButton();
+                
+                showToast('Wallet connected successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Connection failed:', error);
+                
+                let errorMsg = error.message || 'Unknown error';
+                if (errorMsg.includes('closed')) {
+                    errorMsg = 'Connection cancelled';
+                }
+                
+                showToast('Failed to connect: ' + errorMsg, 'error');
+                
+                connectBtn.innerHTML = 'Connect Wallet';
+                connectBtn.disabled = false;
+            }
+        }
+
+        // --- DISCONNECT WALLET ---
+        function disconnectWallet() {
+            if (!window.hederaConnect) return;
+            
+            window.hederaConnect.disconnect();
+            
+            isWalletConnected = false;
+            accountId = null;
+            
+            connectBtn.innerHTML = 'Connect Wallet';
+            connectBtn.classList.remove('ht-btn-success');
+            connectBtn.disabled = false;
+            
+            accountDisplay.classList.remove('active');
+            
+            generateBtn.disabled = true;
+            
+            showToast('Wallet disconnected', 'info');
+        }
+
+        window.disconnectWallet = disconnectWallet;
+
+        // --- GENERATE PAYMENT LINK ---
+        async function generatePaymentLink() {
             const amount = input.value;
             
             if (!amount || amount <= 0) {
-                alert('Please enter a valid amount');
+                showToast('Please enter a valid amount', 'error');
                 return;
             }
             
-            generateBtn.textContent = 'Generating...';
-            generateBtn.disabled = true;
+            if (!isWalletConnected) {
+                showToast('Please connect your wallet first', 'error');
+                return;
+            }
             
-            // Simulate generation
-            setTimeout(() => {
-                alert(`Payment link generated!\nAmount: ${amount} HBAR\n\n(This is a demo - real integration coming soon)`);
-                generateBtn.textContent = 'Generate Payment Link';
+            try {
+                generateBtn.innerHTML = '<span class="spinner"></span>Generating...';
+                generateBtn.disabled = true;
+                
+                // TODO: Replace with actual API call to create payment link
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                const paymentLinkId = 'demo_' + Math.random().toString(36).substr(2, 9);
+                const paymentLink = `${window.location.origin}/pay/${paymentLinkId}`;
+                
+                showToast(`Payment link created!\n${paymentLink}`, 'success');
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(paymentLink).then(() => {
+                    showToast('Link copied to clipboard!', 'success');
+                });
+                
+                generateBtn.innerHTML = '✓ Link Generated!';
+                
+                setTimeout(() => {
+                    generateBtn.innerHTML = 'Generate Payment Link';
+                    generateBtn.disabled = false;
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Generation failed:', error);
+                showToast('Failed to generate link: ' + error.message, 'error');
+                
+                generateBtn.innerHTML = 'Generate Payment Link';
                 generateBtn.disabled = false;
-            }, 1000);
-        });
+            }
+        }
 
-        // Enable Generate button when amount is entered
-        input.addEventListener('input', () => {
+        // --- UPDATE GENERATE BUTTON STATE ---
+        function updateGenerateButton() {
             if (isWalletConnected && input.value && input.value > 0) {
                 generateBtn.disabled = false;
             } else {
                 generateBtn.disabled = true;
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        connectBtn.addEventListener('click', connectWallet);
+        generateBtn.addEventListener('click', generatePaymentLink);
+
+        input.addEventListener('input', () => {
+            updateGenerateButton();
+        });
+
+        // Check for existing connection on load
+        window.addEventListener('load', async () => {
+            try {
+                if (window.hederaConnect) {
+                    await window.hederaConnect.dAppConnector.init({ logger: "error" });
+                    
+                    const existingSessions = window.hederaConnect.dAppConnector.walletConnectClient?.session?.getAll() ?? [];
+                    if (existingSessions.length > 0) {
+                        const accounts = existingSessions[0]?.namespaces?.hedera?.accounts ?? [];
+                        if (accounts.length > 0) {
+                            accountId = accounts[0].split(':')[2];
+                            isWalletConnected = true;
+                            
+                            connectBtn.innerHTML = '✓ Wallet Connected';
+                            connectBtn.classList.add('ht-btn-success');
+                            connectBtn.disabled = true;
+                            
+                            accountIdSpan.textContent = accountId;
+                            accountDisplay.classList.add('active');
+                            
+                            showToast('Session restored!', 'success');
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('Session restore failed:', err);
             }
         });
     </script>
