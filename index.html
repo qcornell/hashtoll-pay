@@ -7,9 +7,6 @@
     <title>HashToll Pay - Hedera Payment Links</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     
-    <!-- QR Code Library -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    
     <style>
         /* --- CSS VARIABLES --- */
         :root {
@@ -530,7 +527,7 @@
     <!-- Toast Container -->
     <div id="toast-container"></div>
 
-    <!-- Hedera WalletConnect SDK -->
+    <!-- Hedera WalletConnect & QRCode SDK -->
     <script type="module">
         import {
             AccountId,
@@ -543,6 +540,9 @@
             HederaSessionEvent,
             HederaChainId,
         } from "https://esm.sh/@hashgraph/hedera-wallet-connect@2.0.4?deps=@hashgraph/sdk@2.78.0";
+
+        // Import QRCode as module
+        import QRCode from "https://esm.sh/qrcode@1.5.3";
 
         const PROJECT_ID = "1acd173110297b885db0bad6276e6868";
 
@@ -675,9 +675,13 @@
             }
         };
 
+        // Export to window
         window.hederaConnect = hederaConnect;
+        window.QRCode = QRCode;
         console.log("✅ window.hederaConnect ready");
+        console.log("✅ window.QRCode ready");
 
+        // Pre-warm init (ONLY HERE - not in load event)
         ensureInitialized().catch(err => {
             console.error("❌ Pre-warm failed:", err);
         });
@@ -911,7 +915,14 @@
             
             // Generate QR code
             qrContainer.innerHTML = '';
-            QRCode.toCanvas(paymentLink, { 
+            
+            if (!window.QRCode) {
+                console.error('QRCode library not loaded');
+                showToast('QR code generation unavailable', 'error');
+                return;
+            }
+            
+            window.QRCode.toCanvas(paymentLink, { 
                 width: 240, 
                 margin: 2,
                 color: {
@@ -1019,12 +1030,11 @@
             updateGenerateButton();
         });
 
-        // Check for existing connection on load
+        // Check for existing session on load (WITHOUT re-initializing)
         window.addEventListener('load', async () => {
             try {
-                if (window.hederaConnect) {
-                    await window.hederaConnect.dAppConnector.init({ logger: "error" });
-                    
+                if (window.hederaConnect && window.hederaConnect.dAppConnector) {
+                    // Just check sessions - DON'T call init() again
                     const existingSessions = window.hederaConnect.dAppConnector.walletConnectClient?.session?.getAll() ?? [];
                     if (existingSessions.length > 0) {
                         const accounts = existingSessions[0]?.namespaces?.hedera?.accounts ?? [];
