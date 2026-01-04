@@ -19,15 +19,13 @@
     <meta name="twitter:image" content="https://pay.hashtoll.com/og-image.png">
     
     <style>
-        /* --- CSS VARIABLES (Updated Colors) --- */
+        /* --- CSS VARIABLES --- */
         :root {
             --ht-card-width: 440px;
             --ht-primary-blue: #446bf2;
             --ht-primary-hover: #3655c4;
             --ht-success-green: #38b5c4;
             --ht-success-green-dark: #26b181;
-            --ht-disconnect-red: #c15072;
-            --ht-disconnect-red-hover: #a84260;
             --ht-logo-max-width: 260px;
             --ht-input-bg: rgba(255, 255, 255, 0.08);
             --ht-text-white: #ffffff;
@@ -148,19 +146,19 @@
             font-weight: 400;
         }
 
-        /* Connected Account Display - UPDATED COLORS */
+        /* 🔥 NEW: Modern Account Display */
         .ht-account-display {
             display: none;
-            background: rgba(54, 85, 196, 0.11);
-            border: 1px solid rgba(56, 181, 196, 0.3);
+            background: linear-gradient(135deg, rgba(56, 181, 196, 0.08) 0%, rgba(38, 177, 129, 0.08) 100%);
+            border: 1px solid rgba(56, 181, 196, 0.25);
             border-radius: var(--ht-radius);
-            padding: 12px 16px;
-            margin-bottom: 20px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
             align-items: center;
             justify-content: space-between;
             transition: all 0.3s ease;
-            flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
+            position: relative;
         }
 
         .ht-account-display.active {
@@ -169,36 +167,44 @@
 
         .ht-account-id {
             font-family: 'Courier New', monospace;
-            font-size: 0.85rem;
+            font-size: 1.05rem; /* 🔥 Bigger font */
             color: var(--ht-success-green);
             font-weight: 600;
             flex: 1;
-            min-width: 120px;
             word-break: break-all;
+            letter-spacing: 0.02em;
+            text-shadow: 0 2px 8px rgba(56, 181, 196, 0.3);
         }
 
-        /* Disconnect Button - UPDATED COLORS */
+        /* 🔥 NEW: Simple × Disconnect Button */
         .ht-disconnect-btn {
-            background: var(--ht-input-bg);
-            border: 1px solid rgba(239, 68, 68, 0.4);
-            color: var(--ht-disconnect-red);
-            padding: 6px 14px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.7);
+            width: 32px;
+            height: 32px;
             border-radius: 8px;
-            font-size: 0.75rem;
-            font-weight: 600;
+            font-size: 1.2rem;
+            font-weight: 300;
             cursor: pointer;
             transition: all 0.2s;
-            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            line-height: 1;
+            padding: 0;
         }
 
         .ht-disconnect-btn:hover {
-            background: rgba(193, 80, 114, 0.2);
-            border-color: rgba(239, 68, 68, 0.6);
-            transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+            transform: scale(1.05);
         }
 
         .ht-disconnect-btn:active {
-            transform: translateY(0);
+            transform: scale(0.95);
         }
 
         /* --- FORM SECTION --- */
@@ -391,7 +397,7 @@
             box-shadow: 0 8px 20px rgba(68, 107, 242, 0.40);
         }
 
-        /* Success State - UPDATED TO MATCH YOUR GREEN GRADIENT */
+        /* Success State */
         .ht-btn-success {
             background: linear-gradient(180deg, rgba(56, 181, 196, 1) 0%, rgba(38, 177, 129, 1) 100%) !important;
             box-shadow: 0 10px 28px rgba(56, 181, 196, 0.45) !important;
@@ -409,7 +415,7 @@
             transform: translateY(-2px);
         }
 
-        /* Secondary Button - UPDATED FOR GENERATE LINK */
+        /* Secondary Button */
         .ht-btn-secondary {
             background: rgba(255, 255, 255, 0.04);
             color: rgba(255, 255, 255, 0.65);
@@ -473,7 +479,7 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
-        /* Small Button (for actions) */
+        /* Small Button */
         .ht-btn-small {
             padding: 13px 16px;
             font-size: 0.88rem;
@@ -503,7 +509,7 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Toast Notifications - MODERN REDESIGN */
+        /* Toast Notifications */
         .toast {
             position: fixed;
             top: 24px;
@@ -578,14 +584,12 @@
             background: linear-gradient(180deg, #446bf2 0%, #3655c4 100%);
         }
 
-        /* Toast Icon */
         .toast-icon {
             font-size: 1.1rem;
             flex-shrink: 0;
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
         }
 
-        /* Toast exit animation */
         .toast.removing {
             animation: slideOutRight 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
         }
@@ -624,17 +628,17 @@
             }
 
             .ht-account-display {
-                padding: 10px 12px;
+                padding: 14px 16px;
             }
 
             .ht-account-id {
-                font-size: 0.75rem;
-                min-width: 100px;
+                font-size: 0.95rem; /* 🔥 Still bigger on mobile */
             }
 
             .ht-disconnect-btn {
-                font-size: 0.7rem;
-                padding: 5px 10px;
+                width: 28px;
+                height: 28px;
+                font-size: 1.1rem;
             }
 
             .ht-form-section.hidden {
@@ -685,14 +689,12 @@
             }
         }
 
-        /* Tablet adjustments */
         @media (min-width: 501px) and (max-width: 768px) {
             .ht-card {
                 max-width: 90%;
             }
         }
 
-        /* Very small screens */
         @media (max-width: 360px) {
             .ht-card {
                 padding: 20px 15px 30px 15px;
@@ -729,7 +731,7 @@
         <!-- Connected Account Display -->
         <div class="ht-account-display" id="accountDisplay">
             <span class="ht-account-id" id="accountId">0.0.0</span>
-            <button class="ht-disconnect-btn" onclick="disconnectWallet()">Disconnect</button>
+            <button class="ht-disconnect-btn" onclick="disconnectWallet()" title="Disconnect">×</button>
         </div>
 
         <!-- Form Section -->
@@ -1134,98 +1136,18 @@
                 currentPaymentLink = paymentLink;
                 currentAmount = amount;
                 
-        // --- SHOW RESULT VIEW WITH QR LOGO (BULLETPROOF VERSION) ---
-function showResultView(paymentLink) {
-    formSection.classList.add('hidden');
-    
-    subtitle.textContent = 'Your payment link is ready!';
-    
-    linkDisplay.textContent = paymentLink;
-    
-    qrContainer.innerHTML = '';
-    
-    if (!window.QRCode) {
-        console.error('QRCode library not loaded');
-        showToast('QR code generation unavailable', 'error');
-        return;
-    }
-    
-    const isMobile = window.innerWidth <= 500;
-    const qrSize = isMobile ? Math.min(240, window.innerWidth - 100) : 240;
-    
-    // Generate QR code with HIGH error correction
-    window.QRCode.toCanvas(paymentLink, { 
-        width: qrSize, 
-        margin: 2,
-        errorCorrectionLevel: 'H', // 🔥 CRITICAL for logo overlay
-        color: {
-            dark: '#000000',
-            light: '#FFFFFF'
+                showResultView(paymentLink);
+                
+                showToast('Payment link generated! 🎉', 'success');
+                
+            } catch (error) {
+                console.error('Generation failed:', error);
+                showToast('Failed to generate link', 'error');
+                
+                generateBtn.innerHTML = 'Generate Payment Link';
+                generateBtn.disabled = false;
+            }
         }
-    }, (err, canvas) => {
-        if (err) {
-            console.error('QR generation failed:', err);
-            showToast('Failed to generate QR code', 'error');
-            return;
-        }
-        
-        canvas.style.borderRadius = '8px';
-        
-        // 🔥 Append canvas FIRST
-        qrContainer.appendChild(canvas);
-        
-        const ctx = canvas.getContext('2d');
-        
-        // 🔥 SAFE rounded-rect helper (works on ALL browsers)
-        function roundRect(ctx, x, y, w, h, r) {
-            const radius = Math.min(r, w / 2, h / 2);
-            ctx.beginPath();
-            ctx.moveTo(x + radius, y);
-            ctx.arcTo(x + w, y, x + w, y + h, radius);
-            ctx.arcTo(x + w, y + h, x, y + h, radius);
-            ctx.arcTo(x, y + h, x, y, radius);
-            ctx.arcTo(x, y, x + w, y, radius);
-            ctx.closePath();
-        }
-        
-        const logo = new Image();
-        
-        // 🔥 Absolute URL + cache buster (bulletproof)
-        logo.src = `${window.location.origin}/qr_logo.png?v=2`;
-        
-        logo.onload = () => {
-            console.log('✅ Logo loaded successfully');
-            
-            const logoSize = canvas.width * 0.22;  // 22% of QR size
-            const padding  = logoSize * 0.35;      // White space around logo
-            
-            const bgSize = logoSize + (padding * 2);
-            const bgX = (canvas.width - bgSize) / 2;
-            const bgY = (canvas.height - bgSize) / 2;
-            
-            // 🔥 Draw white rounded background
-            ctx.save();
-            ctx.fillStyle = '#ffffff';
-            roundRect(ctx, bgX, bgY, bgSize, bgSize, bgSize * 0.18);
-            ctx.fill();
-            
-            // 🔥 Draw logo centered
-            const logoX = (canvas.width - logoSize) / 2;
-            const logoY = (canvas.height - logoSize) / 2;
-            ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
-            ctx.restore();
-            
-            console.log('✅ QR logo overlay complete');
-        };
-        
-        logo.onerror = () => {
-            console.warn('❌ Could not load qr_logo.png. Check URL:', logo.src);
-            console.warn('Make sure qr_logo.png exists in the same folder as index.html');
-        };
-    });
-    
-    resultSection.classList.add('active');
-}
 
         // --- SHOW FORM VIEW ---
         function showFormView() {
@@ -1237,7 +1159,7 @@ function showResultView(paymentLink) {
             updateGenerateButton();
         }
 
-        // --- SHOW RESULT VIEW WITH QR LOGO ---
+        // --- SHOW RESULT VIEW WITH QR LOGO (BULLETPROOF VERSION) ---
         function showResultView(paymentLink) {
             formSection.classList.add('hidden');
             
@@ -1256,11 +1178,11 @@ function showResultView(paymentLink) {
             const isMobile = window.innerWidth <= 500;
             const qrSize = isMobile ? Math.min(240, window.innerWidth - 100) : 240;
             
-            // 🔥 FIXED: High error correction + proper logo timing
+            // Generate QR code with HIGH error correction
             window.QRCode.toCanvas(paymentLink, { 
                 width: qrSize, 
                 margin: 2,
-                errorCorrectionLevel: 'H', // 🆕 HIGH error correction for logo overlay
+                errorCorrectionLevel: 'H', // 🔥 CRITICAL for logo overlay
                 color: {
                     dark: '#000000',
                     light: '#FFFFFF'
@@ -1274,48 +1196,56 @@ function showResultView(paymentLink) {
                 
                 canvas.style.borderRadius = '8px';
                 
-                // 🔥 APPEND CANVAS FIRST
+                // 🔥 Append canvas FIRST
                 qrContainer.appendChild(canvas);
                 
-                // 🔥 THEN add logo overlay
                 const ctx = canvas.getContext('2d');
-                const logo = new Image();
-                logo.crossOrigin = 'anonymous'; // Fix CORS
                 
-                // 🔥 Try both paths
-                logo.src = 'qr_logo.png';
+                // 🔥 SAFE rounded-rect helper (works on ALL browsers)
+                function roundRect(ctx, x, y, w, h, r) {
+                    const radius = Math.min(r, w / 2, h / 2);
+                    ctx.beginPath();
+                    ctx.moveTo(x + radius, y);
+                    ctx.arcTo(x + w, y, x + w, y + h, radius);
+                    ctx.arcTo(x + w, y + h, x, y + h, radius);
+                    ctx.arcTo(x, y + h, x, y, radius);
+                    ctx.arcTo(x, y, x + w, y, radius);
+                    ctx.closePath();
+                }
+                
+                const logo = new Image();
+                
+                // 🔥 Absolute URL + cache buster (bulletproof)
+                logo.src = `${window.location.origin}/qr_logo.png?v=2`;
                 
                 logo.onload = () => {
                     console.log('✅ Logo loaded successfully');
                     
-                    const logoSize = canvas.width * 0.2; // 20% of QR size
-                    const logoX = (canvas.width - logoSize) / 2;
-                    const logoY = (canvas.height - logoSize) / 2;
-                    const padding = logoSize * 0.25; // White space around logo
+                    const logoSize = canvas.width * 0.22;  // 22% of QR size
+                    const padding  = logoSize * 0.35;      // White space around logo
                     
-                    // 🔥 IMPROVED: Rounded square background (better than circle)
                     const bgSize = logoSize + (padding * 2);
                     const bgX = (canvas.width - bgSize) / 2;
                     const bgY = (canvas.height - bgSize) / 2;
-                    const cornerRadius = bgSize * 0.15;
                     
-                    ctx.fillStyle = 'white';
-                    ctx.beginPath();
-                    ctx.roundRect(bgX, bgY, bgSize, bgSize, cornerRadius);
+                    // 🔥 Draw white rounded background
+                    ctx.save();
+                    ctx.fillStyle = '#ffffff';
+                    roundRect(ctx, bgX, bgY, bgSize, bgSize, bgSize * 0.18);
                     ctx.fill();
                     
-                    // Draw logo
+                    // 🔥 Draw logo centered
+                    const logoX = (canvas.width - logoSize) / 2;
+                    const logoY = (canvas.height - logoSize) / 2;
                     ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+                    ctx.restore();
                     
-                    console.log('✅ Logo overlay complete');
+                    console.log('✅ QR logo overlay complete');
                 };
                 
-                logo.onerror = (e) => {
-                    console.warn('⚠️ Logo failed to load:', e);
-                    console.warn('Trying alternative path...');
-                    
-                    // Fallback: try absolute URL
-                    logo.src = window.location.origin + '/qr_logo.png';
+                logo.onerror = () => {
+                    console.warn('❌ Could not load qr_logo.png. Check URL:', logo.src);
+                    console.warn('Make sure qr_logo.png exists in the same folder as index.html');
                 };
             });
             
