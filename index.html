@@ -1193,7 +1193,34 @@
                     showToast('Failed to generate QR code', 'error');
                     return;
                 }
+                
                 canvas.style.borderRadius = '8px';
+                
+                // Add logo overlay to QR code
+                const ctx = canvas.getContext('2d');
+                const logo = new Image();
+                logo.crossOrigin = 'anonymous';
+                logo.src = 'qr_logo.png';
+                
+                logo.onload = () => {
+                    const logoSize = canvas.width * 0.2;
+                    const logoX = (canvas.width - logoSize) / 2;
+                    const logoY = (canvas.height - logoSize) / 2;
+                    
+                    // Add white background circle for logo
+                    ctx.fillStyle = 'white';
+                    ctx.beginPath();
+                    ctx.arc(canvas.width / 2, canvas.height / 2, logoSize * 0.6, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    // Draw logo
+                    ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+                };
+                
+                logo.onerror = () => {
+                    console.warn('Logo failed to load, showing QR without logo');
+                };
+                
                 qrContainer.appendChild(canvas);
             });
             
