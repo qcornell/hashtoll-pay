@@ -1035,10 +1035,12 @@
                 try {
                     const res = await fetch('https://pvtoczsnwamailsjjnfn.supabase.co/functions/v1/mark-paid', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                      headers: {
+                      "Content-Type": "application/json",
+                      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+                      "apikey": SUPABASE_ANON_KEY
                         },
+
                         body: JSON.stringify({ slug: invoice.slug })
                     });
 
