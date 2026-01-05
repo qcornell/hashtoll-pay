@@ -162,7 +162,7 @@
             margin-bottom: 12px;
         }
 
-        /* 🔥 Modern Account Display */
+        /* 🔥 Modern Account Display - ONLY show on home page when connected */
         .ht-account-display {
             display: none;
             background: linear-gradient(135deg, rgba(56, 181, 196, 0.08) 0%, rgba(38, 177, 129, 0.08) 100%);
@@ -181,7 +181,7 @@
             display: flex;
         }
 
-        /* Hide account display on invoice view */
+        /* 🔥 HIDE account display completely on invoice view */
         body.invoice-view .ht-account-display {
             display: none !important;
         }
@@ -381,60 +381,6 @@
 
         body.invoice-view .ht-amount-value {
             font-size: 1.25rem;
-        }
-
-        /* ✅ Receiver account row */
-        .ht-receiver-row {
-            display: none;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin: 10px 0 12px 0;
-            padding: 10px 14px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-
-        body.invoice-view .ht-receiver-row {
-            margin: 8px 0 10px 0;
-            padding: 8px 12px;
-        }
-
-        .ht-receiver-icon {
-            opacity: 0.85;
-            font-size: 0.95rem;
-        }
-
-        .ht-receiver-account {
-            font-family: 'Courier New', monospace;
-            font-weight: 700;
-            letter-spacing: 0.01em;
-            color: rgba(255, 255, 255, 0.92);
-            font-size: 0.9rem;
-        }
-
-        body.invoice-view .ht-receiver-account {
-            font-size: 0.85rem;
-        }
-
-        .ht-receiver-copy {
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            background: rgba(255, 255, 255, 0.06);
-            color: rgba(255, 255, 255, 0.85);
-            border-radius: 10px;
-            padding: 6px 10px;
-            cursor: pointer;
-            transition: 0.2s ease;
-            font-size: 0.85rem;
-        }
-
-        .ht-receiver-copy:hover {
-            background: rgba(255, 255, 255, 0.10);
-            border-color: rgba(255, 255, 255, 0.25);
-            transform: translateY(-1px);
         }
 
         /* 🔥 Payment Status */
@@ -857,10 +803,6 @@
                 font-size: 1.1rem;
             }
 
-            .ht-receiver-account {
-                font-size: 0.8rem;
-            }
-
             .ht-link-display {
                 font-size: 0.72rem;
                 padding: 12px;
@@ -919,7 +861,7 @@
             <p class="ht-subtitle" id="subtitle">Create a payment link in seconds</p>
         </div>
 
-        <!-- Connected Account Display -->
+        <!-- Connected Account Display (ONLY on home page) -->
         <div class="ht-account-display" id="accountDisplay">
             <span class="ht-account-id" id="accountId">0.0.0</span>
             <button class="ht-disconnect-btn" onclick="disconnectWallet()" title="Disconnect">×</button>
@@ -948,17 +890,8 @@
             <div class="ht-amount-box">
                 <div class="ht-amount-label">$<span id="usdAmountLabel">50</span> USD worth of HBAR</div>
                 <div class="ht-amount-value">
-                    ℏ <span id="hbarAmount">0.2155987</span>
+                    ℏ <span id="hbarAmount">0.00000000</span>
                 </div>
-            </div>
-
-            <!-- ✅ Receiver account row (shows on invoice page) -->
-            <div class="ht-receiver-row" id="receiverRow" style="display:none;">
-                <span class="ht-receiver-icon">👤</span>
-                <span class="ht-receiver-account" id="receiverAccount">0.0.0</span>
-                <button class="ht-receiver-copy" id="copyReceiverBtn" type="button" title="Copy account">
-                    📋
-                </button>
             </div>
 
             <!-- 🔥 Payment Status -->
@@ -1190,7 +1123,7 @@
 
         async function startPaymentPolling(invoice) {
             const payStatus = document.getElementById("payStatus");
-            payStatus.textContent = "⏳ Waiting for payment confirmation...";
+            payStatus.textContent = "⏳ Waiting for payment...";
             payStatus.classList.remove('paid');
 
             if (pollTimer) clearInterval(pollTimer);
@@ -1238,12 +1171,11 @@
             const slug = getInvoiceSlugFromUrl();
             if (!slug) return;
 
-            // Mark as invoice view to hide account display
+            // Mark as invoice view to apply special styling
             document.body.classList.add('invoice-view');
 
             try {
                 formSection.classList.add("hidden");
-                subtitle.textContent = "Send $50 worth of HBAR via HashToll.";
 
                 const { data, error } = await window.supabaseClient
                     .from("invoices")
@@ -1268,23 +1200,6 @@
                 
                 // Show HBAR amount
                 document.getElementById('hbarAmount').textContent = data.amount_hbar;
-
-                // ✅ Show receiver account id above "waiting for payment"
-                const receiverRow = document.getElementById("receiverRow");
-                const receiverAccount = document.getElementById("receiverAccount");
-                const copyReceiverBtn = document.getElementById("copyReceiverBtn");
-
-                receiverRow.style.display = "flex";
-                receiverAccount.textContent = data.receiver_account;
-
-                copyReceiverBtn.onclick = async () => {
-                    try {
-                        await navigator.clipboard.writeText(data.receiver_account);
-                        showToast("Receiver account copied!", "success");
-                    } catch (e) {
-                        showToast("Failed to copy account", "error");
-                    }
-                };
 
                 showResultView(invoiceUrl, true);
 
@@ -1567,9 +1482,6 @@
             payStatus.textContent = '⏳ Waiting for payment...';
             payStatus.classList.remove('paid');
             
-            // Hide receiver row when going back to form
-            document.getElementById('receiverRow').style.display = 'none';
-            
             generateBtn.innerHTML = 'Generate Payment Link';
             updateGenerateButton();
         }
@@ -1741,7 +1653,11 @@
                             connectBtn.disabled = true;
                             
                             accountIdSpan.textContent = accountId;
-                            accountDisplay.classList.add('active');
+                            
+                            // Only show account display if NOT on invoice view
+                            if (!document.body.classList.contains('invoice-view')) {
+                                accountDisplay.classList.add('active');
+                            }
                         }
                     }
                 }
