@@ -1171,6 +1171,32 @@ body.keyboard-open {
     let currentInvoiceSlug = null;
 
     const input = document.getElementById('amountInput');
+    /* ✅ PASTE THE iOS keyboard/viewport fix RIGHT HERE */
+function setVhUnit() {
+  const vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+
+(function initVhFix() {
+  document.body.classList.add('use-vh-fallback');
+  setVhUnit();
+  window.addEventListener('resize', setVhUnit);
+  window.addEventListener('orientationchange', () => setTimeout(setVhUnit, 250));
+})();
+
+input.addEventListener('focus', () => {
+  document.body.classList.add('keyboard-open');
+  setTimeout(() => {
+    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 250);
+});
+
+input.addEventListener('blur', () => {
+  document.body.classList.remove('keyboard-open');
+  setTimeout(setVhUnit, 150);
+});
+
+    
     const connectBtn = document.getElementById('connectBtn');
     const generateBtn = document.getElementById('generateBtn');
     const accountDisplay = document.getElementById('accountDisplay');
