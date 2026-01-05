@@ -60,6 +60,16 @@
     min-height: -webkit-fill-available;
   }
 }
+    /* Fallback for older iOS: use JS-driven --vh variable */
+body.use-vh-fallback {
+  min-height: calc(var(--vh, 1vh) * 100);
+}
+
+/* When keyboard is open, don’t vertically center */
+body.keyboard-open {
+  align-items: flex-start !important;
+  padding-top: 16px;
+}
 
     body.walletconnect-open {
       pointer-events: none !important;
