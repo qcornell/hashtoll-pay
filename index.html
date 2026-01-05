@@ -867,8 +867,8 @@
     <!-- Form Section (HOME) -->
     <div class="ht-form-section" id="formSection">
       <div class="ht-input-group">
-        <label class="ht-label">USD Amount (converted to HBAR)</label>
-        <input type="number" class="ht-input" id="amountInput" placeholder="$50" step="0.01" min="0">
+        <label class="ht-label"> USD Amount </label>
+        <input type="number" class="ht-input" id="amountInput" placeholder="Enter Amount" step="0.01" min="0">
       </div>
 
       <button class="ht-btn ht-btn-primary" id="connectBtn">Connect Wallet</button>
@@ -1625,7 +1625,7 @@ subtitle.textContent = '';
     }
 
     setTimeout(typePlaceholder, 500);
-    input.addEventListener('focus', () => { if (!input.value) input.placeholder = '$50'; });
+    input.addEventListener('focus', () => { if (!input.value) input.placeholder = 'Enter Amount'; });
 
     connectBtn.addEventListener('click', connectWallet);
     generateBtn.addEventListener('click', generatePaymentLink);
