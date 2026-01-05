@@ -1303,8 +1303,9 @@
         currentPaymentLink = invoiceUrl;
         currentAmount = inv.requested_amount_hbar;
 
-        // 🔥 FIX: Set subtitle to just "Send securely via HashPack"
-        subtitle.textContent = 'Send securely via HashPack';
+       // On invoice page, only show the subsubtitle line.
+// Keep subtitle empty (or use it for amount if you want).
+subtitle.textContent = '';
 
         payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
         payerUsdAmount.textContent = inv.requested_amount_hbar;
