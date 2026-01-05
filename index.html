@@ -1184,7 +1184,19 @@ function setVhUnit() {
   window.addEventListener('orientationchange', () => setTimeout(setVhUnit, 250));
 })();
 
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS
+}
+
+function isMobileWidth() {
+  return window.matchMedia('(max-width: 768px)').matches;
+}
+
 input.addEventListener('focus', () => {
+  // ✅ Only do keyboard behavior on iOS (or you can use iOS || mobileWidth)
+  if (!isIOS()) return;
+
   document.body.classList.add('keyboard-open');
   setTimeout(() => {
     input.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1192,9 +1204,12 @@ input.addEventListener('focus', () => {
 });
 
 input.addEventListener('blur', () => {
+  if (!isIOS()) return;
+
   document.body.classList.remove('keyboard-open');
   setTimeout(setVhUnit, 150);
 });
+
 
     
     const connectBtn = document.getElementById('connectBtn');
