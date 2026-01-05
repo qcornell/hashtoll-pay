@@ -320,7 +320,7 @@
             line-height: 1.4;
         }
 
-        /* 🔥 HBAR Amount Display - Like image 3 */
+        /* 🔥 HBAR Amount Display */
         .ht-amount-box {
             background: linear-gradient(135deg, rgba(56, 181, 196, 0.08) 0%, rgba(38, 177, 129, 0.08) 100%);
             border: 1px solid rgba(56, 181, 196, 0.25);
@@ -345,14 +345,52 @@
             letter-spacing: -0.01em;
         }
 
-        .ht-amount-hbar {
-            font-size: 1rem;
-            margin-left: 6px;
-            font-weight: 600;
-            opacity: 0.9;
+        /* ✅ Receiver account row (matches your screenshot placement) */
+        .ht-receiver-row {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px 0 12px 0;
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
 
-        /* 🔥 Payment Status - Simplified */
+        .ht-receiver-icon {
+            opacity: 0.85;
+            font-size: 0.95rem;
+        }
+
+        .ht-receiver-account {
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            color: rgba(255, 255, 255, 0.92);
+            font-size: 0.9rem;
+        }
+
+        .ht-receiver-copy {
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.85);
+            border-radius: 10px;
+            padding: 6px 10px;
+            cursor: pointer;
+            transition: 0.2s ease;
+            font-size: 0.85rem;
+        }
+
+        .ht-receiver-copy:hover {
+            background: rgba(255, 255, 255, 0.10);
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+        }
+
+        /* 🔥 Payment Status */
         .ht-status {
             padding: 12px 16px;
             background: rgba(255, 255, 255, 0.05);
@@ -360,7 +398,7 @@
             font-size: 0.9rem;
             font-weight: 500;
             color: rgba(255, 255, 255, 0.7);
-            margin: 20px 0;
+            margin: 0 0 20px 0;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -741,6 +779,10 @@
                 font-size: 1.2rem;
             }
 
+            .ht-receiver-account {
+                font-size: 0.8rem;
+            }
+
             .ht-link-display {
                 font-size: 0.72rem;
                 padding: 12px;
@@ -832,9 +874,18 @@
                 </div>
             </div>
 
+            <!-- ✅ Receiver account row (shows on invoice page) -->
+            <div class="ht-receiver-row" id="receiverRow" style="display:none;">
+                <span class="ht-receiver-icon">👤</span>
+                <span class="ht-receiver-account" id="receiverAccount">0.0.0</span>
+                <button class="ht-receiver-copy" id="copyReceiverBtn" type="button" title="Copy account">
+                    📋
+                </button>
+            </div>
+
             <!-- 🔥 Payment Status -->
             <div class="ht-status" id="payStatus">
-                👤 Waiting for payment...
+                ⏳ Waiting for payment...
             </div>
             
             <!-- Hidden link display for share functionality -->
@@ -1140,6 +1191,23 @@
                 // Show HBAR amount
                 document.getElementById('hbarAmount').textContent = data.amount_hbar;
 
+                // ✅ Show receiver account id above "waiting for payment"
+                const receiverRow = document.getElementById("receiverRow");
+                const receiverAccount = document.getElementById("receiverAccount");
+                const copyReceiverBtn = document.getElementById("copyReceiverBtn");
+
+                receiverRow.style.display = "flex";
+                receiverAccount.textContent = data.receiver_account;
+
+                copyReceiverBtn.onclick = async () => {
+                    try {
+                        await navigator.clipboard.writeText(data.receiver_account);
+                        showToast("Receiver account copied!", "success");
+                    } catch (e) {
+                        showToast("Failed to copy account", "error");
+                    }
+                };
+
                 showResultView(invoiceUrl);
 
                 if (data.status === "paid") {
@@ -1418,8 +1486,11 @@
             subtitle.textContent = 'Create a payment link in seconds';
             
             const payStatus = document.getElementById('payStatus');
-            payStatus.textContent = '👤 Waiting for payment...';
+            payStatus.textContent = '⏳ Waiting for payment...';
             payStatus.classList.remove('paid');
+            
+            // Hide receiver row when going back to form
+            document.getElementById('receiverRow').style.display = 'none';
             
             generateBtn.innerHTML = 'Generate Payment Link';
             updateGenerateButton();
