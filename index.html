@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 
@@ -424,6 +423,11 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
+    }
+
+    /* 🔥 FIX #3: Hide status by default on payer screen */
+    .ht-status.payer-status-hidden {
+      display: none;
     }
 
     .ht-status.paid {
@@ -914,7 +918,7 @@
       <!-- QR -->
       <div class="ht-qr-container" id="payerQrContainer"></div>
 
-      <!-- Amount -->
+      <!-- Amount (🔥 FIX #1: Removed "Pay $X worth of HBAR" subtitle here) -->
       <div class="ht-usd-worth">
         $<span id="payerUsdAmount">0</span> USD worth of HBAR
       </div>
@@ -926,10 +930,10 @@
       <!-- Pay / Confirm -->
       <button class="ht-btn ht-btn-primary ht-btn-pay" id="payNowBtn">Pay Now</button>
       <button class="ht-btn ht-btn-secondary" id="iPaidBtn">✅ I Paid (Check Payment)</button>
-      <div class="ht-helper-text">After you pay, tap “I Paid” to confirm.</div>
+      <div class="ht-helper-text">After you pay, tap "I Paid" to confirm.</div>
 
-      <!-- Status -->
-      <div class="ht-status" id="payerStatus">⏳ Waiting for payment...</div>
+      <!-- 🔥 FIX #3: Status hidden by default -->
+      <div class="ht-status payer-status-hidden" id="payerStatus">⏳ Waiting for payment...</div>
 
       <!-- Bottom actions -->
       <div class="ht-action-buttons">
@@ -1300,6 +1304,8 @@
     }
 
     function setPayerStatus(text, type = 'default') {
+      // 🔥 FIX #3: Remove hidden class when showing status
+      payerStatus.classList.remove('payer-status-hidden');
       payerStatus.textContent = text;
       payerStatus.classList.remove('paid', 'warn');
 
@@ -1329,7 +1335,9 @@
         payerUsdAmount.textContent = '...';
         payerHbarAmount.textContent = '...';
         payerHbarLine.style.display = 'none';
-        setPayerStatus('⏳ Waiting for payment...', 'default');
+        
+        // 🔥 FIX #3: Keep status hidden initially
+        payerStatus.classList.add('payer-status-hidden');
 
         const inv = await loadInvoice(slug);
 
@@ -1337,7 +1345,8 @@
         currentPaymentLink = invoiceUrl;
         currentAmount = inv.requested_amount_hbar;
 
-        subtitle.textContent = `Pay $${inv.requested_amount_hbar} worth of HBAR`;
+        // 🔥 FIX #1: Changed subtitle to just "Send securely via HashPack"
+        subtitle.textContent = `$${inv.requested_amount_hbar} USD worth of HBAR`;
 
         payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
         payerUsdAmount.textContent = inv.requested_amount_hbar;
@@ -1351,12 +1360,11 @@
 
         await renderQrInto(payerQrContainer, invoiceUrl);
 
-        // status from DB
+        // 🔥 FIX #3: Only show status if already paid
         if (inv.status === 'paid') {
           setPayerStatus('✅ PAID — Payment confirmed on Hedera!', 'paid');
-        } else {
-          setPayerStatus('⏳ Waiting for payment...', 'default');
         }
+        // Otherwise status stays hidden
 
       } catch (err) {
         console.error(err);
@@ -1770,4 +1778,3 @@
 </body>
 
 </html>
-```
