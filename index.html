@@ -1402,7 +1402,7 @@ subtitle.textContent = '';
 
     async function startCreatorPolling(invoice) {
       const payStatus = document.getElementById("payStatus");
-      payStatus.textContent = "⏳ Waiting for payment...";
+      payStatus.textContent = "Request payment securely...";
       payStatus.classList.remove('paid');
 
       if (pollTimer) clearInterval(pollTimer);
@@ -1572,7 +1572,7 @@ subtitle.textContent = '';
       subtitle.textContent = 'Create a payment link in seconds';
 
       const payStatus = document.getElementById('payStatus');
-      payStatus.textContent = '⏳ Waiting for payment...';
+      payStatus.textContent = 'Request payment securely...';
       payStatus.classList.remove('paid');
 
       generateBtn.innerHTML = 'Generate Payment Link';
