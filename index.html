@@ -121,18 +121,8 @@
             margin: 20px;
         }
 
-        /* 🔥 Tighter spacing for invoice view */
-        body.invoice-view .ht-card {
-            padding: 30px 40px 40px 40px;
-        }
-
         .ht-logo-area {
             margin-bottom: 35px;
-            transition: all 0.3s ease;
-        }
-
-        body.invoice-view .ht-logo-area {
-            margin-bottom: 20px;
         }
 
         .ht-title {
@@ -158,10 +148,6 @@
             font-weight: 400;
         }
 
-        body.invoice-view .ht-subtitle {
-            margin-bottom: 12px;
-        }
-
         /* 🔥 Modern Account Display - ONLY show on home page when connected */
         .ht-account-display {
             display: none;
@@ -179,11 +165,6 @@
 
         .ht-account-display.active {
             display: flex;
-        }
-
-        /* 🔥 HIDE account display completely on invoice view */
-        body.invoice-view .ht-account-display {
-            display: none !important;
         }
 
         .ht-account-id {
@@ -317,12 +298,6 @@
             max-width: 100%;
         }
 
-        /* 🔥 Smaller QR on invoice view */
-        body.invoice-view .ht-qr-container {
-            padding: 12px;
-            margin: 12px auto;
-        }
-
         .ht-qr-container canvas {
             border-radius: 8px;
             display: block;
@@ -330,67 +305,46 @@
             height: auto !important;
         }
 
-        /* 🔥 USD Amount Display */
-        .ht-usd-display {
-            font-size: 1.05rem;
-            font-weight: 400;
-            color: var(--ht-text-muted);
-            margin: 0 0 20px 0;
-            line-height: 1.4;
+        /* 🔥 USD Worth Line (matches screenshot) */
+        .ht-usd-worth {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.75);
+            margin-top: 18px;
+            margin-bottom: 12px;
         }
 
-        body.invoice-view .ht-usd-display {
-            margin: 0 0 12px 0;
-            font-size: 0.95rem;
-        }
-
-        /* 🔥 HBAR Amount Display */
-        .ht-amount-box {
-            background: linear-gradient(135deg, rgba(56, 181, 196, 0.08) 0%, rgba(38, 177, 129, 0.08) 100%);
-            border: 1px solid rgba(56, 181, 196, 0.25);
-            border-radius: var(--ht-radius);
-            padding: 16px 20px;
-            margin: 20px 0;
-            text-align: center;
-        }
-
-        body.invoice-view .ht-amount-box {
-            padding: 12px 16px;
-            margin: 12px 0;
-        }
-
-        .ht-amount-label {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.6);
-            margin-bottom: 6px;
-            font-weight: 500;
-        }
-
-        body.invoice-view .ht-amount-label {
-            font-size: 0.8rem;
-            margin-bottom: 4px;
-        }
-
-        .ht-amount-value {
-            font-size: 1.4rem;
+        /* 🔥 HBAR Line with Icon (matches screenshot) */
+        .ht-hbar-line {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1.35rem;
             font-weight: 700;
-            color: var(--ht-text-white);
+            color: rgba(255, 255, 255, 0.92);
+            margin-bottom: 18px;
+        }
+
+        .ht-hbar-icon {
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .ht-hbar-num {
             font-family: 'Courier New', monospace;
-            letter-spacing: -0.01em;
+            letter-spacing: 0.01em;
         }
 
-        body.invoice-view .ht-amount-value {
-            font-size: 1.25rem;
-        }
-
-        /* 🔥 Payment Status */
+        /* 🔥 Payment Status (matches screenshot) */
         .ht-status {
             padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.10);
             border-radius: var(--ht-radius);
             font-size: 0.9rem;
             font-weight: 500;
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255, 255, 255, 0.75);
             margin: 0 0 20px 0;
             display: flex;
             align-items: center;
@@ -398,14 +352,9 @@
             gap: 8px;
         }
 
-        body.invoice-view .ht-status {
-            padding: 10px 14px;
-            margin: 0 0 12px 0;
-            font-size: 0.85rem;
-        }
-
         .ht-status.paid {
             background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15));
+            border-color: rgba(16, 185, 129, 0.3);
             color: #10b981;
             font-weight: 600;
         }
@@ -429,10 +378,6 @@
             display: flex;
             gap: 10px;
             margin-top: 16px;
-        }
-
-        body.invoice-view .ht-action-buttons {
-            margin-top: 10px;
         }
 
         .ht-action-buttons button {
@@ -592,11 +537,6 @@
             margin-bottom: 0;
         }
 
-        body.invoice-view .ht-btn-small {
-            padding: 11px 14px;
-            font-size: 0.85rem;
-        }
-
         .ht-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
@@ -724,16 +664,8 @@
                 border-radius: 20px;
             }
 
-            body.invoice-view .ht-card {
-                padding: 20px 20px 30px 20px;
-            }
-
             .ht-logo-area {
                 margin-bottom: 25px;
-            }
-
-            body.invoice-view .ht-logo-area {
-                margin-bottom: 15px;
             }
 
             .ht-title img {
@@ -783,24 +715,16 @@
                 max-width: 280px;
             }
 
-            body.invoice-view .ht-qr-container {
-                max-width: 220px;
-            }
-
             .ht-qr-container canvas {
                 width: 100% !important;
             }
 
-            .ht-usd-display {
+            .ht-usd-worth {
                 font-size: 0.95rem;
             }
 
-            .ht-amount-value {
+            .ht-hbar-line {
                 font-size: 1.2rem;
-            }
-
-            body.invoice-view .ht-amount-value {
-                font-size: 1.1rem;
             }
 
             .ht-link-display {
@@ -880,18 +804,17 @@
 
         <!-- Result Section -->
         <div class="ht-result-section" id="resultSection">
-            <div class="ht-usd-display" id="usdDisplay">
-                Send <span id="usdAmount">$50</span> worth of HBAR via HashToll.
-            </div>
-
             <div class="ht-qr-container" id="qrContainer"></div>
             
-            <!-- 🔥 HBAR Amount Display -->
-            <div class="ht-amount-box">
-                <div class="ht-amount-label">$<span id="usdAmountLabel">50</span> USD worth of HBAR</div>
-                <div class="ht-amount-value">
-                    ℏ <span id="hbarAmount">0.00000000</span>
-                </div>
+            <!-- 🔥 USD Worth Line (matches screenshot) -->
+            <div class="ht-usd-worth" id="usdWorthLine">
+                $<span id="usdAmount">50</span> USD worth of HBAR
+            </div>
+
+            <!-- 🔥 HBAR Line with Icon (matches screenshot) -->
+            <div class="ht-hbar-line">
+                <span class="ht-hbar-icon">🧾</span>
+                <span class="ht-hbar-num" id="hbarAmount">0.2155987</span>
             </div>
 
             <!-- 🔥 Payment Status -->
@@ -1094,7 +1017,7 @@
         }
 
         function tinybarsToHbar(tb) {
-            return (Number(tb) / 100000000).toFixed(8);
+            return (Number(tb) / 100000000).toFixed(7); // 🔥 Changed to 7 decimals
         }
 
         function makeUniquePayAmount(requestedHbar) {
@@ -1171,9 +1094,6 @@
             const slug = getInvoiceSlugFromUrl();
             if (!slug) return;
 
-            // Mark as invoice view to apply special styling
-            document.body.classList.add('invoice-view');
-
             try {
                 formSection.classList.add("hidden");
 
@@ -1191,15 +1111,12 @@
                 currentPaymentLink = invoiceUrl;
                 currentAmount = data.requested_amount_hbar;
 
-                // Update subtitle with actual amount
+                // 🔥 Update subtitle to match screenshot
                 subtitle.textContent = `Send $${data.requested_amount_hbar} worth of HBAR via HashToll.`;
 
-                // Show USD amount
-                document.getElementById('usdAmount').textContent = '$' + data.requested_amount_hbar;
-                document.getElementById('usdAmountLabel').textContent = data.requested_amount_hbar;
-                
-                // Show HBAR amount
-                document.getElementById('hbarAmount').textContent = data.amount_hbar;
+                // 🔥 Show amounts with 7 decimals
+                document.getElementById('usdAmount').textContent = data.requested_amount_hbar;
+                document.getElementById('hbarAmount').textContent = Number(data.amount_hbar).toFixed(7);
 
                 showResultView(invoiceUrl, true);
 
@@ -1446,10 +1363,9 @@
                 currentPaymentLink = paymentLink;
                 currentAmount = requestedAmount;
 
-                // Update amounts
-                document.getElementById('usdAmount').textContent = '$' + requestedAmount;
-                document.getElementById('usdAmountLabel').textContent = requestedAmount;
-                document.getElementById('hbarAmount').textContent = amount_hbar;
+                // 🔥 Update amounts with 7 decimals
+                document.getElementById('usdAmount').textContent = requestedAmount;
+                document.getElementById('hbarAmount').textContent = Number(amount_hbar).toFixed(7);
 
                 showResultView(paymentLink, false);
                 showToast("Invoice created! 🎉", "success");
@@ -1473,7 +1389,6 @@
         // 🎨 VIEW MANAGEMENT
         // ============================================
         function showFormView() {
-            document.body.classList.remove('invoice-view');
             formSection.classList.remove('hidden');
             resultSection.classList.remove('active');
             subtitle.textContent = 'Create a payment link in seconds';
@@ -1488,7 +1403,12 @@
 
         function showResultView(paymentLink, isInvoiceView = false) {
             formSection.classList.add('hidden');
-            subtitle.textContent = 'Your payment link is ready!';
+            
+            // 🔥 Only change subtitle if NOT invoice view (invoice loads its own subtitle)
+            if (!isInvoiceView) {
+                subtitle.textContent = 'Your payment link is ready!';
+            }
+            
             linkDisplay.textContent = paymentLink;
             
             qrContainer.innerHTML = '';
@@ -1499,14 +1419,9 @@
                 return;
             }
             
-            // 🔥 Smaller QR for invoice view
+            // 🔥 Standard QR size - 240px for all views
             const isMobile = window.innerWidth <= 500;
-            let qrSize;
-            if (isInvoiceView) {
-                qrSize = isMobile ? 180 : 200;
-            } else {
-                qrSize = isMobile ? Math.min(240, window.innerWidth - 100) : 240;
-            }
+            const qrSize = isMobile ? Math.min(240, window.innerWidth - 100) : 240;
             
             window.QRCode.toCanvas(paymentLink, { 
                 width: qrSize, 
@@ -1653,11 +1568,7 @@
                             connectBtn.disabled = true;
                             
                             accountIdSpan.textContent = accountId;
-                            
-                            // Only show account display if NOT on invoice view
-                            if (!document.body.classList.contains('invoice-view')) {
-                                accountDisplay.classList.add('active');
-                            }
+                            accountDisplay.classList.add('active');
                         }
                     }
                 }
