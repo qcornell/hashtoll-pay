@@ -302,10 +302,11 @@
       display: block;
     }
 
+    /* 🔥 FIX: Centered account row */
     .payer-account-row {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
       gap: 10px;
       padding: 12px 14px;
       border-radius: 999px;
@@ -320,11 +321,8 @@
       color: rgba(255, 255, 255, 0.92);
       font-weight: 700;
       letter-spacing: 0.01em;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 290px;
       text-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+      text-align: center;
     }
 
     .payer-copy-btn {
@@ -425,7 +423,6 @@
       gap: 8px;
     }
 
-    /* 🔥 FIX #3: Hide status by default on payer screen */
     .ht-status.payer-status-hidden {
       display: none;
     }
@@ -818,7 +815,6 @@
       }
 
       .payer-account-id {
-        max-width: 220px;
         font-size: 0.92rem;
       }
 
@@ -857,6 +853,7 @@
       <h1 class="ht-title">
         <img src="/logo.png" alt="HashToll">
       </h1>
+      <!-- 🔥 FIX: Removed duplicate subtitle text -->
       <p class="ht-subtitle" id="subtitle">Create a payment link in seconds</p>
       <p class="ht-subsubtitle" id="subsubtitle">Send securely via HashPack</p>
     </div>
@@ -909,7 +906,7 @@
 
     <!-- Payer Section (INVOICE PAGE) -->
     <div class="ht-payer-section" id="payerSection">
-      <!-- Receiver account row -->
+      <!-- Receiver account row (🔥 CENTERED) -->
       <div class="payer-account-row">
         <div class="payer-account-id" id="payerReceiverAccount">0.0.000000</div>
         <button class="payer-copy-btn" id="copyReceiverBtn" title="Copy receiver account">⧉</button>
@@ -918,7 +915,7 @@
       <!-- QR -->
       <div class="ht-qr-container" id="payerQrContainer"></div>
 
-      <!-- Amount (🔥 FIX #1: Removed "Pay $X worth of HBAR" subtitle here) -->
+      <!-- 🔥 FIX: Only ONE amount display -->
       <div class="ht-usd-worth">
         $<span id="payerUsdAmount">0</span> USD worth of HBAR
       </div>
@@ -932,7 +929,7 @@
       <button class="ht-btn ht-btn-secondary" id="iPaidBtn">✅ I Paid (Check Payment)</button>
       <div class="ht-helper-text">After you pay, tap "I Paid" to confirm.</div>
 
-      <!-- 🔥 FIX #3: Status hidden by default -->
+      <!-- Status hidden by default -->
       <div class="ht-status payer-status-hidden" id="payerStatus">⏳ Waiting for payment...</div>
 
       <!-- Bottom actions -->
@@ -946,7 +943,7 @@
   <!-- Toast Container -->
   <div id="toast-container"></div>
 
-  <!-- Hedera WalletConnect & QRCode SDK (for HOME connect; payer does NOT need to connect) -->
+  <!-- Hedera WalletConnect & QRCode SDK -->
   <script type="module">
     import { LedgerId } from "https://esm.sh/@hashgraph/sdk@2.78.0";
     import { DAppConnector, HederaJsonRpcMethod, HederaSessionEvent, HederaChainId } from "https://esm.sh/@hashgraph/hedera-wallet-connect@2.0.4?deps=@hashgraph/sdk@2.78.0";
@@ -997,7 +994,6 @@
         try {
           document.body.classList.add("walletconnect-open");
 
-          // Restore session if possible
           const existingSessions = dAppConnector.walletConnectClient?.session?.getAll() ?? [];
           if (existingSessions.length > 0) {
             const accounts = existingSessions[0]?.namespaces?.hedera?.accounts ?? [];
@@ -1060,22 +1056,15 @@
     window.hederaConnect = hederaConnect;
     window.QRCode = QRCode;
 
-    // Prewarm (HOME only; safe if it fails)
     ensureInitialized().catch(() => { });
   </script>
 
   <script>
-    // ============================================
-    // 🔥 SUPABASE CONFIG
-    // ============================================
     const SUPABASE_URL = 'https://pvtoczsnwamailsjjnfn.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2dG9jenNud2FtYWlsc2pqbmZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NjE1MTksImV4cCI6MjA4MzEzNzUxOX0.3mDZ3RUo7aHi25r1X1axYj0EppgXFKEY7xGvqdhDSbM';
 
     window.supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ============================================
-    // 🍞 TOAST NOTIFICATIONS
-    // ============================================
     function showToast(message, type = 'info') {
       const toast = document.createElement('div');
       toast.className = `toast toast-${type}`;
@@ -1100,9 +1089,6 @@
       }, 3500);
     }
 
-    // ============================================
-    // 🎨 PARTICLE ANIMATION
-    // ============================================
     const particlesContainer = document.getElementById('particles');
     const particleCount = 40;
 
@@ -1126,9 +1112,6 @@
       particlesContainer.appendChild(particle);
     }
 
-    // ============================================
-    // 💰 UNIQUE AMOUNT GENERATION (CREATOR)
-    // ============================================
     function hbarToTinybars(hbar) {
       return Math.round(Number(hbar) * 100000000);
     }
@@ -1156,9 +1139,6 @@
       return Array.from(arr, x => chars[x % chars.length]).join("");
     }
 
-    // ============================================
-    // 📄 ROUTING: HOME vs /invoice/:slug
-    // ============================================
     function getInvoiceSlugFromUrl() {
       const path = window.location.pathname;
       const match = path.match(/^\/invoice\/([a-zA-Z0-9_-]+)$/);
@@ -1169,9 +1149,6 @@
       return !!getInvoiceSlugFromUrl();
     }
 
-    // ============================================
-    // 📱 STATE
-    // ============================================
     let accountId = null;
     let isWalletConnected = false;
 
@@ -1179,7 +1156,6 @@
     let currentAmount = null;
     let currentInvoiceSlug = null;
 
-    // HOME elements
     const input = document.getElementById('amountInput');
     const connectBtn = document.getElementById('connectBtn');
     const generateBtn = document.getElementById('generateBtn');
@@ -1193,11 +1169,9 @@
     const shareBtn = document.getElementById('shareBtn');
     const createAnotherBtn = document.getElementById('createAnotherBtn');
 
-    // Shared header
     const subtitle = document.getElementById('subtitle');
     const subsubtitle = document.getElementById('subsubtitle');
 
-    // PAYER elements
     const payerSection = document.getElementById('payerSection');
     const payerQrContainer = document.getElementById('payerQrContainer');
     const payerReceiverAccount = document.getElementById('payerReceiverAccount');
@@ -1211,9 +1185,6 @@
     const payerCopyLinkBtn = document.getElementById('payerCopyLinkBtn');
     const payerShareBtn = document.getElementById('payerShareBtn');
 
-    // ============================================
-    // 🎨 VIEW MODES
-    // ============================================
     function enterHomeMode() {
       payerSection.classList.remove('active');
       resultSection.classList.remove('active');
@@ -1221,9 +1192,6 @@
 
       subsubtitle.classList.remove('active');
       subtitle.textContent = 'Create a payment link in seconds';
-
-      // account display only relevant on home
-      // (it will show only if connected)
     }
 
     function enterCreatorResultMode() {
@@ -1236,21 +1204,15 @@
     }
 
     function enterInvoiceMode() {
-      // hide home-only UI
       accountDisplay.classList.remove('active');
       formSection.classList.add('hidden');
       resultSection.classList.remove('active');
 
-      // show payer UI
       payerSection.classList.add('active');
 
-      // invoice header text
       subsubtitle.classList.add('active');
     }
 
-    // ============================================
-    // ✅ PAYER: render invoice UI
-    // ============================================
     async function renderQrInto(containerEl, url) {
       containerEl.innerHTML = '';
 
@@ -1277,7 +1239,6 @@
         canvas.style.borderRadius = '8px';
         containerEl.appendChild(canvas);
 
-        // optional center logo
         const ctx = canvas.getContext('2d');
         const logo = new Image();
         logo.src = `${window.location.origin}/qr_logo.png?v=2`;
@@ -1304,7 +1265,6 @@
     }
 
     function setPayerStatus(text, type = 'default') {
-      // 🔥 FIX #3: Remove hidden class when showing status
       payerStatus.classList.remove('payer-status-hidden');
       payerStatus.textContent = text;
       payerStatus.classList.remove('paid', 'warn');
@@ -1330,13 +1290,11 @@
       try {
         enterInvoiceMode();
 
-        // reset UI
         payerReceiverAccount.textContent = 'Loading...';
         payerUsdAmount.textContent = '...';
         payerHbarAmount.textContent = '...';
         payerHbarLine.style.display = 'none';
         
-        // 🔥 FIX #3: Keep status hidden initially
         payerStatus.classList.add('payer-status-hidden');
 
         const inv = await loadInvoice(slug);
@@ -1345,31 +1303,26 @@
         currentPaymentLink = invoiceUrl;
         currentAmount = inv.requested_amount_hbar;
 
-        // 🔥 FIX #1: Changed subtitle to just "Send securely via HashPack"
-        subtitle.textContent = `$${inv.requested_amount_hbar} USD worth of HBAR`;
+        // 🔥 FIX: Set subtitle to just "Send securely via HashPack"
+        subtitle.textContent = 'Send securely via HashPack';
 
         payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
         payerUsdAmount.textContent = inv.requested_amount_hbar;
 
-        // Optional exact HBAR line (you can enable by toggling display)
         if (inv.amount_hbar != null) {
           payerHbarAmount.textContent = Number(inv.amount_hbar).toFixed(7);
-          // If you want it visible, set to 'flex'
           payerHbarLine.style.display = 'none';
         }
 
         await renderQrInto(payerQrContainer, invoiceUrl);
 
-        // 🔥 FIX #3: Only show status if already paid
         if (inv.status === 'paid') {
           setPayerStatus('✅ PAID — Payment confirmed on Hedera!', 'paid');
         }
-        // Otherwise status stays hidden
 
       } catch (err) {
         console.error(err);
         showToast('Invoice not found', 'error');
-        // fallback to home
         enterHomeMode();
       }
     }
@@ -1410,11 +1363,7 @@
     }
 
     function payNowPlaceholder() {
-      // Placeholder only (backend + deep link later)
       showToast('Opening wallet… (placeholder)', 'info');
-
-      // Optional: you can try a simple HashPack website open
-      // window.open('https://www.hashpack.app/', '_blank');
     }
 
     async function copyText(text, successMsg = 'Copied!') {
@@ -1448,9 +1397,6 @@
       }
     }
 
-    // ============================================
-    // 🔍 CREATOR AUTO POLLING (HOME RESULT ONLY)
-    // ============================================
     let pollTimer = null;
 
     async function startCreatorPolling(invoice) {
@@ -1490,9 +1436,6 @@
       pollTimer = setInterval(checkOnce, 4000);
     }
 
-    // ============================================
-    // 🔐 WALLET CONNECTION (CREATOR HOME ONLY)
-    // ============================================
     async function connectWallet() {
       if (isInvoicePage()) {
         showToast('Wallet connection is not required on invoice page', 'info');
@@ -1542,7 +1485,6 @@
 
       accountDisplay.classList.remove('active');
 
-      // reset home UI
       showFormView();
 
       generateBtn.disabled = true;
@@ -1554,9 +1496,6 @@
 
     window.disconnectWallet = disconnectWallet;
 
-    // ============================================
-    // 🔗 GENERATE PAYMENT LINK (CREATOR)
-    // ============================================
     async function generatePaymentLink() {
       const requestedAmount = Number(input.value);
 
@@ -1598,18 +1537,14 @@
         document.getElementById('usdAmount').textContent = requestedAmount;
         document.getElementById('hbarAmount').textContent = Number(amount_hbar).toFixed(7);
 
-        // creator result UI
         enterCreatorResultMode();
 
-        // put link into hidden display (used for copy/share)
         linkDisplay.textContent = paymentLink;
 
-        // render QR
         await renderQrInto(qrContainer, paymentLink);
 
         showToast("Invoice created! 🎉", "success");
 
-        // creator can keep auto polling
         await startCreatorPolling({
           slug: data.slug
         });
@@ -1622,11 +1557,7 @@
       }
     }
 
-    // ============================================
-    // 🎨 HOME VIEW HELPERS
-    // ============================================
     function showFormView() {
-      // clear creator poll
       if (pollTimer) {
         clearInterval(pollTimer);
         pollTimer = null;
@@ -1662,9 +1593,6 @@
       }
     }
 
-    // ============================================
-    // ⌨️ TYPING PLACEHOLDER ANIMATION (HOME)
-    // ============================================
     const placeholderText = '$50';
     let charIndex = 0;
     let isTyping = true;
@@ -1698,22 +1626,17 @@
     setTimeout(typePlaceholder, 500);
     input.addEventListener('focus', () => { if (!input.value) input.placeholder = '$50'; });
 
-    // ============================================
-    // 🎯 EVENT LISTENERS
-    // ============================================
     connectBtn.addEventListener('click', connectWallet);
     generateBtn.addEventListener('click', generatePaymentLink);
     createAnotherBtn.addEventListener('click', createAnother);
     input.addEventListener('input', updateGenerateButton);
 
-    // creator result actions
     copyBtn.addEventListener('click', async () => {
       if (!currentPaymentLink) return;
       await copyText(currentPaymentLink, 'Link copied!');
     });
     shareBtn.addEventListener('click', shareCurrentLink);
 
-    // payer actions
     copyReceiverBtn.addEventListener('click', async () => {
       const acct = payerReceiverAccount.textContent?.trim();
       if (!acct || acct === 'Loading...') return;
@@ -1733,22 +1656,16 @@
 
     payerShareBtn.addEventListener('click', shareCurrentLink);
 
-    // ============================================
-    // 🔄 ON LOAD: route + restore session (HOME ONLY)
-    // ============================================
     window.addEventListener('load', async () => {
       const slug = getInvoiceSlugFromUrl();
 
       if (slug) {
-        // INVOICE PAGE: payer UI only (NO auto polling loop; button checks only)
         await loadInvoiceAndRenderPayer(slug);
         return;
       }
 
-      // HOME PAGE default
       enterHomeMode();
 
-      // restore wallet session on home only
       try {
         if (window.hederaConnect && window.hederaConnect.dAppConnector) {
           const existingSessions = window.hederaConnect.dAppConnector.walletConnectClient?.session?.getAll() ?? [];
