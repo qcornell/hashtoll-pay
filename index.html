@@ -121,9 +121,18 @@
             margin: 20px;
         }
 
+        /* 🔥 Tighter spacing for invoice view */
+        body.invoice-view .ht-card {
+            padding: 30px 40px 40px 40px;
+        }
+
         .ht-logo-area {
             margin-bottom: 35px;
             transition: all 0.3s ease;
+        }
+
+        body.invoice-view .ht-logo-area {
+            margin-bottom: 20px;
         }
 
         .ht-title {
@@ -147,6 +156,10 @@
             color: var(--ht-text-muted);
             font-size: 0.95rem;
             font-weight: 400;
+        }
+
+        body.invoice-view .ht-subtitle {
+            margin-bottom: 12px;
         }
 
         /* 🔥 Modern Account Display */
@@ -304,6 +317,12 @@
             max-width: 100%;
         }
 
+        /* 🔥 Smaller QR on invoice view */
+        body.invoice-view .ht-qr-container {
+            padding: 12px;
+            margin: 12px auto;
+        }
+
         .ht-qr-container canvas {
             border-radius: 8px;
             display: block;
@@ -320,6 +339,11 @@
             line-height: 1.4;
         }
 
+        body.invoice-view .ht-usd-display {
+            margin: 0 0 12px 0;
+            font-size: 0.95rem;
+        }
+
         /* 🔥 HBAR Amount Display */
         .ht-amount-box {
             background: linear-gradient(135deg, rgba(56, 181, 196, 0.08) 0%, rgba(38, 177, 129, 0.08) 100%);
@@ -330,11 +354,21 @@
             text-align: center;
         }
 
+        body.invoice-view .ht-amount-box {
+            padding: 12px 16px;
+            margin: 12px 0;
+        }
+
         .ht-amount-label {
             font-size: 0.85rem;
             color: rgba(255, 255, 255, 0.6);
             margin-bottom: 6px;
             font-weight: 500;
+        }
+
+        body.invoice-view .ht-amount-label {
+            font-size: 0.8rem;
+            margin-bottom: 4px;
         }
 
         .ht-amount-value {
@@ -345,7 +379,11 @@
             letter-spacing: -0.01em;
         }
 
-        /* ✅ Receiver account row (matches your screenshot placement) */
+        body.invoice-view .ht-amount-value {
+            font-size: 1.25rem;
+        }
+
+        /* ✅ Receiver account row */
         .ht-receiver-row {
             display: none;
             align-items: center;
@@ -360,6 +398,11 @@
             -webkit-backdrop-filter: blur(10px);
         }
 
+        body.invoice-view .ht-receiver-row {
+            margin: 8px 0 10px 0;
+            padding: 8px 12px;
+        }
+
         .ht-receiver-icon {
             opacity: 0.85;
             font-size: 0.95rem;
@@ -371,6 +414,10 @@
             letter-spacing: 0.01em;
             color: rgba(255, 255, 255, 0.92);
             font-size: 0.9rem;
+        }
+
+        body.invoice-view .ht-receiver-account {
+            font-size: 0.85rem;
         }
 
         .ht-receiver-copy {
@@ -405,6 +452,12 @@
             gap: 8px;
         }
 
+        body.invoice-view .ht-status {
+            padding: 10px 14px;
+            margin: 0 0 12px 0;
+            font-size: 0.85rem;
+        }
+
         .ht-status.paid {
             background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15));
             color: #10b981;
@@ -430,6 +483,10 @@
             display: flex;
             gap: 10px;
             margin-top: 16px;
+        }
+
+        body.invoice-view .ht-action-buttons {
+            margin-top: 10px;
         }
 
         .ht-action-buttons button {
@@ -589,6 +646,11 @@
             margin-bottom: 0;
         }
 
+        body.invoice-view .ht-btn-small {
+            padding: 11px 14px;
+            font-size: 0.85rem;
+        }
+
         .ht-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
@@ -716,8 +778,16 @@
                 border-radius: 20px;
             }
 
+            body.invoice-view .ht-card {
+                padding: 20px 20px 30px 20px;
+            }
+
             .ht-logo-area {
                 margin-bottom: 25px;
+            }
+
+            body.invoice-view .ht-logo-area {
+                margin-bottom: 15px;
             }
 
             .ht-title img {
@@ -767,6 +837,10 @@
                 max-width: 280px;
             }
 
+            body.invoice-view .ht-qr-container {
+                max-width: 220px;
+            }
+
             .ht-qr-container canvas {
                 width: 100% !important;
             }
@@ -777,6 +851,10 @@
 
             .ht-amount-value {
                 font-size: 1.2rem;
+            }
+
+            body.invoice-view .ht-amount-value {
+                font-size: 1.1rem;
             }
 
             .ht-receiver-account {
@@ -1208,7 +1286,7 @@
                     }
                 };
 
-                showResultView(invoiceUrl);
+                showResultView(invoiceUrl, true);
 
                 if (data.status === "paid") {
                     const payStatus = document.getElementById("payStatus");
@@ -1458,7 +1536,7 @@
                 document.getElementById('usdAmountLabel').textContent = requestedAmount;
                 document.getElementById('hbarAmount').textContent = amount_hbar;
 
-                showResultView(paymentLink);
+                showResultView(paymentLink, false);
                 showToast("Invoice created! 🎉", "success");
 
                 await startPaymentPolling({
@@ -1496,7 +1574,7 @@
             updateGenerateButton();
         }
 
-        function showResultView(paymentLink) {
+        function showResultView(paymentLink, isInvoiceView = false) {
             formSection.classList.add('hidden');
             subtitle.textContent = 'Your payment link is ready!';
             linkDisplay.textContent = paymentLink;
@@ -1509,8 +1587,14 @@
                 return;
             }
             
+            // 🔥 Smaller QR for invoice view
             const isMobile = window.innerWidth <= 500;
-            const qrSize = isMobile ? Math.min(240, window.innerWidth - 100) : 240;
+            let qrSize;
+            if (isInvoiceView) {
+                qrSize = isMobile ? 180 : 200;
+            } else {
+                qrSize = isMobile ? Math.min(240, window.innerWidth - 100) : 240;
+            }
             
             window.QRCode.toCanvas(paymentLink, { 
                 width: qrSize, 
