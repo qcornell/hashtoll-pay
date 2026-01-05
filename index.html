@@ -306,35 +306,66 @@
             height: auto !important;
         }
 
-        /* 🔥 NEW: Amount Display */
-        .ht-amount-display {
+        /* 🔥 USD Amount Display */
+        .ht-usd-display {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--ht-text-white);
+            margin: 20px 0 10px 0;
+            text-shadow: 0 2px 8px rgba(255, 255, 255, 0.2);
+        }
+
+        /* 🔥 Receiver Account Display */
+        .ht-receiver-display {
             background: linear-gradient(135deg, rgba(56, 181, 196, 0.08) 0%, rgba(38, 177, 129, 0.08) 100%);
             border: 1px solid rgba(56, 181, 196, 0.25);
             border-radius: var(--ht-radius);
-            padding: 20px;
-            margin: 20px 0;
-            text-align: center;
+            padding: 14px 16px;
+            margin: 16px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
         }
 
-        .ht-btn-copy-amount {
-            margin-top: 8px;
-            padding: 8px 16px;
-            background: rgba(255,255,255,0.08);
+        .ht-receiver-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+
+        .ht-receiver-account {
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            color: var(--ht-success-green);
+            font-weight: 600;
+            flex: 1;
+            word-break: break-all;
+            text-align: right;
+        }
+
+        .ht-receiver-copy {
+            background: rgba(255,255,255,0.06);
             border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 8px;
-            color: rgba(255,255,255,0.8);
+            border-radius: 6px;
+            color: rgba(255,255,255,0.7);
             cursor: pointer;
-            font-size: 0.75rem;
+            font-size: 0.85rem;
+            padding: 6px 10px;
             transition: all 0.2s;
+            flex-shrink: 0;
         }
 
-        .ht-btn-copy-amount:hover {
-            background: rgba(255,255,255,0.12);
+        .ht-receiver-copy:hover {
+            background: rgba(255,255,255,0.1);
             border-color: rgba(255,255,255,0.25);
             color: #ffffff;
         }
 
-        .ht-btn-copy-amount:active {
+        .ht-receiver-copy:active {
             transform: scale(0.95);
         }
 
@@ -350,6 +381,7 @@
             word-break: break-all;
             text-align: center;
             line-height: 1.4;
+            display: none; /* Hidden by default, shown via Share */
         }
 
         .ht-action-buttons {
@@ -697,6 +729,22 @@
                 width: 100% !important;
             }
 
+            .ht-usd-display {
+                font-size: 1.5rem;
+            }
+
+            .ht-receiver-display {
+                padding: 12px 14px;
+                flex-direction: column;
+                text-align: center;
+                gap: 8px;
+            }
+
+            .ht-receiver-account {
+                text-align: center;
+                font-size: 0.85rem;
+            }
+
             .ht-link-display {
                 font-size: 0.72rem;
                 padding: 12px;
@@ -764,8 +812,8 @@
         <!-- Form Section -->
         <div class="ht-form-section" id="formSection">
             <div class="ht-input-group">
-                <label class="ht-label">Amount (HBAR)</label>
-                <input type="number" class="ht-input" id="amountInput" placeholder="Enter Amount..." step="0.01" min="0">
+                <label class="ht-label">USD Amount (converted to HBAR)</label>
+                <input type="number" class="ht-input" id="amountInput" placeholder="$50" step="0.01" min="0">
             </div>
 
             <button class="ht-btn ht-btn-primary" id="connectBtn">Connect Wallet</button>
@@ -774,29 +822,26 @@
 
         <!-- Result Section -->
         <div class="ht-result-section" id="resultSection">
-            <div class="ht-qr-container" id="qrContainer"></div>
-            
-            <!-- 🔥 NEW: Amount Display -->
-            <div class="ht-amount-display" id="amountDisplay" style="display:none;">
-                <div style="font-size: 0.75rem; opacity: 0.7; margin-bottom: 4px;">
-                    SEND EXACTLY
-                </div>
-                <div style="font-size: 1.8rem; font-weight: 700; color: var(--ht-success-green); font-family: 'Courier New', monospace; letter-spacing: -0.02em;">
-                    <span id="exactAmount">0.00000000</span> HBAR
-                </div>
-                <button class="ht-btn-copy-amount" id="copyAmountBtn">
-                    📋 Copy Amount
-                </button>
+            <div class="ht-usd-display" id="usdDisplay">
+                Send <span id="usdAmount">$50</span> worth of HBAR via HashToll.
             </div>
 
-            <!-- 🔥 NEW: Payment Status -->
+            <div class="ht-qr-container" id="qrContainer"></div>
+            
+            <!-- 🔥 Receiver Account Display -->
+            <div class="ht-receiver-display">
+                <span class="ht-receiver-label">📋 Send to</span>
+                <span class="ht-receiver-account" id="receiverAccount">0.0.2155987</span>
+                <button class="ht-receiver-copy" id="copyAccountBtn">Copy</button>
+            </div>
+
+            <!-- 🔥 Payment Status -->
             <div id="payStatus" style="margin-top: 16px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 10px; font-weight: 600; font-size: 0.9rem;">
                 ⏳ Waiting for payment...
             </div>
             
-            <div class="ht-link-display" id="linkDisplay">
-                <!-- Link will be inserted here -->
-            </div>
+            <!-- Hidden link display for share functionality -->
+            <div class="ht-link-display" id="linkDisplay"></div>
 
             <div class="ht-action-buttons">
                 <button class="ht-btn ht-btn-action ht-btn-small" id="copyBtn">
@@ -809,7 +854,7 @@
 
             <div class="ht-action-buttons" style="margin-top: 8px;">
                 <button class="ht-btn ht-btn-secondary ht-btn-small" id="createAnotherBtn">
-                    ← Create Another
+                    + New Link
                 </button>
                 <button class="ht-btn ht-btn-secondary ht-btn-small" id="doneBtn">
                     ✓ Done
@@ -1035,12 +1080,11 @@
                 try {
                     const res = await fetch('https://pvtoczsnwamailsjjnfn.supabase.co/functions/v1/mark-paid', {
                         method: 'POST',
-                      headers: {
-                      "Content-Type": "application/json",
-                      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-                      "apikey": SUPABASE_ANON_KEY
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+                            "apikey": SUPABASE_ANON_KEY
                         },
-
                         body: JSON.stringify({ slug: invoice.slug })
                     });
 
@@ -1100,27 +1144,14 @@
 
                 linkDisplay.textContent = invoiceUrl;
                 currentPaymentLink = invoiceUrl;
-                currentAmount = data.amount_hbar;
+                currentAmount = data.requested_amount_hbar; // Use USD amount
+                currentReceiverAccount = data.receiver_account;
 
-                // 🔥 Show exact amount
-                const amountDisplay = document.getElementById('amountDisplay');
-                const exactAmount = document.getElementById('exactAmount');
-                const copyAmountBtn = document.getElementById('copyAmountBtn');
-                
-                amountDisplay.style.display = 'block';
-                exactAmount.textContent = Number(data.amount_hbar).toFixed(8);
+                // Show USD amount
+                document.getElementById('usdAmount').textContent = '$' + data.requested_amount_hbar;
 
-                copyAmountBtn.onclick = async () => {
-                    try {
-                        await navigator.clipboard.writeText(data.amount_hbar.toString());
-                        const orig = copyAmountBtn.textContent;
-                        copyAmountBtn.textContent = '✓ Copied!';
-                        setTimeout(() => copyAmountBtn.textContent = orig, 2000);
-                        showToast('Amount copied!', 'success');
-                    } catch (e) {
-                        showToast('Failed to copy', 'error');
-                    }
-                };
+                // Show receiver account
+                document.getElementById('receiverAccount').textContent = data.receiver_account;
 
                 showResultView(invoiceUrl);
 
@@ -1173,6 +1204,7 @@
         let isWalletConnected = false;
         let currentPaymentLink = null;
         let currentAmount = null;
+        let currentReceiverAccount = null;
 
         const input = document.getElementById('amountInput');
         const connectBtn = document.getElementById('connectBtn');
@@ -1188,6 +1220,7 @@
         const createAnotherBtn = document.getElementById('createAnotherBtn');
         const doneBtn = document.getElementById('doneBtn');
         const subtitle = document.getElementById('subtitle');
+        const copyAccountBtn = document.getElementById('copyAccountBtn');
 
         // ============================================
         // 🍞 TOAST NOTIFICATIONS
@@ -1223,7 +1256,7 @@
         // ============================================
         // ⌨️ TYPING PLACEHOLDER ANIMATION
         // ============================================
-        const placeholderText = 'Enter Amount...';
+        const placeholderText = '$50';
         let charIndex = 0;
         let isTyping = true;
 
@@ -1257,7 +1290,7 @@
 
         input.addEventListener('focus', () => {
             if (!input.value) {
-                input.placeholder = 'Enter amount...';
+                input.placeholder = '$50';
             }
         });
 
@@ -1346,7 +1379,8 @@
                 generateBtn.innerHTML = '<span class="spinner"></span>Generating...';
                 generateBtn.disabled = true;
 
-                // 🔥 Generate unique amount
+                // 🔥 Generate unique amount (treating input as HBAR equivalent for now)
+                // In production, you'd fetch real-time USD->HBAR conversion rate
                 const { requested_amount_hbar, amount_hbar, amount_tinybars } = 
                     makeUniquePayAmount(requestedAmount);
 
@@ -1368,27 +1402,14 @@
 
                 const paymentLink = `${window.location.origin}/invoice/${data.slug}`;
                 currentPaymentLink = paymentLink;
-                currentAmount = amount_hbar;
+                currentAmount = requestedAmount;
+                currentReceiverAccount = accountId;
 
-                // 🔥 Show exact amount
-                const amountDisplay = document.getElementById('amountDisplay');
-                const exactAmount = document.getElementById('exactAmount');
-                const copyAmountBtn = document.getElementById('copyAmountBtn');
-                
-                amountDisplay.style.display = 'block';
-                exactAmount.textContent = Number(amount_hbar).toFixed(8);
+                // Show USD amount
+                document.getElementById('usdAmount').textContent = '$' + requestedAmount;
 
-                copyAmountBtn.onclick = async () => {
-                    try {
-                        await navigator.clipboard.writeText(amount_hbar.toString());
-                        const orig = copyAmountBtn.textContent;
-                        copyAmountBtn.textContent = '✓ Copied!';
-                        setTimeout(() => copyAmountBtn.textContent = orig, 2000);
-                        showToast('Amount copied!', 'success');
-                    } catch (e) {
-                        showToast('Failed to copy', 'error');
-                    }
-                };
+                // Show receiver account
+                document.getElementById('receiverAccount').textContent = accountId;
 
                 showResultView(paymentLink);
                 showToast("Invoice created! 🎉", "success");
@@ -1417,7 +1438,6 @@
             resultSection.classList.remove('active');
             subtitle.textContent = 'Create a payment link in seconds';
             
-            document.getElementById('amountDisplay').style.display = 'none';
             document.getElementById('payStatus').textContent = '⏳ Waiting for payment...';
             
             generateBtn.innerHTML = 'Generate Payment Link';
@@ -1508,14 +1528,33 @@
             }
         }
 
+        async function copyAccount() {
+            if (!currentReceiverAccount) return;
+            
+            try {
+                await navigator.clipboard.writeText(currentReceiverAccount);
+                const originalText = copyAccountBtn.textContent;
+                copyAccountBtn.textContent = '✓';
+                
+                setTimeout(() => {
+                    copyAccountBtn.textContent = originalText;
+                }, 2000);
+                
+                showToast('Account ID copied!', 'success');
+            } catch (error) {
+                console.error('Copy failed:', error);
+                showToast('Failed to copy', 'error');
+            }
+        }
+
         async function shareLink() {
             if (!currentPaymentLink) return;
             
             if (navigator.share) {
                 try {
                     await navigator.share({
-                        title: `Send me ${currentAmount} HBAR`,
-                        text: `Pay me ${currentAmount} HBAR with HashToll:`,
+                        title: `Send me $${currentAmount} in HBAR`,
+                        text: `Pay me $${currentAmount} worth of HBAR with HashToll:`,
                         url: currentPaymentLink
                     });
                     showToast('Shared successfully!', 'success');
@@ -1535,6 +1574,7 @@
             input.value = '';
             currentPaymentLink = null;
             currentAmount = null;
+            currentReceiverAccount = null;
             
             if (pollTimer) {
                 clearInterval(pollTimer);
@@ -1568,6 +1608,7 @@
         connectBtn.addEventListener('click', connectWallet);
         generateBtn.addEventListener('click', generatePaymentLink);
         copyBtn.addEventListener('click', copyLink);
+        copyAccountBtn.addEventListener('click', copyAccount);
         shareBtn.addEventListener('click', shareLink);
         createAnotherBtn.addEventListener('click', createAnother);
         doneBtn.addEventListener('click', done);
