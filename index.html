@@ -168,6 +168,11 @@
             display: flex;
         }
 
+        /* Hide account display on invoice view */
+        body.invoice-view .ht-account-display {
+            display: none !important;
+        }
+
         .ht-account-id {
             font-family: 'Courier New', monospace;
             font-size: 1.05rem;
@@ -308,65 +313,64 @@
 
         /* 🔥 USD Amount Display */
         .ht-usd-display {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: var(--ht-text-white);
-            margin: 20px 0 10px 0;
-            text-shadow: 0 2px 8px rgba(255, 255, 255, 0.2);
+            font-size: 1.05rem;
+            font-weight: 400;
+            color: var(--ht-text-muted);
+            margin: 0 0 20px 0;
+            line-height: 1.4;
         }
 
-        /* 🔥 Receiver Account Display */
-        .ht-receiver-display {
+        /* 🔥 HBAR Amount Display - Like image 3 */
+        .ht-amount-box {
             background: linear-gradient(135deg, rgba(56, 181, 196, 0.08) 0%, rgba(38, 177, 129, 0.08) 100%);
             border: 1px solid rgba(56, 181, 196, 0.25);
             border-radius: var(--ht-radius);
-            padding: 14px 16px;
-            margin: 16px 0;
+            padding: 16px 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .ht-amount-label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .ht-amount-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--ht-text-white);
+            font-family: 'Courier New', monospace;
+            letter-spacing: -0.01em;
+        }
+
+        .ht-amount-hbar {
+            font-size: 1rem;
+            margin-left: 6px;
+            font-weight: 600;
+            opacity: 0.9;
+        }
+
+        /* 🔥 Payment Status - Simplified */
+        .ht-status {
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--ht-radius);
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 20px 0;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 10px;
+            justify-content: center;
+            gap: 8px;
         }
 
-        .ht-receiver-label {
-            font-size: 0.7rem;
+        .ht-status.paid {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15));
+            color: #10b981;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.5);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            flex-shrink: 0;
-        }
-
-        .ht-receiver-account {
-            font-family: 'Courier New', monospace;
-            font-size: 0.95rem;
-            color: var(--ht-success-green);
-            font-weight: 600;
-            flex: 1;
-            word-break: break-all;
-            text-align: right;
-        }
-
-        .ht-receiver-copy {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 6px;
-            color: rgba(255,255,255,0.7);
-            cursor: pointer;
-            font-size: 0.85rem;
-            padding: 6px 10px;
-            transition: all 0.2s;
-            flex-shrink: 0;
-        }
-
-        .ht-receiver-copy:hover {
-            background: rgba(255,255,255,0.1);
-            border-color: rgba(255,255,255,0.25);
-            color: #ffffff;
-        }
-
-        .ht-receiver-copy:active {
-            transform: scale(0.95);
         }
 
         .ht-link-display {
@@ -381,7 +385,7 @@
             word-break: break-all;
             text-align: center;
             line-height: 1.4;
-            display: none; /* Hidden by default, shown via Share */
+            display: none;
         }
 
         .ht-action-buttons {
@@ -730,19 +734,11 @@
             }
 
             .ht-usd-display {
-                font-size: 1.5rem;
+                font-size: 0.95rem;
             }
 
-            .ht-receiver-display {
-                padding: 12px 14px;
-                flex-direction: column;
-                text-align: center;
-                gap: 8px;
-            }
-
-            .ht-receiver-account {
-                text-align: center;
-                font-size: 0.85rem;
+            .ht-amount-value {
+                font-size: 1.2rem;
             }
 
             .ht-link-display {
@@ -828,16 +824,17 @@
 
             <div class="ht-qr-container" id="qrContainer"></div>
             
-            <!-- 🔥 Receiver Account Display -->
-            <div class="ht-receiver-display">
-                <span class="ht-receiver-label">📋 Send to</span>
-                <span class="ht-receiver-account" id="receiverAccount">0.0.2155987</span>
-                <button class="ht-receiver-copy" id="copyAccountBtn">Copy</button>
+            <!-- 🔥 HBAR Amount Display -->
+            <div class="ht-amount-box">
+                <div class="ht-amount-label">$<span id="usdAmountLabel">50</span> USD worth of HBAR</div>
+                <div class="ht-amount-value">
+                    ℏ <span id="hbarAmount">0.2155987</span>
+                </div>
             </div>
 
             <!-- 🔥 Payment Status -->
-            <div id="payStatus" style="margin-top: 16px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 10px; font-weight: 600; font-size: 0.9rem;">
-                ⏳ Waiting for payment...
+            <div class="ht-status" id="payStatus">
+                👤 Waiting for payment...
             </div>
             
             <!-- Hidden link display for share functionality -->
@@ -852,14 +849,9 @@
                 </button>
             </div>
 
-            <div class="ht-action-buttons" style="margin-top: 8px;">
-                <button class="ht-btn ht-btn-secondary ht-btn-small" id="createAnotherBtn">
-                    + New Link
-                </button>
-                <button class="ht-btn ht-btn-secondary ht-btn-small" id="doneBtn">
-                    ✓ Done
-                </button>
-            </div>
+            <button class="ht-btn ht-btn-secondary ht-btn-small" id="createAnotherBtn" style="margin-top: 8px;">
+                + New Link
+            </button>
         </div>
     </div>
 
@@ -1045,7 +1037,7 @@
 
         function makeUniquePayAmount(requestedHbar) {
             const baseTb = hbarToTinybars(requestedHbar);
-            const tagTb = Math.floor(50 + Math.random() * 4950); // 50-5000 tinybars
+            const tagTb = Math.floor(50 + Math.random() * 4950);
             const payTb = baseTb + tagTb;
             
             return {
@@ -1063,16 +1055,14 @@
         }
 
         // ============================================
-        // 🔍 PAYMENT POLLING (USING EDGE FUNCTION)
+        // 🔍 PAYMENT POLLING
         // ============================================
         let pollTimer = null;
 
         async function startPaymentPolling(invoice) {
             const payStatus = document.getElementById("payStatus");
             payStatus.textContent = "⏳ Waiting for payment confirmation...";
-            payStatus.style.background = "rgba(255,255,255,0.05)";
-            payStatus.style.color = "rgba(255,255,255,0.85)";
-            payStatus.style.borderLeft = "3px solid rgba(255,255,255,0.2)";
+            payStatus.classList.remove('paid');
 
             if (pollTimer) clearInterval(pollTimer);
 
@@ -1092,27 +1082,18 @@
 
                     if (result.status === 'paid') {
                         payStatus.textContent = "✅ PAID — Payment confirmed on Hedera!";
-                        payStatus.style.background = "linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15))";
-                        payStatus.style.color = "#10b981";
-                        payStatus.style.borderLeft = "3px solid #10b981";
-
+                        payStatus.classList.add('paid');
                         showToast("Payment confirmed! 🎉", "success");
-
                         clearInterval(pollTimer);
                         pollTimer = null;
-                    } else {
-                        payStatus.textContent = "⚡ Checking blockchain...";
-                        payStatus.style.color = "rgba(255,255,255,0.75)";
                     }
                 } catch (err) {
                     console.warn("Poll error:", err);
-                    payStatus.textContent = "⚠️ Verification in progress...";
-                    payStatus.style.color = "rgba(255,255,255,0.65)";
                 }
             }
 
             await checkOnce();
-            pollTimer = setInterval(checkOnce, 4000); // Check every 4 seconds
+            pollTimer = setInterval(checkOnce, 4000);
         }
 
         // ============================================
@@ -1128,9 +1109,12 @@
             const slug = getInvoiceSlugFromUrl();
             if (!slug) return;
 
+            // Mark as invoice view to hide account display
+            document.body.classList.add('invoice-view');
+
             try {
                 formSection.classList.add("hidden");
-                subtitle.textContent = "Payment Invoice";
+                subtitle.textContent = "Send $50 worth of HBAR via HashToll.";
 
                 const { data, error } = await window.supabaseClient
                     .from("invoices")
@@ -1144,22 +1128,24 @@
 
                 linkDisplay.textContent = invoiceUrl;
                 currentPaymentLink = invoiceUrl;
-                currentAmount = data.requested_amount_hbar; // Use USD amount
-                currentReceiverAccount = data.receiver_account;
+                currentAmount = data.requested_amount_hbar;
+
+                // Update subtitle with actual amount
+                subtitle.textContent = `Send $${data.requested_amount_hbar} worth of HBAR via HashToll.`;
 
                 // Show USD amount
                 document.getElementById('usdAmount').textContent = '$' + data.requested_amount_hbar;
-
-                // Show receiver account
-                document.getElementById('receiverAccount').textContent = data.receiver_account;
+                document.getElementById('usdAmountLabel').textContent = data.requested_amount_hbar;
+                
+                // Show HBAR amount
+                document.getElementById('hbarAmount').textContent = data.amount_hbar;
 
                 showResultView(invoiceUrl);
 
                 if (data.status === "paid") {
+                    const payStatus = document.getElementById("payStatus");
                     payStatus.textContent = "✅ PAID — Payment confirmed on Hedera";
-                    payStatus.style.background = "linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15))";
-                    payStatus.style.color = "#10b981";
-                    payStatus.style.borderLeft = "3px solid #10b981";
+                    payStatus.classList.add('paid');
                 } else {
                     await startPaymentPolling(data);
                 }
@@ -1204,7 +1190,6 @@
         let isWalletConnected = false;
         let currentPaymentLink = null;
         let currentAmount = null;
-        let currentReceiverAccount = null;
 
         const input = document.getElementById('amountInput');
         const connectBtn = document.getElementById('connectBtn');
@@ -1218,9 +1203,7 @@
         const copyBtn = document.getElementById('copyBtn');
         const shareBtn = document.getElementById('shareBtn');
         const createAnotherBtn = document.getElementById('createAnotherBtn');
-        const doneBtn = document.getElementById('doneBtn');
         const subtitle = document.getElementById('subtitle');
-        const copyAccountBtn = document.getElementById('copyAccountBtn');
 
         // ============================================
         // 🍞 TOAST NOTIFICATIONS
@@ -1360,7 +1343,7 @@
         window.disconnectWallet = disconnectWallet;
 
         // ============================================
-        // 🔗 GENERATE PAYMENT LINK (WITH UNIQUE AMOUNTS)
+        // 🔗 GENERATE PAYMENT LINK
         // ============================================
         async function generatePaymentLink() {
             const requestedAmount = Number(input.value);
@@ -1379,8 +1362,6 @@
                 generateBtn.innerHTML = '<span class="spinner"></span>Generating...';
                 generateBtn.disabled = true;
 
-                // 🔥 Generate unique amount (treating input as HBAR equivalent for now)
-                // In production, you'd fetch real-time USD->HBAR conversion rate
                 const { requested_amount_hbar, amount_hbar, amount_tinybars } = 
                     makeUniquePayAmount(requestedAmount);
 
@@ -1403,18 +1384,15 @@
                 const paymentLink = `${window.location.origin}/invoice/${data.slug}`;
                 currentPaymentLink = paymentLink;
                 currentAmount = requestedAmount;
-                currentReceiverAccount = accountId;
 
-                // Show USD amount
+                // Update amounts
                 document.getElementById('usdAmount').textContent = '$' + requestedAmount;
-
-                // Show receiver account
-                document.getElementById('receiverAccount').textContent = accountId;
+                document.getElementById('usdAmountLabel').textContent = requestedAmount;
+                document.getElementById('hbarAmount').textContent = amount_hbar;
 
                 showResultView(paymentLink);
                 showToast("Invoice created! 🎉", "success");
 
-                // 🔥 Start polling for payment
                 await startPaymentPolling({
                     slug: data.slug,
                     receiver_account: accountId,
@@ -1434,11 +1412,14 @@
         // 🎨 VIEW MANAGEMENT
         // ============================================
         function showFormView() {
+            document.body.classList.remove('invoice-view');
             formSection.classList.remove('hidden');
             resultSection.classList.remove('active');
             subtitle.textContent = 'Create a payment link in seconds';
             
-            document.getElementById('payStatus').textContent = '⏳ Waiting for payment...';
+            const payStatus = document.getElementById('payStatus');
+            payStatus.textContent = '👤 Waiting for payment...';
+            payStatus.classList.remove('paid');
             
             generateBtn.innerHTML = 'Generate Payment Link';
             updateGenerateButton();
@@ -1528,25 +1509,6 @@
             }
         }
 
-        async function copyAccount() {
-            if (!currentReceiverAccount) return;
-            
-            try {
-                await navigator.clipboard.writeText(currentReceiverAccount);
-                const originalText = copyAccountBtn.textContent;
-                copyAccountBtn.textContent = '✓';
-                
-                setTimeout(() => {
-                    copyAccountBtn.textContent = originalText;
-                }, 2000);
-                
-                showToast('Account ID copied!', 'success');
-            } catch (error) {
-                console.error('Copy failed:', error);
-                showToast('Failed to copy', 'error');
-            }
-        }
-
         async function shareLink() {
             if (!currentPaymentLink) return;
             
@@ -1574,7 +1536,6 @@
             input.value = '';
             currentPaymentLink = null;
             currentAmount = null;
-            currentReceiverAccount = null;
             
             if (pollTimer) {
                 clearInterval(pollTimer);
@@ -1582,14 +1543,6 @@
             }
             
             showFormView();
-        }
-
-        function done() {
-            showToast('Thanks for using HashToll! 🎉', 'success');
-            
-            setTimeout(() => {
-                createAnother();
-            }, 1500);
         }
 
         function updateGenerateButton() {
@@ -1608,10 +1561,8 @@
         connectBtn.addEventListener('click', connectWallet);
         generateBtn.addEventListener('click', generatePaymentLink);
         copyBtn.addEventListener('click', copyLink);
-        copyAccountBtn.addEventListener('click', copyAccount);
         shareBtn.addEventListener('click', shareLink);
         createAnotherBtn.addEventListener('click', createAnother);
-        doneBtn.addEventListener('click', done);
 
         input.addEventListener('input', updateGenerateButton);
 
@@ -1619,10 +1570,8 @@
         // 🔄 SESSION RESTORE & INVOICE LOAD
         // ============================================
         window.addEventListener('load', async () => {
-            // Check if we're viewing an invoice
             await loadInvoiceIfPresent();
 
-            // Restore wallet session
             try {
                 if (window.hederaConnect && window.hederaConnect.dAppConnector) {
                     const existingSessions = window.hederaConnect.dAppConnector.walletConnectClient?.session?.getAll() ?? [];
