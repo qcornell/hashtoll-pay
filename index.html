@@ -1233,7 +1233,12 @@
     const payerStatus = document.getElementById('payerStatus');
 
    function enterHomeMode() {
-  accountDisplay.classList.add('active');     // ✅ show on wallet connect screen
+  if (isWalletConnected && accountId) {
+    accountDisplay.classList.add('active');
+    accountIdSpan.textContent = accountId; // keep it updated
+  } else {
+    accountDisplay.classList.remove('active');
+  }
   payerSection.classList.remove('active');
   resultSection.classList.remove('active');
   formSection.classList.remove('hidden');
