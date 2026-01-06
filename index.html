@@ -912,7 +912,7 @@
       </div>
 
       <div class="ht-status" id="payStatus">
-        Request pament securely...
+        Request payment securely...
       </div>
 
       <!-- Hidden link display for share functionality -->
@@ -1369,7 +1369,7 @@ function enterInvoiceMode() {
         // ❌ REMOVED: QR code rendering for payer
 
         if (inv.status === 'paid') {
-          setPayerStatus('✅ PAID — Payment confirmed on Hedera!', 'paid');
+          setPayerStatus('✅ PAID — Receiver notified!', 'paid');
         }
 
       } catch (err) {
@@ -1379,14 +1379,15 @@ function enterInvoiceMode() {
       }
     }
 
-    async function checkPaymentOnce(slug) {
+    // ✅ UPDATED: Notify function replaces checkPaymentOnce
+    async function notifyPaidOnce(slug) {
       try {
         iPaidBtn.disabled = true;
-        iPaidBtn.innerHTML = '<span class="spinner"></span>Checking...';
+        iPaidBtn.innerHTML = '<span class="spinner"></span>Notifying...';
 
-        setPayerStatus('⏳ Checking payment...', 'default');
+        setPayerStatus('📩 Notifying receiver...', 'default');
 
-        const res = await fetch('https://pvtoczsnwamailsjjnfn.supabase.co/functions/v1/mark-paid', {
+        const res = await fetch('https://pvtoczsnwamailsjjnfn.supabase.co/functions/v1/notify-paid', {
           method: 'POST',
           headers: {
             "Content-Type": "application/json",
@@ -1397,20 +1398,17 @@ function enterInvoiceMode() {
         });
 
         const result = await res.json();
+        if (!res.ok) throw new Error(result?.error || "Notify failed");
 
-        if (result.status === 'paid') {
-          setPayerStatus('✅ PAID — Payment confirmed on Hedera!', 'paid');
-          showToast('Payment confirmed! 🎉', 'success');
-        } else {
-          setPayerStatus('❌ Not found yet — try again in a few seconds', 'warn');
-        }
+        setPayerStatus('✅ Marked as PAID — receiver notified!', 'paid');
+        showToast('Receiver notified! ✅', 'success');
       } catch (err) {
         console.error(err);
-        setPayerStatus('⚠️ Could not check right now — try again', 'warn');
-        showToast('Check failed', 'error');
+        setPayerStatus('⚠️ Could not notify — try again', 'warn');
+        showToast('Notify failed', 'error');
       } finally {
         iPaidBtn.disabled = false;
-        iPaidBtn.innerHTML = '✅ I Paid (Check Payment)';
+        iPaidBtn.innerHTML = '✅ I Paid (Notify Receiver)';
       }
     }
 
@@ -1451,6 +1449,7 @@ function enterInvoiceMode() {
 
     let pollTimer = null;
 
+    // ✅ UPDATED: Seller polling now checks Supabase directly
     async function startCreatorPolling(invoice) {
       const payStatus = document.getElementById("payStatus");
       payStatus.textContent = "Request payment securely...";
@@ -1460,22 +1459,18 @@ function enterInvoiceMode() {
 
       async function checkOnce() {
         try {
-          const res = await fetch('https://pvtoczsnwamailsjjnfn.supabase.co/functions/v1/mark-paid', {
-            method: 'POST',
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-              "apikey": SUPABASE_ANON_KEY
-            },
-            body: JSON.stringify({ slug: invoice.slug })
-          });
+          const { data, error } = await window.supabaseClient
+            .from("invoices")
+            .select("status")
+            .eq("slug", invoice.slug)
+            .single();
 
-          const result = await res.json();
+          if (error) throw error;
 
-          if (result.status === 'paid') {
-            payStatus.textContent = "✅ PAID — Payment confirmed on Hedera!";
+          if (data?.status === "paid") {
+            payStatus.textContent = "✅ PAID — Receiver notified!";
             payStatus.classList.add('paid');
-            showToast("Payment confirmed! 🎉", "success");
+            showToast("Payment marked paid ✅", "success");
             clearInterval(pollTimer);
             pollTimer = null;
           }
@@ -1485,7 +1480,7 @@ function enterInvoiceMode() {
       }
 
       await checkOnce();
-      pollTimer = setInterval(checkOnce, 4000);
+      pollTimer = setInterval(checkOnce, 2000); // faster feels better
     }
 
     async function connectWallet() {
@@ -1696,9 +1691,11 @@ function enterInvoiceMode() {
     });
 
     payNowBtn.addEventListener('click', payNowPlaceholder);
+    
+    // ✅ UPDATED: Use notifyPaidOnce instead of checkPaymentOnce
     iPaidBtn.addEventListener('click', async () => {
       if (!currentInvoiceSlug) return;
-      await checkPaymentOnce(currentInvoiceSlug);
+      await notifyPaidOnce(currentInvoiceSlug);
     });
 
     window.addEventListener('load', async () => {
