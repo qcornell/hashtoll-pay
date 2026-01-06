@@ -65,7 +65,7 @@ body.use-vh-fallback {
   min-height: calc(var(--vh, 1vh) * 100);
 }
 
-/* When keyboard is open, don’t vertically center */
+/* When keyboard is open, don't vertically center */
 body.keyboard-open {
   align-items: flex-start !important;
   padding-top: 16px;
@@ -548,6 +548,27 @@ body.keyboard-open {
       box-shadow: 0 8px 20px rgba(68, 107, 242, 0.40);
     }
 
+    /* 🔥 NEW: Greenish-blue gradient when wallet connected */
+    .ht-btn-primary.ht-btn-success {
+      background: linear-gradient(180deg, #38b5c4 0%, #26b181 60%, #1e9e73 100%);
+      box-shadow: 0 10px 28px rgba(56, 181, 196, 0.45);
+    }
+
+    .ht-btn-primary.ht-btn-success::before {
+      background: radial-gradient(ellipse at center,
+          rgba(255, 255, 255, 0.85) 0%,
+          rgba(255, 255, 255, 0.15) 40%,
+          rgba(255, 255, 255, 0.00) 72%);
+    }
+
+    .ht-btn-primary.ht-btn-success:hover:not(:disabled) {
+      box-shadow: 0 14px 34px rgba(56, 181, 196, 0.55);
+    }
+
+    .ht-btn-primary.ht-btn-success:active:not(:disabled) {
+      box-shadow: 0 8px 20px rgba(56, 181, 196, 0.40);
+    }
+
     /* Big Pay button */
     .ht-btn-pay {
       padding: 18px 16px;
@@ -867,7 +888,6 @@ body.keyboard-open {
       <h1 class="ht-title">
         <img src="/logo.png" alt="HashToll">
       </h1>
-      <!-- 🔥 FIX: Removed duplicate subtitle text -->
       <p class="ht-subtitle" id="subtitle">Create a payment link in seconds</p>
       <p class="ht-subsubtitle" id="subsubtitle">Send securely via HashPack</p>
     </div>
@@ -920,7 +940,7 @@ body.keyboard-open {
 
     <!-- Payer Section (INVOICE PAGE) -->
     <div class="ht-payer-section" id="payerSection">
-      <!-- Receiver account row (🔥 CENTERED) -->
+      <!-- Receiver account row -->
       <div class="payer-account-row">
         <div class="payer-account-id" id="payerReceiverAccount">0.0.000000</div>
         <button class="payer-copy-btn" id="copyReceiverBtn" title="Copy receiver account">⧉</button>
@@ -929,7 +949,6 @@ body.keyboard-open {
       <!-- QR -->
       <div class="ht-qr-container" id="payerQrContainer"></div>
 
-      <!-- 🔥 FIX: Only ONE amount display -->
       <div class="ht-usd-worth">
         $<span id="payerUsdAmount">0</span> USD worth of HBAR
       </div>
@@ -946,11 +965,7 @@ body.keyboard-open {
       <!-- Status hidden by default -->
       <div class="ht-status payer-status-hidden" id="payerStatus">⏳ Waiting for payment...</div>
 
-      <!-- Bottom actions -->
-      <div class="ht-action-buttons">
-        <button class="ht-btn ht-btn-action ht-btn-small" id="payerCopyLinkBtn">📋 Copy Link</button>
-        <button class="ht-btn ht-btn-action ht-btn-small" id="payerShareBtn">🔗 Share</button>
-      </div>
+      <!-- ❌ REMOVED: Copy/Share buttons for payer page -->
     </div>
   </div>
 
@@ -1171,47 +1186,40 @@ body.keyboard-open {
     let currentInvoiceSlug = null;
 
     const input = document.getElementById('amountInput');
-    /* ✅ PASTE THE iOS keyboard/viewport fix RIGHT HERE */
-function setVhUnit() {
-  const vh = window.innerHeight * 0.01;
-  document.documentElement.style.setProperty('--vh', `${vh}px`);
-}
 
-(function initVhFix() {
-  document.body.classList.add('use-vh-fallback');
-  setVhUnit();
-  window.addEventListener('resize', setVhUnit);
-  window.addEventListener('orientationchange', () => setTimeout(setVhUnit, 250));
-})();
+    function setVhUnit() {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
 
-function isIOS() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS
-}
+    (function initVhFix() {
+      document.body.classList.add('use-vh-fallback');
+      setVhUnit();
+      window.addEventListener('resize', setVhUnit);
+      window.addEventListener('orientationchange', () => setTimeout(setVhUnit, 250));
+    })();
 
-function isMobileWidth() {
-  return window.matchMedia('(max-width: 768px)').matches;
-}
+    function isIOS() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
 
-input.addEventListener('focus', () => {
-  // ✅ Only do keyboard behavior on iOS (or you can use iOS || mobileWidth)
-  if (!isIOS()) return;
+    input.addEventListener('focus', () => {
+      if (!isIOS()) return;
 
-  document.body.classList.add('keyboard-open');
-  setTimeout(() => {
-    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, 250);
-});
+      document.body.classList.add('keyboard-open');
+      setTimeout(() => {
+        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 250);
+    });
 
-input.addEventListener('blur', () => {
-  if (!isIOS()) return;
+    input.addEventListener('blur', () => {
+      if (!isIOS()) return;
 
-  document.body.classList.remove('keyboard-open');
-  setTimeout(setVhUnit, 150);
-});
+      document.body.classList.remove('keyboard-open');
+      setTimeout(setVhUnit, 150);
+    });
 
-
-    
     const connectBtn = document.getElementById('connectBtn');
     const generateBtn = document.getElementById('generateBtn');
     const accountDisplay = document.getElementById('accountDisplay');
@@ -1237,8 +1245,8 @@ input.addEventListener('blur', () => {
     const payNowBtn = document.getElementById('payNowBtn');
     const iPaidBtn = document.getElementById('iPaidBtn');
     const payerStatus = document.getElementById('payerStatus');
-    const payerCopyLinkBtn = document.getElementById('payerCopyLinkBtn');
-    const payerShareBtn = document.getElementById('payerShareBtn');
+
+    // ❌ REMOVED: Variable declarations for payer copy/share buttons
 
     function enterHomeMode() {
       payerSection.classList.remove('active');
@@ -1358,9 +1366,7 @@ input.addEventListener('blur', () => {
         currentPaymentLink = invoiceUrl;
         currentAmount = inv.requested_amount_hbar;
 
-       // On invoice page, only show the subsubtitle line.
-// Keep subtitle empty (or use it for amount if you want).
-subtitle.textContent = '';
+        subtitle.textContent = '';
 
         payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
         payerUsdAmount.textContent = inv.requested_amount_hbar;
@@ -1705,12 +1711,7 @@ subtitle.textContent = '';
       await checkPaymentOnce(currentInvoiceSlug);
     });
 
-    payerCopyLinkBtn.addEventListener('click', async () => {
-      if (!currentPaymentLink) return;
-      await copyText(currentPaymentLink, 'Link copied!');
-    });
-
-    payerShareBtn.addEventListener('click', shareCurrentLink);
+    // ❌ REMOVED: Event listeners for payer copy/share buttons
 
     window.addEventListener('load', async () => {
       const slug = getInvoiceSlugFromUrl();
