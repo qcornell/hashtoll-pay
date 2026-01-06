@@ -1480,39 +1480,42 @@
     }
 
     async function loadInvoiceAndRenderPayer(slug) {
-      currentInvoiceSlug = slug;
+  currentInvoiceSlug = slug;
 
-      try {
-        enterInvoiceMode();
+  try {
+    enterInvoiceMode();
 
-        payerReceiverAccount.textContent = 'Loading...';
-        payerUsdAmount.textContent = '...';
-        
-        payerStatus.classList.add('payer-status-hidden');
+    payerReceiverAccount.textContent = 'Loading...';
+    payerUsdAmount.textContent = '...';
+    
+    payerStatus.classList.add('payer-status-hidden');
 
-        const inv = await loadInvoice(slug);
+    const inv = await loadInvoice(slug);
 
-        currentCreatorAccount = inv.creator_account;
+    currentCreatorAccount = inv.creator_account;
 
-        const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
-        currentPaymentLink = invoiceUrl;
-        currentAmount = inv.requested_amount_hbar;
+    const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
+    currentPaymentLink = invoiceUrl;
+    currentAmount = inv.requested_amount_hbar;
 
-        subtitle.innerHTML = `<a href="/${inv.creator_account}" style="color: var(--ht-primary-blue); text-decoration: none;">→ Check Payment Status</a>`;
+    subtitle.innerHTML = `<a href="/${inv.creator_account}" style="color: var(--ht-primary-blue); text-decoration: none;">→ Check Payment Status</a>`;
 
-        payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
-        payerUsdAmount.textContent = inv.requested_amount_hbar;
+    payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
+    payerUsdAmount.textContent = inv.requested_amount_hbar;
 
-        if (inv.status === 'paid') {
-          setPayerStatus('✅ PAID — Receiver notified!', 'paid');
-        }
-
-      } catch (err) {
-        console.error(err);
-        showToast('Invoice not found', 'error');
-        enterHomeMode();
-      }
+    if (inv.status === 'paid') {
+      setPayerStatus('✅ PAID — Receiver notified!', 'paid');
     }
+
+    // ← ADD THIS LINE
+    startPayerRealtime(slug);
+
+  } catch (err) {
+    console.error(err);
+    showToast('Invoice not found', 'error');
+    enterHomeMode();
+  }
+}
 
     async function loadStatusPage(walletId) {
       try {
@@ -1828,6 +1831,34 @@
           console.log("Status page subscription status:", status);
         });
     }
+
+    function startPayerRealtime(slug) {
+  stopRealtime();
+
+  realtimeChannel = window.supabaseClient
+    .channel(`payer-invoice-${slug}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "invoices",
+        filter: `slug=eq.${slug}`
+      },
+      (payload) => {
+        console.log("Payer realtime update:", payload);
+        
+        const newStatus = payload?.new?.status;
+        
+        if (newStatus === "paid") {
+          setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+        } else if (newStatus === "unpaid") {
+          setPayerStatus('⏳ Waiting for payment...', 'default');
+        }
+      }
+    )
+    .subscribe();
+}
 
     async function createInvoiceViaEdge({ receiver_account, requested_amount_hbar, amount_hbar }) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/create-invoice`, {
