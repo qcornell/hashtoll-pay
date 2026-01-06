@@ -1367,40 +1367,44 @@
       }
     }
 
-    // ✅ UPDATED: Use SUPABASE_URL variable and immediately show paid status
-    async function notifyPaidOnce(slug) {
-      try {
-        iPaidBtn.disabled = true;
-        iPaidBtn.innerHTML = '<span class="spinner"></span>Marking paid...';
+   // ✅ UPDATED: Only show PAID if DB update actually succeeded
+async function notifyPaidOnce(slug) {
+  try {
+    iPaidBtn.disabled = true;
+    iPaidBtn.innerHTML = '<span class="spinner"></span>Marking paid...';
 
-        setPayerStatus('📩 Marking as PAID...', 'default');
+    setPayerStatus('📩 Marking as PAID...', 'default');
 
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
-          method: 'POST',
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-            "apikey": SUPABASE_ANON_KEY
-          },
-          body: JSON.stringify({ slug })
-        });
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "apikey": SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ slug })
+    });
 
-        const result = await res.json();
-        if (!res.ok) throw new Error(result?.error || "Notify failed");
-
-        // ✅ TRUST ME BRO: immediately show paid
-        setPayerStatus('✅ PAID — Receiver notified!', 'paid');
-        showToast('Marked as paid ✅', 'success');
-
-      } catch (err) {
-        console.error(err);
-        setPayerStatus('⚠️ Could not mark paid — try again', 'warn');
-        showToast('Mark paid failed', 'error');
-      } finally {
-        iPaidBtn.disabled = false;
-        iPaidBtn.innerHTML = '✅ I Paid (Notify Receiver)';
-      }
+    const result = await res.json();
+    
+    // ✅ CRITICAL: Only show PAID if backend confirmed the update
+    if (!res.ok || !result?.ok) {
+      throw new Error(result?.error || "Notify failed");
     }
+
+    // ✅ Now safe to show PAID (DB was actually updated)
+    setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+    showToast('Marked as paid ✅', 'success');
+
+  } catch (err) {
+    console.error(err);
+    setPayerStatus('⚠️ Could not mark paid — try again', 'warn');
+    showToast('Mark paid failed', 'error');
+  } finally {
+    iPaidBtn.disabled = false;
+    iPaidBtn.innerHTML = '✅ I Paid (Notify Receiver)';
+  }
+}
 
     function payNowPlaceholder() {
       showToast('Opening wallet… (placeholder)', 'info');
