@@ -328,107 +328,204 @@
       display: block;
     }
 
-    .status-wallet-info {
+    .status-header {
       background: linear-gradient(135deg, rgba(56, 181, 196, 0.08) 0%, rgba(38, 177, 129, 0.08) 100%);
       border: 1px solid rgba(56, 181, 196, 0.25);
       border-radius: var(--ht-radius);
-      padding: 16px 20px;
-      margin-bottom: 20px;
+      padding: 20px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .status-header-left {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .status-header-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
     }
 
     .status-wallet-id {
       font-family: 'Courier New', monospace;
-      font-size: 1.05rem;
+      font-size: 1.1rem;
       color: var(--ht-success-green);
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.02em;
       text-shadow: 0 2px 8px rgba(56, 181, 196, 0.3);
-      margin-bottom: 8px;
+      word-break: break-all;
+    }
+
+    .status-disconnect-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.7);
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      font-size: 1.3rem;
+      font-weight: 300;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .status-disconnect-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
+      color: #ffffff;
+      transform: scale(1.05);
+    }
+
+    .status-disconnect-btn:active {
+      transform: scale(0.95);
     }
 
     .invoice-card {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: var(--ht-radius);
-      padding: 18px;
-      margin-bottom: 12px;
+      background: linear-gradient(135deg, rgba(30, 32, 64, 0.6) 0%, rgba(20, 22, 44, 0.5) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
       text-align: left;
-      transition: all 0.2s ease;
+    }
+
+    .invoice-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, rgba(68, 107, 242, 0.5), transparent);
+      opacity: 0;
+      transition: opacity 0.25s ease;
     }
 
     .invoice-card:hover {
-      background: rgba(255, 255, 255, 0.06);
-      border-color: rgba(255, 255, 255, 0.15);
+      background: linear-gradient(135deg, rgba(40, 42, 74, 0.7) 0%, rgba(30, 32, 54, 0.6) 100%);
+      border-color: rgba(255, 255, 255, 0.12);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .invoice-card:hover::before {
+      opacity: 1;
     }
 
     .invoice-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      gap: 12px;
+    }
+
+    .invoice-header-left {
+      flex: 1;
+      min-width: 0;
     }
 
     .invoice-slug {
       font-family: 'Courier New', monospace;
-      font-size: 0.85rem;
-      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.5);
       font-weight: 600;
+      letter-spacing: 0.03em;
+      margin-bottom: 8px;
     }
 
     .invoice-amount {
-      font-size: 1.1rem;
-      font-weight: 700;
+      font-size: 1.4rem;
+      font-weight: 800;
       color: var(--ht-text-white);
-      margin-bottom: 8px;
+      line-height: 1.2;
+      margin-bottom: 4px;
     }
 
     .invoice-url {
       font-family: 'Courier New', monospace;
-      font-size: 0.75rem;
-      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.4);
       word-break: break-all;
-      margin-bottom: 12px;
       line-height: 1.4;
+      margin-top: 12px;
+      margin-bottom: 16px;
     }
 
     .invoice-actions {
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 8px;
-      flex-wrap: wrap;
+    }
+
+    .invoice-action-primary {
+      grid-column: 1 / -1;
     }
 
     .invoice-badge {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-size: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 0.75rem;
       font-weight: 700;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .invoice-badge.unpaid {
-      background: rgba(245, 158, 11, 0.12);
-      border: 1px solid rgba(245, 158, 11, 0.28);
-      color: rgba(245, 158, 11, 0.95);
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.12));
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #f59e0b;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
     }
 
     .invoice-badge.paid {
-      background: rgba(59, 130, 246, 0.12);
-      border: 1px solid rgba(59, 130, 246, 0.28);
-      color: rgba(59, 130, 246, 0.95);
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(37, 99, 235, 0.12));
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #3b82f6;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
     }
 
     .invoice-badge.confirmed {
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.15));
-      border: 1px solid rgba(16, 185, 129, 0.3);
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(5, 150, 105, 0.15));
+      border: 1px solid rgba(16, 185, 129, 0.35);
       color: #10b981;
+      box-shadow: 0 2px 10px rgba(16, 185, 129, 0.2);
     }
 
     .no-invoices {
       text-align: center;
-      padding: 40px 20px;
-      color: rgba(255, 255, 255, 0.5);
-      font-size: 0.9rem;
+      padding: 60px 20px;
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .no-invoices-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      opacity: 0.3;
     }
 
     /* Centered account row */
@@ -951,12 +1048,34 @@
         font-size: 0.92rem;
       }
 
+      .status-header {
+        padding: 16px;
+      }
+
+      .status-wallet-id {
+        font-size: 0.95rem;
+      }
+
+      .status-disconnect-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 1.2rem;
+      }
+
       .invoice-card {
-        padding: 14px;
+        padding: 16px;
+      }
+
+      .invoice-amount {
+        font-size: 1.2rem;
       }
 
       .invoice-actions {
-        flex-direction: column;
+        grid-template-columns: 1fr;
+      }
+
+      .invoice-action-primary {
+        grid-column: 1;
       }
 
       .toast {
@@ -1063,8 +1182,12 @@
 
     <!-- Status Section (DASHBOARD) -->
     <div class="ht-status-section" id="statusSection">
-      <div class="status-wallet-info">
-        <div class="status-wallet-id" id="statusWalletId">0.0.000000</div>
+      <div class="status-header">
+        <div class="status-header-left">
+          <div class="status-header-title">Connected Wallet</div>
+          <div class="status-wallet-id" id="statusWalletId">0.0.000000</div>
+        </div>
+        <button class="status-disconnect-btn" onclick="disconnectWallet()" title="Disconnect">×</button>
       </div>
 
       <button class="ht-btn ht-btn-primary" id="createNewFromStatus" style="margin-bottom: 24px;">
@@ -1480,49 +1603,48 @@
     }
 
     async function loadInvoiceAndRenderPayer(slug) {
-  currentInvoiceSlug = slug;
+      currentInvoiceSlug = slug;
 
-  try {
-    enterInvoiceMode();
+      try {
+        enterInvoiceMode();
 
-    payerReceiverAccount.textContent = 'Loading...';
-    payerUsdAmount.textContent = '...';
-    
-    payerStatus.classList.add('payer-status-hidden');
+        payerReceiverAccount.textContent = 'Loading...';
+        payerUsdAmount.textContent = '...';
+        
+        payerStatus.classList.add('payer-status-hidden');
 
-    const inv = await loadInvoice(slug);
+        const inv = await loadInvoice(slug);
 
-    currentCreatorAccount = inv.creator_account;
+        currentCreatorAccount = inv.creator_account;
 
-    const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
-    currentPaymentLink = invoiceUrl;
-    currentAmount = inv.requested_amount_hbar;
+        const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
+        currentPaymentLink = invoiceUrl;
+        currentAmount = inv.requested_amount_hbar;
 
-    subtitle.innerHTML = `<a href="/${inv.creator_account}" style="color: var(--ht-primary-blue); text-decoration: none;">→ Check Payment Status</a>`;
+        subtitle.innerHTML = `<a href="/${inv.creator_account}" style="color: var(--ht-primary-blue); text-decoration: none;">→ Check Payment Status</a>`;
 
-    payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
-    payerUsdAmount.textContent = inv.requested_amount_hbar;
+        payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
+        payerUsdAmount.textContent = inv.requested_amount_hbar;
 
-    if (inv.status === 'paid') {
-      setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+        if (inv.status === 'paid') {
+          setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+        }
+
+        startPayerRealtime(slug);
+
+      } catch (err) {
+        console.error(err);
+        showToast('Invoice not found', 'error');
+        enterHomeMode();
+      }
     }
-
-    // ← ADD THIS LINE
-    startPayerRealtime(slug);
-
-  } catch (err) {
-    console.error(err);
-    showToast('Invoice not found', 'error');
-    enterHomeMode();
-  }
-}
 
     async function loadStatusPage(walletId) {
       try {
         enterStatusMode();
         
         statusWalletId.textContent = walletId;
-        invoiceList.innerHTML = '<div class="no-invoices">Loading invoices...</div>';
+        invoiceList.innerHTML = '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
 
         const { data: invoices, error } = await window.supabaseClient
           .from("invoices")
@@ -1533,7 +1655,13 @@
         if (error) throw error;
 
         if (!invoices || invoices.length === 0) {
-          invoiceList.innerHTML = '<div class="no-invoices">No invoices found for this wallet.</div>';
+          invoiceList.innerHTML = `
+            <div class="no-invoices">
+              <div class="no-invoices-icon">📭</div>
+              No invoices found for this wallet.<br>
+              Create your first payment link above!
+            </div>
+          `;
           return;
         }
 
@@ -1549,22 +1677,36 @@
           let actionBtn = '';
           
           if (inv.status === 'paid' && inv.confirmed_by_creator) {
-            badge = '<span class="invoice-badge confirmed">✅ CONFIRMED</span>';
-            actionBtn = `<button class="ht-btn ht-btn-secondary ht-btn-small" onclick="toggleInvoiceStatus('${inv.slug}', 'unpaid')">Mark as Unpaid</button>`;
+            badge = '<span class="invoice-badge confirmed">✅ Confirmed</span>';
+            actionBtn = `
+              <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" onclick="toggleInvoiceStatus('${inv.slug}', 'unpaid')">
+                Mark as Unpaid
+              </button>
+            `;
           } else if (inv.status === 'paid' && !inv.confirmed_by_creator) {
-            badge = '<span class="invoice-badge paid">💰 PAID (Unconfirmed)</span>';
-            actionBtn = `<button class="ht-btn ht-btn-primary ht-btn-small" onclick="confirmInvoicePayment('${inv.slug}')">Confirm Payment</button>`;
+            badge = '<span class="invoice-badge paid">💰 Paid</span>';
+            actionBtn = `
+              <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary" onclick="confirmInvoicePayment('${inv.slug}')">
+                Confirm Payment
+              </button>
+            `;
           } else {
-            badge = '<span class="invoice-badge unpaid">⏳ UNPAID</span>';
-            actionBtn = '<button class="ht-btn ht-btn-secondary ht-btn-small" disabled>Waiting...</button>';
+            badge = '<span class="invoice-badge unpaid">⏳ Unpaid</span>';
+            actionBtn = `
+              <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
+                Waiting...
+              </button>
+            `;
           }
           
           card.innerHTML = `
             <div class="invoice-header">
-              <div class="invoice-slug">#${inv.slug}</div>
+              <div class="invoice-header-left">
+                <div class="invoice-slug">#${inv.slug}</div>
+                <div class="invoice-amount">$${inv.requested_amount_hbar} HBAR</div>
+              </div>
               ${badge}
             </div>
-            <div class="invoice-amount">$${inv.requested_amount_hbar} HBAR</div>
             <div class="invoice-url">${invoiceUrl}</div>
             <div class="invoice-actions">
               ${actionBtn}
@@ -1581,7 +1723,13 @@
       } catch (err) {
         console.error(err);
         showToast('Failed to load invoices', 'error');
-        invoiceList.innerHTML = '<div class="no-invoices">Error loading invoices.</div>';
+        invoiceList.innerHTML = `
+          <div class="no-invoices">
+            <div class="no-invoices-icon">⚠️</div>
+            Error loading invoices.<br>
+            Please try again.
+          </div>
+        `;
       }
     }
 
@@ -1833,32 +1981,32 @@
     }
 
     function startPayerRealtime(slug) {
-  stopRealtime();
+      stopRealtime();
 
-  realtimeChannel = window.supabaseClient
-    .channel(`payer-invoice-${slug}`)
-    .on(
-      "postgres_changes",
-      {
-        event: "UPDATE",
-        schema: "public",
-        table: "invoices",
-        filter: `slug=eq.${slug}`
-      },
-      (payload) => {
-        console.log("Payer realtime update:", payload);
-        
-        const newStatus = payload?.new?.status;
-        
-        if (newStatus === "paid") {
-          setPayerStatus('✅ PAID — Receiver notified!', 'paid');
-        } else if (newStatus === "unpaid") {
-          setPayerStatus('⏳ Waiting for payment...', 'default');
-        }
-      }
-    )
-    .subscribe();
-}
+      realtimeChannel = window.supabaseClient
+        .channel(`payer-invoice-${slug}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "invoices",
+            filter: `slug=eq.${slug}`
+          },
+          (payload) => {
+            console.log("Payer realtime update:", payload);
+            
+            const newStatus = payload?.new?.status;
+            
+            if (newStatus === "paid") {
+              setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+            } else if (newStatus === "unpaid") {
+              setPayerStatus('⏳ Waiting for payment...', 'default');
+            }
+          }
+        )
+        .subscribe();
+    }
 
     async function createInvoiceViaEdge({ receiver_account, requested_amount_hbar, amount_hbar }) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/create-invoice`, {
@@ -2014,6 +2162,12 @@
       connectBtn.disabled = false;
 
       accountDisplay.classList.remove('active');
+
+      // If on status page, redirect to home
+      if (isStatusPage()) {
+        window.location.href = '/';
+        return;
+      }
 
       showFormView();
 
