@@ -891,7 +891,7 @@
     <!-- Form Section (HOME) -->
     <div class="ht-form-section" id="formSection">
       <div class="ht-input-group">
-        <label class="ht-label">  USD Amount </label>
+        <label class="ht-label">USD Amount</label>
         <input type="number" class="ht-input" id="amountInput" placeholder="Enter Amount" step="0.01" min="0">
       </div>
 
@@ -936,11 +936,9 @@
         <button class="payer-copy-btn" id="copyReceiverBtn" title="Copy receiver account">⧉</button>
       </div>
 
-      <!-- ❌ REMOVED: QR code container -->
-
-    <div class="ht-usd-worth">
-   Send $<span id="payerUsdAmount">0</span> in HBAR
-     </div>
+      <div class="ht-usd-worth">
+        Send $<span id="payerUsdAmount">0</span> in HBAR
+      </div>
 
       <div class="ht-hbar-line" id="payerHbarLine">
         Exact: <span class="ht-hbar-num" id="payerHbarAmount">0.0000000</span> HBAR
@@ -1232,39 +1230,39 @@
     const iPaidBtn = document.getElementById('iPaidBtn');
     const payerStatus = document.getElementById('payerStatus');
 
-   function enterHomeMode() {
-  if (isWalletConnected && accountId) {
-    accountDisplay.classList.add('active');
-    accountIdSpan.textContent = accountId; // keep it updated
-  } else {
-    accountDisplay.classList.remove('active');
-  }
-  payerSection.classList.remove('active');
-  resultSection.classList.remove('active');
-  formSection.classList.remove('hidden');
+    function enterHomeMode() {
+      if (isWalletConnected && accountId) {
+        accountDisplay.classList.add('active');
+        accountIdSpan.textContent = accountId;
+      } else {
+        accountDisplay.classList.remove('active');
+      }
+      payerSection.classList.remove('active');
+      resultSection.classList.remove('active');
+      formSection.classList.remove('hidden');
 
-  subsubtitle.classList.remove('active');
-  subtitle.textContent = 'Create a payment link in seconds';
-}
+      subsubtitle.classList.remove('active');
+      subtitle.textContent = 'Create a payment link in seconds';
+    }
 
-function enterCreatorResultMode() {
-  accountDisplay.classList.remove('active');  // ✅ hide on QR/result screen
-  payerSection.classList.remove('active');
-  formSection.classList.add('hidden');
-  resultSection.classList.add('active');
+    function enterCreatorResultMode() {
+      accountDisplay.classList.remove('active');
+      payerSection.classList.remove('active');
+      formSection.classList.add('hidden');
+      resultSection.classList.add('active');
 
-  subsubtitle.classList.remove('active');
-  subtitle.textContent = 'Your payment link is ready!';
-}
+      subsubtitle.classList.remove('active');
+      subtitle.textContent = 'Your payment link is ready!';
+    }
 
-function enterInvoiceMode() {
-  accountDisplay.classList.remove('active');  // ✅ hide on invoice page too
-  formSection.classList.add('hidden');
-  resultSection.classList.remove('active');
-  payerSection.classList.add('active');
+    function enterInvoiceMode() {
+      accountDisplay.classList.remove('active');
+      formSection.classList.add('hidden');
+      resultSection.classList.remove('active');
+      payerSection.classList.add('active');
 
-  subsubtitle.classList.add('active');
-}
+      subsubtitle.classList.add('active');
+    }
 
     async function renderQrInto(containerEl, url) {
       containerEl.innerHTML = '';
@@ -1366,8 +1364,6 @@ function enterInvoiceMode() {
           payerHbarLine.style.display = 'none';
         }
 
-        // ❌ REMOVED: QR code rendering for payer
-
         if (inv.status === 'paid') {
           setPayerStatus('✅ PAID — Receiver notified!', 'paid');
         }
@@ -1379,7 +1375,6 @@ function enterInvoiceMode() {
       }
     }
 
-    // ✅ UPDATED: Notify function replaces checkPaymentOnce
     async function notifyPaidOnce(slug) {
       try {
         iPaidBtn.disabled = true;
@@ -1447,40 +1442,53 @@ function enterInvoiceMode() {
       }
     }
 
-    let pollTimer = null;
+    // ✅ NEW: Realtime channel management
+    let realtimeChannel = null;
 
-    // ✅ UPDATED: Seller polling now checks Supabase directly
-    async function startCreatorPolling(invoice) {
+    function stopRealtime() {
+      try {
+        if (realtimeChannel) {
+          window.supabaseClient.removeChannel(realtimeChannel);
+          realtimeChannel = null;
+        }
+      } catch (e) {
+        console.warn("Error stopping realtime:", e);
+      }
+    }
+
+    // ✅ NEW: Realtime listener (replaces polling)
+    function startCreatorRealtime(slug) {
       const payStatus = document.getElementById("payStatus");
       payStatus.textContent = "Request payment securely...";
-      payStatus.classList.remove('paid');
+      payStatus.classList.remove("paid");
 
-      if (pollTimer) clearInterval(pollTimer);
+      stopRealtime();
 
-      async function checkOnce() {
-        try {
-          const { data, error } = await window.supabaseClient
-            .from("invoices")
-            .select("status")
-            .eq("slug", invoice.slug)
-            .single();
+      realtimeChannel = window.supabaseClient
+        .channel(`invoice-status-${slug}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "invoices",
+            filter: `slug=eq.${slug}`
+          },
+          (payload) => {
+            console.log("Realtime update received:", payload);
+            const newStatus = payload?.new?.status;
 
-          if (error) throw error;
-
-          if (data?.status === "paid") {
-            payStatus.textContent = "✅ PAID — Receiver notified!";
-            payStatus.classList.add('paid');
-            showToast("Payment marked paid ✅", "success");
-            clearInterval(pollTimer);
-            pollTimer = null;
+            if (newStatus === "paid") {
+              payStatus.textContent = "✅ PAID — Receiver notified!";
+              payStatus.classList.add("paid");
+              showToast("Payment marked paid ✅", "success");
+              stopRealtime(); // Stop listening after paid
+            }
           }
-        } catch (err) {
-          console.warn("Poll error:", err);
-        }
-      }
-
-      await checkOnce();
-      pollTimer = setInterval(checkOnce, 2000); // faster feels better
+        )
+        .subscribe((status) => {
+          console.log("Realtime subscription status:", status);
+        });
     }
 
     async function connectWallet() {
@@ -1535,7 +1543,6 @@ function enterInvoiceMode() {
       showFormView();
 
       generateBtn.disabled = true;
-      generateBtn.classList.remove('enabled');
       input.value = '';
 
       showToast('Wallet disconnected', 'info');
@@ -1592,9 +1599,8 @@ function enterInvoiceMode() {
 
         showToast("Invoice created! 🎉", "success");
 
-        await startCreatorPolling({
-          slug: data.slug
-        });
+        // ✅ Start realtime listener instead of polling
+        startCreatorRealtime(data.slug);
 
       } catch (err) {
         console.error(err);
@@ -1605,10 +1611,8 @@ function enterInvoiceMode() {
     }
 
     function showFormView() {
-      if (pollTimer) {
-        clearInterval(pollTimer);
-        pollTimer = null;
-      }
+      // ✅ Stop realtime when going back to form
+      stopRealtime();
 
       formSection.classList.remove('hidden');
       resultSection.classList.remove('active');
@@ -1626,6 +1630,9 @@ function enterInvoiceMode() {
     }
 
     function createAnother() {
+      // ✅ Stop realtime when creating new invoice
+      stopRealtime();
+      
       input.value = '';
       currentPaymentLink = null;
       currentAmount = null;
@@ -1692,7 +1699,6 @@ function enterInvoiceMode() {
 
     payNowBtn.addEventListener('click', payNowPlaceholder);
     
-    // ✅ UPDATED: Use notifyPaidOnce instead of checkPaymentOnce
     iPaidBtn.addEventListener('click', async () => {
       if (!currentInvoiceSlug) return;
       await notifyPaidOnce(currentInvoiceSlug);
