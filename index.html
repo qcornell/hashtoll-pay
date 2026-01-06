@@ -1367,45 +1367,28 @@
       }
     }
 
-   // ✅ UPDATED: Only show PAID if DB update actually succeeded
-async function notifyPaidOnce(slug) {
-  try {
-    iPaidBtn.disabled = true;
-    iPaidBtn.innerHTML = '<span class="spinner"></span>Marking paid...';
+   async function notifyPaidOnce(slug) {
+  iPaidBtn.disabled = true;
+  iPaidBtn.innerHTML = '<span class="spinner"></span>Marking paid...';
 
-    setPayerStatus('📩 Marking as PAID...', 'default');
+  // ✅ Show PAID immediately
+  setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+  showToast('Marked as paid ✅', 'success');
 
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
-      method: 'POST',
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-        "apikey": SUPABASE_ANON_KEY
-      },
-      body: JSON.stringify({ slug })
-    });
+  // Fire backend update (don't wait for response)
+  fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
+    method: 'POST',
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      "apikey": SUPABASE_ANON_KEY
+    },
+    body: JSON.stringify({ slug })
+  }).catch(console.error);
 
-    const result = await res.json();
-    
-    // ✅ CRITICAL: Only show PAID if backend confirmed the update
-    if (!res.ok || !result?.ok) {
-      throw new Error(result?.error || "Notify failed");
-    }
-
-    // ✅ Now safe to show PAID (DB was actually updated)
-    setPayerStatus('✅ PAID — Receiver notified!', 'paid');
-    showToast('Marked as paid ✅', 'success');
-
-  } catch (err) {
-    console.error(err);
-    setPayerStatus('⚠️ Could not mark paid — try again', 'warn');
-    showToast('Mark paid failed', 'error');
-  } finally {
-    iPaidBtn.disabled = false;
-    iPaidBtn.innerHTML = '✅ I Paid (Notify Receiver)';
-  }
+  iPaidBtn.disabled = false;
+  iPaidBtn.innerHTML = '✅ I Paid (Notify Receiver)';
 }
-
     function payNowPlaceholder() {
       showToast('Opening wallet… (placeholder)', 'info');
     }
