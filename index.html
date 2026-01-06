@@ -167,6 +167,16 @@
       font-weight: 400;
     }
 
+    .ht-subtitle a {
+      color: #666;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .ht-subtitle a:hover {
+      color: #999;
+    }
+
     .ht-subsubtitle {
       margin: 6px 0 0 0;
       color: rgba(255, 255, 255, 0.55);
@@ -318,6 +328,113 @@
       display: block;
     }
 
+    /* --- STATUS PAGE (/:walletId) --- */
+    .ht-status-section {
+      display: none;
+      animation: fadeInUp 0.4s ease;
+    }
+
+    .ht-status-section.active {
+      display: block;
+    }
+
+    .status-header {
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .status-header h2 {
+      margin: 0 0 8px 0;
+      font-size: 1.5rem;
+      color: var(--ht-text-white);
+    }
+
+    .status-header p {
+      margin: 0;
+      color: var(--ht-text-muted);
+      font-size: 0.9rem;
+    }
+
+    .status-header strong {
+      color: var(--ht-success-green);
+      font-family: 'Courier New', monospace;
+    }
+
+    .invoice-card {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--ht-radius);
+      padding: 16px;
+      margin-bottom: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      text-align: left;
+    }
+
+    .invoice-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .invoice-header strong {
+      font-size: 1rem;
+      color: var(--ht-text-white);
+    }
+
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--ht-text-muted);
+    }
+
+    .status-badge.paid {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+    }
+
+    .status-badge.confirmed {
+      background: rgba(56, 181, 196, 0.15);
+      color: var(--ht-success-green);
+    }
+
+    .invoice-details {
+      margin-bottom: 12px;
+    }
+
+    .invoice-details p {
+      margin: 6px 0;
+      font-size: 0.875rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .invoice-details a {
+      color: var(--ht-primary-blue);
+      text-decoration: none;
+      word-break: break-all;
+      font-size: 0.8rem;
+      font-family: 'Courier New', monospace;
+    }
+
+    .invoice-details a:hover {
+      text-decoration: underline;
+    }
+
+    .invoice-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .invoice-actions button {
+      flex: 1;
+    }
+
     /* Centered account row */
     .payer-account-row {
       display: flex;
@@ -396,24 +513,7 @@
       font-weight: 700;
       color: rgba(255, 255, 255, 0.82);
       margin-top: 12px;
-      margin-bottom: 8px;
-    }
-
-    /* Optional exact HBAR line */
-    .ht-hbar-line {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      font-size: 0.92rem;
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.62);
       margin-bottom: 14px;
-    }
-
-    .ht-hbar-num {
-      font-family: 'Courier New', monospace;
-      letter-spacing: 0.01em;
     }
 
     /* Status pill */
@@ -907,10 +1007,6 @@
         Pay $<span id="usdAmount">50</span> of HBAR
       </div>
 
-      <div class="ht-hbar-line" id="hbarLine">
-        Exact: <span class="ht-hbar-num" id="hbarAmount">0.2155987</span> HBAR
-      </div>
-
       <div class="ht-status" id="payStatus">
         Request payment securely...
       </div>
@@ -940,10 +1036,6 @@
         Send $<span id="payerUsdAmount">0</span> in HBAR
       </div>
 
-      <div class="ht-hbar-line" id="payerHbarLine">
-        Exact: <span class="ht-hbar-num" id="payerHbarAmount">0.0000000</span> HBAR
-      </div>
-
       <!-- Pay / Confirm -->
       <button class="ht-btn ht-btn-primary ht-btn-pay" id="payNowBtn">Pay Now</button>
       <button class="ht-btn ht-btn-secondary" id="iPaidBtn">✅ I Paid (Notify Receiver)</button>
@@ -951,6 +1043,21 @@
 
       <!-- Status hidden by default -->
       <div class="ht-status payer-status-hidden" id="payerStatus">⏳ Waiting for payment...</div>
+    </div>
+
+    <!-- Status Section (WALLET STATUS PAGE) -->
+    <div class="ht-status-section" id="statusSection">
+      <div class="status-header">
+        <h2>My Invoices</h2>
+        <p>Wallet: <strong id="statusWalletId">0.0.000000</strong></p>
+        <button class="ht-btn ht-btn-secondary ht-btn-small" onclick="window.location.href='/'" style="margin-top: 12px;">
+          + Create New Invoice
+        </button>
+      </div>
+      
+      <div id="invoiceListContainer">
+        <!-- Invoice cards rendered here -->
+      </div>
     </div>
   </div>
 
@@ -1152,8 +1259,18 @@
       return match ? match[1] : null;
     }
 
+    function getWalletIdFromUrl() {
+      const path = window.location.pathname;
+      const match = path.match(/^\/0\.0\.\d+$/);
+      return match ? path.substring(1) : null;
+    }
+
     function isInvoicePage() {
       return !!getInvoiceSlugFromUrl();
+    }
+
+    function isStatusPage() {
+      return !!getWalletIdFromUrl();
     }
 
     let accountId = null;
@@ -1162,6 +1279,7 @@
     let currentPaymentLink = null;
     let currentAmount = null;
     let currentInvoiceSlug = null;
+    let currentCreatorAccount = null;
 
     const input = document.getElementById('amountInput');
 
@@ -1217,11 +1335,13 @@
     const payerReceiverAccount = document.getElementById('payerReceiverAccount');
     const copyReceiverBtn = document.getElementById('copyReceiverBtn');
     const payerUsdAmount = document.getElementById('payerUsdAmount');
-    const payerHbarLine = document.getElementById('payerHbarLine');
-    const payerHbarAmount = document.getElementById('payerHbarAmount');
     const payNowBtn = document.getElementById('payNowBtn');
     const iPaidBtn = document.getElementById('iPaidBtn');
     const payerStatus = document.getElementById('payerStatus');
+
+    const statusSection = document.getElementById('statusSection');
+    const statusWalletId = document.getElementById('statusWalletId');
+    const invoiceListContainer = document.getElementById('invoiceListContainer');
 
     function enterHomeMode() {
       if (isWalletConnected && accountId) {
@@ -1232,6 +1352,7 @@
       }
       payerSection.classList.remove('active');
       resultSection.classList.remove('active');
+      statusSection.classList.remove('active');
       formSection.classList.remove('hidden');
 
       subsubtitle.classList.remove('active');
@@ -1241,6 +1362,7 @@
     function enterCreatorResultMode() {
       accountDisplay.classList.remove('active');
       payerSection.classList.remove('active');
+      statusSection.classList.remove('active');
       formSection.classList.add('hidden');
       resultSection.classList.add('active');
 
@@ -1252,9 +1374,21 @@
       accountDisplay.classList.remove('active');
       formSection.classList.add('hidden');
       resultSection.classList.remove('active');
+      statusSection.classList.remove('active');
       payerSection.classList.add('active');
 
       subsubtitle.classList.add('active');
+    }
+
+    function enterStatusMode() {
+      accountDisplay.classList.remove('active');
+      formSection.classList.add('hidden');
+      resultSection.classList.remove('active');
+      payerSection.classList.remove('active');
+      statusSection.classList.add('active');
+
+      subsubtitle.classList.remove('active');
+      subtitle.textContent = 'Track your invoices';
     }
 
     async function renderQrInto(containerEl, url) {
@@ -1320,7 +1454,7 @@
     async function loadInvoice(slug) {
       const { data, error } = await window.supabaseClient
         .from("invoices")
-        .select("slug, receiver_account, requested_amount_hbar, amount_hbar, status, created_at")
+        .select("slug, creator_account, receiver_account, requested_amount_hbar, amount_hbar, status, confirmed_by_creator, created_at")
         .eq("slug", slug)
         .single();
 
@@ -1336,25 +1470,22 @@
 
         payerReceiverAccount.textContent = 'Loading...';
         payerUsdAmount.textContent = '...';
-        payerHbarAmount.textContent = '...';
         
         payerStatus.classList.add('payer-status-hidden');
 
         const inv = await loadInvoice(slug);
 
+        currentCreatorAccount = inv.creator_account;
+
         const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
         currentPaymentLink = invoiceUrl;
         currentAmount = inv.requested_amount_hbar;
 
-        subtitle.textContent = '';
+        // ✅ NEW: Change subtitle to clickable link
+        subtitle.innerHTML = `<a href="/${inv.creator_account}">→ Check Payment Status</a>`;
 
         payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
         payerUsdAmount.textContent = inv.requested_amount_hbar;
-
-        if (inv.amount_hbar != null) {
-          payerHbarAmount.textContent = Number(inv.amount_hbar).toFixed(7);
-          payerHbarLine.style.display = 'flex';
-        }
 
         if (inv.status === 'paid') {
           setPayerStatus('✅ PAID — Receiver notified!', 'paid');
@@ -1367,28 +1498,27 @@
       }
     }
 
-   async function notifyPaidOnce(slug) {
-  iPaidBtn.disabled = true;
-  iPaidBtn.innerHTML = '<span class="spinner"></span>Marking paid...';
+    async function notifyPaidOnce(slug) {
+      iPaidBtn.disabled = true;
+      iPaidBtn.innerHTML = '<span class="spinner"></span>Marking paid...';
 
-  // ✅ Show PAID immediately
-  setPayerStatus('✅ PAID — Receiver notified!', 'paid');
-  showToast('Marked as paid ✅', 'success');
+      setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+      showToast('Marked as paid ✅', 'success');
 
-  // Fire backend update (don't wait for response)
-  fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
-    method: 'POST',
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-      "apikey": SUPABASE_ANON_KEY
-    },
-    body: JSON.stringify({ slug })
-  }).catch(console.error);
+      fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "apikey": SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({ slug })
+      }).catch(console.error);
 
-  iPaidBtn.disabled = false;
-  iPaidBtn.innerHTML = '✅ I Paid (Notify Receiver)';
-}
+      iPaidBtn.disabled = false;
+      iPaidBtn.innerHTML = '✅ I Paid (Notify Receiver)';
+    }
+
     function payNowPlaceholder() {
       showToast('Opening wallet… (placeholder)', 'info');
     }
@@ -1483,7 +1613,6 @@
             
             const newStatus = payload?.new?.status;
 
-            // ✅ Confirmed: Clean paid styling for creator view
             if (newStatus === "paid") {
               payStatus.textContent = "✅ PAID — Receiver notified!";
               payStatus.classList.add("paid");
@@ -1504,6 +1633,27 @@
       }, 5000);
     }
 
+    function startStatusPageRealtime(walletId) {
+      stopRealtime();
+
+      realtimeChannel = window.supabaseClient
+        .channel(`creator-status-${walletId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "invoices",
+            filter: `creator_account=eq.${walletId}`
+          },
+          (payload) => {
+            console.log("Status page update:", payload);
+            loadStatusPage(walletId);
+          }
+        )
+        .subscribe();
+    }
+
     async function createInvoiceViaEdge({ receiver_account, requested_amount_hbar, amount_hbar }) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/create-invoice`, {
         method: "POST",
@@ -1522,6 +1672,126 @@
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "create-invoice failed");
       return json;
+    }
+
+    async function confirmPayment(slug) {
+      try {
+        const { error } = await window.supabaseClient
+          .from('invoices')
+          .update({ 
+            confirmed_by_creator: true,
+            status: 'paid'
+          })
+          .eq('slug', slug);
+
+        if (error) throw error;
+
+        showToast('Payment confirmed! ✅', 'success');
+
+      } catch (err) {
+        console.error(err);
+        showToast('Could not confirm payment', 'error');
+      }
+    }
+
+    async function toggleStatus(slug, newStatus) {
+      try {
+        const { error } = await window.supabaseClient
+          .from('invoices')
+          .update({ 
+            status: newStatus,
+            confirmed_by_creator: false
+          })
+          .eq('slug', slug);
+
+        if (error) throw error;
+
+        showToast(`Status updated to ${newStatus}`, 'success');
+
+      } catch (err) {
+        console.error(err);
+        showToast('Could not update status', 'error');
+      }
+    }
+
+    function copyInvoiceLink(slug) {
+      const link = `${window.location.origin}/invoice/${slug}`;
+      copyText(link, 'Link copied! ✅');
+    }
+
+    window.confirmPayment = confirmPayment;
+    window.toggleStatus = toggleStatus;
+    window.copyInvoiceLink = copyInvoiceLink;
+
+    async function renderInvoiceList(invoices) {
+      if (invoices.length === 0) {
+        invoiceListContainer.innerHTML = '<p style="color: rgba(255,255,255,0.5); text-align: center; padding: 40px 0;">No invoices yet</p>';
+        return;
+      }
+
+      const html = invoices.map(inv => {
+        let statusBadge, actionButton;
+
+        if (inv.status === 'paid' && inv.confirmed_by_creator) {
+          statusBadge = '<span class="status-badge confirmed">✅ CONFIRMED</span>';
+          actionButton = `<button class="ht-btn ht-btn-secondary ht-btn-small" onclick="toggleStatus('${inv.slug}', 'unpaid')">Mark as Unpaid</button>`;
+        } 
+        else if (inv.status === 'paid' && !inv.confirmed_by_creator) {
+          statusBadge = '<span class="status-badge paid">💰 PAID (Unconfirmed)</span>';
+          actionButton = `<button class="ht-btn ht-btn-primary ht-btn-small" onclick="confirmPayment('${inv.slug}')">Confirm Payment</button>`;
+        } 
+        else {
+          statusBadge = '<span class="status-badge">⏳ UNCONFIRMED</span>';
+          actionButton = `<button class="ht-btn ht-btn-secondary ht-btn-small" disabled style="opacity: 0.5;">Waiting for payment...</button>`;
+        }
+
+        const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
+
+        return `
+          <div class="invoice-card" data-slug="${inv.slug}">
+            <div class="invoice-header">
+              <strong>Invoice #${inv.slug.slice(0, 8)}</strong>
+              ${statusBadge}
+            </div>
+            <div class="invoice-details">
+              <p><strong>Amount:</strong> $${inv.requested_amount_hbar} USD</p>
+              <p><a href="${invoiceUrl}" target="_blank">${invoiceUrl}</a></p>
+            </div>
+            <div class="invoice-actions">
+              ${actionButton}
+              <button class="ht-btn ht-btn-action ht-btn-small" onclick="copyInvoiceLink('${inv.slug}')">Copy Link</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      invoiceListContainer.innerHTML = html;
+    }
+
+    async function loadStatusPage(walletId) {
+      try {
+        enterStatusMode();
+
+        statusWalletId.textContent = walletId;
+        invoiceListContainer.innerHTML = '<p style="color: rgba(255,255,255,0.5); text-align: center; padding: 20px;">Loading...</p>';
+
+        const { data: invoices, error } = await window.supabaseClient
+          .from('invoices')
+          .select('*')
+          .eq('creator_account', walletId)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        await renderInvoiceList(invoices);
+
+        startStatusPageRealtime(walletId);
+
+      } catch (err) {
+        console.error(err);
+        showToast('Could not load invoices', 'error');
+        enterHomeMode();
+      }
     }
 
     async function generatePaymentLink() {
@@ -1554,7 +1824,6 @@
         currentAmount = requestedAmount;
 
         document.getElementById('usdAmount').textContent = requestedAmount;
-        document.getElementById('hbarAmount').textContent = Number(inv.amount_hbar).toFixed(7);
 
         enterCreatorResultMode();
 
@@ -1580,6 +1849,7 @@
       formSection.classList.remove('hidden');
       resultSection.classList.remove('active');
       payerSection.classList.remove('active');
+      statusSection.classList.remove('active');
 
       subsubtitle.classList.remove('active');
       subtitle.textContent = 'Create a payment link in seconds';
@@ -1609,14 +1879,13 @@
       }
     }
 
-    // ✅ REVERTED: Connect button behavior back to original (disable when connected)
     async function connectWallet() {
-      if (isInvoicePage()) {
-        showToast('Wallet connection is not required on invoice page', 'info');
+      if (isInvoicePage() || isStatusPage()) {
+        showToast('Wallet connection is not required on this page', 'info');
         return;
       }
       
-      if (isWalletConnected) return; // Already connected
+      if (isWalletConnected) return;
 
       try {
         connectBtn.innerHTML = '<span class="spinner"></span>Connecting...';
@@ -1628,10 +1897,9 @@
 
         isWalletConnected = true;
         
-        // ✅ Keep the color change (success green) but disable the button
         connectBtn.innerHTML = '✓ Wallet Connected';
         connectBtn.classList.add('ht-btn-success');
-        connectBtn.disabled = true; // ✅ Disabled, user must use × button to disconnect
+        connectBtn.disabled = true;
 
         accountIdSpan.textContent = accountId;
         accountDisplay.classList.add('active');
@@ -1734,11 +2002,19 @@
 
     window.addEventListener('load', async () => {
       const slug = getInvoiceSlugFromUrl();
+      const walletId = getWalletIdFromUrl();
 
       if (slug) {
         formSection.classList.add('hidden');
         accountDisplay.classList.remove('active');
         await loadInvoiceAndRenderPayer(slug);
+        return;
+      }
+
+      if (walletId) {
+        formSection.classList.add('hidden');
+        accountDisplay.classList.remove('active');
+        await loadStatusPage(walletId);
         return;
       }
 
@@ -1753,7 +2029,6 @@
               accountId = accounts[0].split(':')[2];
               isWalletConnected = true;
 
-              // ✅ Keep success styling but disable button
               connectBtn.innerHTML = '✓ Wallet Connected';
               connectBtn.classList.add('ht-btn-success');
               connectBtn.disabled = true;
