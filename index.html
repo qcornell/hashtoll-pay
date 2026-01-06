@@ -1468,7 +1468,6 @@
       }
     }
 
-    // ✅ FIX 2: Better fallback logic with realtimeEventReceived
     function startCreatorRealtime(slug) {
       const payStatus = document.getElementById("payStatus");
       payStatus.textContent = "Request payment securely...";
@@ -1476,7 +1475,7 @@
 
       stopRealtime();
 
-      let realtimeEventReceived = false; // ✅ Changed from realtimeConnected
+      let realtimeEventReceived = false;
 
       realtimeChannel = window.supabaseClient
         .channel(`invoice-status-${slug}`)
@@ -1490,7 +1489,7 @@
           },
           (payload) => {
             console.log("Realtime update received:", payload);
-            realtimeEventReceived = true; // ✅ Only set true when event actually arrives
+            realtimeEventReceived = true;
             
             const newStatus = payload?.new?.status;
 
@@ -1506,7 +1505,6 @@
           console.log("Realtime subscription status:", status);
         });
 
-      // ✅ Start fallback polling after 5s if no event received
       setTimeout(() => {
         if (!realtimeEventReceived && !fallbackPollInterval) {
           console.log("No realtime events received, starting fallback polling");
@@ -1620,13 +1618,17 @@
       }
     }
 
-    // ✅ FIX 1: Added missing connectWallet function
     async function connectWallet() {
       if (isInvoicePage()) {
         showToast('Wallet connection is not required on invoice page', 'info');
         return;
       }
-      if (isWalletConnected) return;
+      
+      // ✅ FIX 1: If already connected, allow clicking to disconnect
+      if (isWalletConnected) {
+        disconnectWallet();
+        return;
+      }
 
       try {
         connectBtn.innerHTML = '<span class="spinner"></span>Connecting...';
@@ -1637,8 +1639,11 @@
         accountId = await window.hederaConnect.connect();
 
         isWalletConnected = true;
-        connectBtn.innerHTML = '✓ Wallet Connected';
+        
+        // ✅ FIX 1: Keep button enabled and change text
+        connectBtn.innerHTML = '✓ Connected (Tap to disconnect)';
         connectBtn.classList.add('ht-btn-success');
+        connectBtn.disabled = false; // ✅ Keep enabled so user can disconnect
 
         accountIdSpan.textContent = accountId;
         accountDisplay.classList.add('active');
@@ -1742,7 +1747,10 @@
     window.addEventListener('load', async () => {
       const slug = getInvoiceSlugFromUrl();
 
+      // ✅ FIX 2: Immediately hide form section on invoice page to prevent flash
       if (slug) {
+        formSection.classList.add('hidden');
+        accountDisplay.classList.remove('active');
         await loadInvoiceAndRenderPayer(slug);
         return;
       }
@@ -1758,9 +1766,10 @@
               accountId = accounts[0].split(':')[2];
               isWalletConnected = true;
 
-              connectBtn.innerHTML = '✓ Wallet Connected';
+              // ✅ FIX 1: Don't permanently disable the button on session restore
+              connectBtn.innerHTML = '✓ Connected (Tap to disconnect)';
               connectBtn.classList.add('ht-btn-success');
-              connectBtn.disabled = true;
+              connectBtn.disabled = false; // ✅ Keep enabled
 
               accountIdSpan.textContent = accountId;
               accountDisplay.classList.add('active');
