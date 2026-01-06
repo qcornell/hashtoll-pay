@@ -1146,13 +1146,6 @@
       };
     }
 
-    function makeSlug(len = 18) {
-      const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-      const arr = new Uint8Array(len);
-      crypto.getRandomValues(arr);
-      return Array.from(arr, x => chars[x % chars.length]).join("");
-    }
-
     function getInvoiceSlugFromUrl() {
       const path = window.location.pathname;
       const match = path.match(/^\/invoice\/([a-zA-Z0-9_-]+)$/);
@@ -1358,10 +1351,9 @@
         payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
         payerUsdAmount.textContent = inv.requested_amount_hbar;
 
-        // ✅ FIX 2: Show exact HBAR line if available
         if (inv.amount_hbar != null) {
           payerHbarAmount.textContent = Number(inv.amount_hbar).toFixed(7);
-          payerHbarLine.style.display = 'flex'; // Show it instead of hiding
+          payerHbarLine.style.display = 'flex';
         }
 
         if (inv.status === 'paid') {
@@ -1442,9 +1434,8 @@
       }
     }
 
-    // ✅ Realtime channel management
     let realtimeChannel = null;
-    let fallbackPollInterval = null; // ✅ FIX 3B: Fallback polling
+    let fallbackPollInterval = null;
 
     function stopRealtime() {
       try {
@@ -1461,7 +1452,6 @@
       }
     }
 
-    // ✅ FIX 3B: Fallback polling in case realtime doesn't connect
     async function fallbackPollInvoiceStatus(slug) {
       try {
         const inv = await loadInvoice(slug);
@@ -1471,14 +1461,14 @@
           payStatus.textContent = "✅ PAID — Receiver notified!";
           payStatus.classList.add("paid");
           showToast("Payment marked paid ✅", "success");
-          stopRealtime(); // Stop both realtime and polling
+          stopRealtime();
         }
       } catch (err) {
         console.warn("Fallback poll error:", err);
       }
     }
 
-    // ✅ Realtime listener (with fallback)
+    // ✅ FIX 2: Better fallback logic with realtimeEventReceived
     function startCreatorRealtime(slug) {
       const payStatus = document.getElementById("payStatus");
       payStatus.textContent = "Request payment securely...";
@@ -1486,7 +1476,7 @@
 
       stopRealtime();
 
-      let realtimeConnected = false;
+      let realtimeEventReceived = false; // ✅ Changed from realtimeConnected
 
       realtimeChannel = window.supabaseClient
         .channel(`invoice-status-${slug}`)
@@ -1500,7 +1490,7 @@
           },
           (payload) => {
             console.log("Realtime update received:", payload);
-            realtimeConnected = true; // Mark as connected when first event arrives
+            realtimeEventReceived = true; // ✅ Only set true when event actually arrives
             
             const newStatus = payload?.new?.status;
 
@@ -1508,29 +1498,23 @@
               payStatus.textContent = "✅ PAID — Receiver notified!";
               payStatus.classList.add("paid");
               showToast("Payment marked paid ✅", "success");
-              stopRealtime(); // Stop listening after paid
+              stopRealtime();
             }
           }
         )
         .subscribe((status) => {
           console.log("Realtime subscription status:", status);
-          
-          // ✅ FIX 3B: Start fallback polling if not connected after 5 seconds
-          if (status === "SUBSCRIBED") {
-            realtimeConnected = true;
-          }
         });
 
-      // Start fallback polling after 5 seconds if realtime hasn't fired
+      // ✅ Start fallback polling after 5s if no event received
       setTimeout(() => {
-        if (!realtimeConnected && !fallbackPollInterval) {
-          console.log("Realtime not connected, starting fallback polling");
+        if (!realtimeEventReceived && !fallbackPollInterval) {
+          console.log("No realtime events received, starting fallback polling");
           fallbackPollInterval = setInterval(() => fallbackPollInvoiceStatus(slug), 3000);
         }
       }, 5000);
     }
 
-    // ✅ FIX 1: Call edge function instead of direct insert
     async function createInvoiceViaEdge({ receiver_account, requested_amount_hbar, amount_hbar }) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/create-invoice`, {
         method: "POST",
@@ -1548,7 +1532,7 @@
 
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "create-invoice failed");
-      return json; // expect: { slug, amount_hbar, requested_amount_hbar, receiver_account, status }
+      return json;
     }
 
     async function generatePaymentLink() {
@@ -1570,7 +1554,6 @@
 
         const { requested_amount_hbar, amount_hbar } = makeUniquePayAmount(requestedAmount);
 
-        // ✅ FIX 1: Use edge function instead of direct insert
         const inv = await createInvoiceViaEdge({
           receiver_account: accountId,
           requested_amount_hbar,
@@ -1592,7 +1575,6 @@
 
         showToast("Invoice created! 🎉", "success");
 
-        // ✅ Start realtime listener
         startCreatorRealtime(inv.slug);
 
       } catch (err) {
@@ -1637,6 +1619,66 @@
         generateBtn.disabled = true;
       }
     }
+
+    // ✅ FIX 1: Added missing connectWallet function
+    async function connectWallet() {
+      if (isInvoicePage()) {
+        showToast('Wallet connection is not required on invoice page', 'info');
+        return;
+      }
+      if (isWalletConnected) return;
+
+      try {
+        connectBtn.innerHTML = '<span class="spinner"></span>Connecting...';
+        connectBtn.disabled = true;
+
+        if (!window.hederaConnect) throw new Error('WalletConnect not loaded yet');
+
+        accountId = await window.hederaConnect.connect();
+
+        isWalletConnected = true;
+        connectBtn.innerHTML = '✓ Wallet Connected';
+        connectBtn.classList.add('ht-btn-success');
+
+        accountIdSpan.textContent = accountId;
+        accountDisplay.classList.add('active');
+
+        updateGenerateButton();
+      } catch (error) {
+        console.error('Connection failed:', error);
+        let errorMsg = error.message || 'Unknown error';
+        if (String(errorMsg).includes('closed')) errorMsg = 'Connection cancelled';
+
+        showToast('Failed to connect: ' + errorMsg, 'error');
+
+        connectBtn.innerHTML = 'Connect Wallet';
+        connectBtn.disabled = false;
+      }
+    }
+
+    function disconnectWallet() {
+      if (!window.hederaConnect) return;
+
+      window.hederaConnect.disconnect();
+
+      isWalletConnected = false;
+      accountId = null;
+
+      connectBtn.innerHTML = 'Connect Wallet';
+      connectBtn.classList.remove('ht-btn-success');
+      connectBtn.disabled = false;
+
+      accountDisplay.classList.remove('active');
+
+      showFormView();
+
+      generateBtn.disabled = true;
+      input.value = '';
+
+      showToast('Wallet disconnected', 'info');
+    }
+
+    window.disconnectWallet = disconnectWallet;
 
     const placeholderText = 'Enter Amount';
     let charIndex = 0;
@@ -1695,7 +1737,6 @@
       await notifyPaidOnce(currentInvoiceSlug);
     });
 
-    // ✅ FIX 3A: Clean up on page unload
     window.addEventListener('beforeunload', stopRealtime);
 
     window.addEventListener('load', async () => {
