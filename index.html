@@ -1367,14 +1367,15 @@
       }
     }
 
+    // ✅ UPDATED: Use SUPABASE_URL variable and immediately show paid status
     async function notifyPaidOnce(slug) {
       try {
         iPaidBtn.disabled = true;
-        iPaidBtn.innerHTML = '<span class="spinner"></span>Notifying...';
+        iPaidBtn.innerHTML = '<span class="spinner"></span>Marking paid...';
 
-        setPayerStatus('📩 Notifying receiver...', 'default');
+        setPayerStatus('📩 Marking as PAID...', 'default');
 
-        const res = await fetch('https://pvtoczsnwamailsjjnfn.supabase.co/functions/v1/notify-paid', {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
           method: 'POST',
           headers: {
             "Content-Type": "application/json",
@@ -1387,12 +1388,14 @@
         const result = await res.json();
         if (!res.ok) throw new Error(result?.error || "Notify failed");
 
-        setPayerStatus('✅ Marked as PAID — receiver notified!', 'paid');
-        showToast('Receiver notified! ✅', 'success');
+        // ✅ TRUST ME BRO: immediately show paid
+        setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+        showToast('Marked as paid ✅', 'success');
+
       } catch (err) {
         console.error(err);
-        setPayerStatus('⚠️ Could not notify — try again', 'warn');
-        showToast('Notify failed', 'error');
+        setPayerStatus('⚠️ Could not mark paid — try again', 'warn');
+        showToast('Mark paid failed', 'error');
       } finally {
         iPaidBtn.disabled = false;
         iPaidBtn.innerHTML = '✅ I Paid (Notify Receiver)';
@@ -1493,6 +1496,7 @@
             
             const newStatus = payload?.new?.status;
 
+            // ✅ Confirmed: Clean paid styling for creator view
             if (newStatus === "paid") {
               payStatus.textContent = "✅ PAID — Receiver notified!";
               payStatus.classList.add("paid");
@@ -1618,17 +1622,14 @@
       }
     }
 
+    // ✅ REVERTED: Connect button behavior back to original (disable when connected)
     async function connectWallet() {
       if (isInvoicePage()) {
         showToast('Wallet connection is not required on invoice page', 'info');
         return;
       }
       
-      // ✅ FIX 1: If already connected, allow clicking to disconnect
-      if (isWalletConnected) {
-        disconnectWallet();
-        return;
-      }
+      if (isWalletConnected) return; // Already connected
 
       try {
         connectBtn.innerHTML = '<span class="spinner"></span>Connecting...';
@@ -1640,10 +1641,10 @@
 
         isWalletConnected = true;
         
-        // ✅ FIX 1: Keep button enabled and change text
-        connectBtn.innerHTML = '✓ Connected (Tap to disconnect)';
+        // ✅ Keep the color change (success green) but disable the button
+        connectBtn.innerHTML = '✓ Wallet Connected';
         connectBtn.classList.add('ht-btn-success');
-        connectBtn.disabled = false; // ✅ Keep enabled so user can disconnect
+        connectBtn.disabled = true; // ✅ Disabled, user must use × button to disconnect
 
         accountIdSpan.textContent = accountId;
         accountDisplay.classList.add('active');
@@ -1747,7 +1748,6 @@
     window.addEventListener('load', async () => {
       const slug = getInvoiceSlugFromUrl();
 
-      // ✅ FIX 2: Immediately hide form section on invoice page to prevent flash
       if (slug) {
         formSection.classList.add('hidden');
         accountDisplay.classList.remove('active');
@@ -1766,10 +1766,10 @@
               accountId = accounts[0].split(':')[2];
               isWalletConnected = true;
 
-              // ✅ FIX 1: Don't permanently disable the button on session restore
-              connectBtn.innerHTML = '✓ Connected (Tap to disconnect)';
+              // ✅ Keep success styling but disable button
+              connectBtn.innerHTML = '✓ Wallet Connected';
               connectBtn.classList.add('ht-btn-success');
-              connectBtn.disabled = false; // ✅ Keep enabled
+              connectBtn.disabled = true;
 
               accountIdSpan.textContent = accountId;
               accountDisplay.classList.add('active');
