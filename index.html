@@ -1232,33 +1232,34 @@
     const iPaidBtn = document.getElementById('iPaidBtn');
     const payerStatus = document.getElementById('payerStatus');
 
-    function enterHomeMode() {
-      payerSection.classList.remove('active');
-      resultSection.classList.remove('active');
-      formSection.classList.remove('hidden');
+   function enterHomeMode() {
+  accountDisplay.classList.add('active');     // ✅ show on wallet connect screen
+  payerSection.classList.remove('active');
+  resultSection.classList.remove('active');
+  formSection.classList.remove('hidden');
 
-      subsubtitle.classList.remove('active');
-      subtitle.textContent = 'Create a payment link in seconds';
-    }
+  subsubtitle.classList.remove('active');
+  subtitle.textContent = 'Create a payment link in seconds';
+}
 
-    function enterCreatorResultMode() {
-      payerSection.classList.remove('active');
-      formSection.classList.add('hidden');
-      resultSection.classList.add('active');
+function enterCreatorResultMode() {
+  accountDisplay.classList.remove('active');  // ✅ hide on QR/result screen
+  payerSection.classList.remove('active');
+  formSection.classList.add('hidden');
+  resultSection.classList.add('active');
 
-      subsubtitle.classList.remove('active');
-      subtitle.textContent = 'Your payment link is ready!';
-    }
+  subsubtitle.classList.remove('active');
+  subtitle.textContent = 'Your payment link is ready!';
+}
 
-    function enterInvoiceMode() {
-      accountDisplay.classList.remove('active');
-      formSection.classList.add('hidden');
-      resultSection.classList.remove('active');
+function enterInvoiceMode() {
+  accountDisplay.classList.remove('active');  // ✅ hide on invoice page too
+  formSection.classList.add('hidden');
+  resultSection.classList.remove('active');
+  payerSection.classList.add('active');
 
-      payerSection.classList.add('active');
-
-      subsubtitle.classList.add('active');
-    }
+  subsubtitle.classList.add('active');
+}
 
     async function renderQrInto(containerEl, url) {
       containerEl.innerHTML = '';
