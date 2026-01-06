@@ -401,7 +401,7 @@
 
     /* Optional exact HBAR line */
     .ht-hbar-line {
-      display: none;
+      display: flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
@@ -1344,7 +1344,6 @@
         payerReceiverAccount.textContent = 'Loading...';
         payerUsdAmount.textContent = '...';
         payerHbarAmount.textContent = '...';
-        payerHbarLine.style.display = 'none';
         
         payerStatus.classList.add('payer-status-hidden');
 
@@ -1359,9 +1358,10 @@
         payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
         payerUsdAmount.textContent = inv.requested_amount_hbar;
 
+        // ✅ FIX 2: Show exact HBAR line if available
         if (inv.amount_hbar != null) {
           payerHbarAmount.textContent = Number(inv.amount_hbar).toFixed(7);
-          payerHbarLine.style.display = 'none';
+          payerHbarLine.style.display = 'flex'; // Show it instead of hiding
         }
 
         if (inv.status === 'paid') {
@@ -1442,8 +1442,9 @@
       }
     }
 
-    // ✅ NEW: Realtime channel management
+    // ✅ Realtime channel management
     let realtimeChannel = null;
+    let fallbackPollInterval = null; // ✅ FIX 3B: Fallback polling
 
     function stopRealtime() {
       try {
@@ -1451,18 +1452,41 @@
           window.supabaseClient.removeChannel(realtimeChannel);
           realtimeChannel = null;
         }
+        if (fallbackPollInterval) {
+          clearInterval(fallbackPollInterval);
+          fallbackPollInterval = null;
+        }
       } catch (e) {
         console.warn("Error stopping realtime:", e);
       }
     }
 
-    // ✅ NEW: Realtime listener (replaces polling)
+    // ✅ FIX 3B: Fallback polling in case realtime doesn't connect
+    async function fallbackPollInvoiceStatus(slug) {
+      try {
+        const inv = await loadInvoice(slug);
+        const payStatus = document.getElementById("payStatus");
+        
+        if (inv.status === "paid") {
+          payStatus.textContent = "✅ PAID — Receiver notified!";
+          payStatus.classList.add("paid");
+          showToast("Payment marked paid ✅", "success");
+          stopRealtime(); // Stop both realtime and polling
+        }
+      } catch (err) {
+        console.warn("Fallback poll error:", err);
+      }
+    }
+
+    // ✅ Realtime listener (with fallback)
     function startCreatorRealtime(slug) {
       const payStatus = document.getElementById("payStatus");
       payStatus.textContent = "Request payment securely...";
       payStatus.classList.remove("paid");
 
       stopRealtime();
+
+      let realtimeConnected = false;
 
       realtimeChannel = window.supabaseClient
         .channel(`invoice-status-${slug}`)
@@ -1476,6 +1500,8 @@
           },
           (payload) => {
             console.log("Realtime update received:", payload);
+            realtimeConnected = true; // Mark as connected when first event arrives
+            
             const newStatus = payload?.new?.status;
 
             if (newStatus === "paid") {
@@ -1488,67 +1514,42 @@
         )
         .subscribe((status) => {
           console.log("Realtime subscription status:", status);
+          
+          // ✅ FIX 3B: Start fallback polling if not connected after 5 seconds
+          if (status === "SUBSCRIBED") {
+            realtimeConnected = true;
+          }
         });
+
+      // Start fallback polling after 5 seconds if realtime hasn't fired
+      setTimeout(() => {
+        if (!realtimeConnected && !fallbackPollInterval) {
+          console.log("Realtime not connected, starting fallback polling");
+          fallbackPollInterval = setInterval(() => fallbackPollInvoiceStatus(slug), 3000);
+        }
+      }, 5000);
     }
 
-    async function connectWallet() {
-      if (isInvoicePage()) {
-        showToast('Wallet connection is not required on invoice page', 'info');
-        return;
-      }
-      if (isWalletConnected) return;
+    // ✅ FIX 1: Call edge function instead of direct insert
+    async function createInvoiceViaEdge({ receiver_account, requested_amount_hbar, amount_hbar }) {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-invoice`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "apikey": SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({
+          receiver_account,
+          requested_amount_hbar,
+          amount_hbar
+        })
+      });
 
-      try {
-        connectBtn.innerHTML = '<span class="spinner"></span>Connecting...';
-        connectBtn.disabled = true;
-
-        if (!window.hederaConnect) throw new Error('WalletConnect not loaded yet');
-
-        accountId = await window.hederaConnect.connect();
-
-        isWalletConnected = true;
-        connectBtn.innerHTML = '✓ Wallet Connected';
-        connectBtn.classList.add('ht-btn-success');
-
-        accountIdSpan.textContent = accountId;
-        accountDisplay.classList.add('active');
-
-        updateGenerateButton();
-      } catch (error) {
-        console.error('Connection failed:', error);
-        let errorMsg = error.message || 'Unknown error';
-        if (String(errorMsg).includes('closed')) errorMsg = 'Connection cancelled';
-
-        showToast('Failed to connect: ' + errorMsg, 'error');
-
-        connectBtn.innerHTML = 'Connect Wallet';
-        connectBtn.disabled = false;
-      }
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "create-invoice failed");
+      return json; // expect: { slug, amount_hbar, requested_amount_hbar, receiver_account, status }
     }
-
-    function disconnectWallet() {
-      if (!window.hederaConnect) return;
-
-      window.hederaConnect.disconnect();
-
-      isWalletConnected = false;
-      accountId = null;
-
-      connectBtn.innerHTML = 'Connect Wallet';
-      connectBtn.classList.remove('ht-btn-success');
-      connectBtn.disabled = false;
-
-      accountDisplay.classList.remove('active');
-
-      showFormView();
-
-      generateBtn.disabled = true;
-      input.value = '';
-
-      showToast('Wallet disconnected', 'info');
-    }
-
-    window.disconnectWallet = disconnectWallet;
 
     async function generatePaymentLink() {
       const requestedAmount = Number(input.value);
@@ -1568,28 +1569,20 @@
         generateBtn.disabled = true;
 
         const { requested_amount_hbar, amount_hbar } = makeUniquePayAmount(requestedAmount);
-        const slug = makeSlug(20);
 
-        const { data, error } = await window.supabaseClient
-          .from("invoices")
-          .insert([{
-            slug,
-            receiver_account: accountId,
-            requested_amount_hbar,
-            amount_hbar,
-            status: "open"
-          }])
-          .select("slug")
-          .single();
+        // ✅ FIX 1: Use edge function instead of direct insert
+        const inv = await createInvoiceViaEdge({
+          receiver_account: accountId,
+          requested_amount_hbar,
+          amount_hbar
+        });
 
-        if (error) throw error;
-
-        const paymentLink = `${window.location.origin}/invoice/${data.slug}`;
+        const paymentLink = `${window.location.origin}/invoice/${inv.slug}`;
         currentPaymentLink = paymentLink;
         currentAmount = requestedAmount;
 
         document.getElementById('usdAmount').textContent = requestedAmount;
-        document.getElementById('hbarAmount').textContent = Number(amount_hbar).toFixed(7);
+        document.getElementById('hbarAmount').textContent = Number(inv.amount_hbar).toFixed(7);
 
         enterCreatorResultMode();
 
@@ -1599,8 +1592,8 @@
 
         showToast("Invoice created! 🎉", "success");
 
-        // ✅ Start realtime listener instead of polling
-        startCreatorRealtime(data.slug);
+        // ✅ Start realtime listener
+        startCreatorRealtime(inv.slug);
 
       } catch (err) {
         console.error(err);
@@ -1611,7 +1604,6 @@
     }
 
     function showFormView() {
-      // ✅ Stop realtime when going back to form
       stopRealtime();
 
       formSection.classList.remove('hidden');
@@ -1630,7 +1622,6 @@
     }
 
     function createAnother() {
-      // ✅ Stop realtime when creating new invoice
       stopRealtime();
       
       input.value = '';
@@ -1703,6 +1694,9 @@
       if (!currentInvoiceSlug) return;
       await notifyPaidOnce(currentInvoiceSlug);
     });
+
+    // ✅ FIX 3A: Clean up on page unload
+    window.addEventListener('beforeunload', stopRealtime);
 
     window.addEventListener('load', async () => {
       const slug = getInvoiceSlugFromUrl();
