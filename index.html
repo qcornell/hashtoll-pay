@@ -25,7 +25,6 @@
     /* --- CSS VARIABLES --- */
     :root {
       --ht-card-width: 440px;
-      /* --ht-primary-blue: #4f6deb; */
       --ht-primary-hover: #315089;
       --ht-success-green: #38b5c4;
       --ht-success-green-dark: #26b181;
@@ -47,7 +46,6 @@
       min-height: 100dvh;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       
-      /* More visible texture with lighter gradient overlay */
       background: 
         linear-gradient(135deg, rgba(232, 234, 246, 0.50) 0%, rgba(245, 247, 250, 0.60) 50%, rgba(227, 242, 253, 0.50) 100%),
         url('/home_bg2.png') center center / cover no-repeat fixed;
@@ -81,7 +79,6 @@
       pointer-events: auto;
     }
 
-    /* --- CLEAN WHITE CARD --- */
     .ht-card {
       width: 100%;
       max-width: var(--ht-card-width);
@@ -136,7 +133,6 @@
       display: block;
     }
 
-    /* --- MODERN ACCOUNT DISPLAY (HOME ONLY) --- */
     .ht-account-display {
       display: none;
       background: linear-gradient(135deg, rgba(56, 181, 196, 0.08) 0%, rgba(38, 177, 129, 0.08) 100%);
@@ -195,7 +191,6 @@
       transform: scale(0.95);
     }
 
-    /* --- FORM SECTION (HOME) --- */
     .ht-form-section {
       transition: all 0.4s ease;
     }
@@ -271,7 +266,6 @@
       color: rgba(108, 117, 125, 0.5);
     }
 
-    /* Payment Description Display */
     .ht-description {
       background: linear-gradient(135deg, rgba(79, 109, 235, 0.05) 0%, rgba(56, 181, 196, 0.05) 100%);
       border: 1.5px solid rgba(79, 109, 235, 0.15);
@@ -311,7 +305,6 @@
       font-style: italic;
     }
 
-    /* --- RESULT SECTION (CREATOR AFTER GENERATE) --- */
     .ht-result-section {
       display: none;
       transition: all 0.4s ease;
@@ -322,7 +315,6 @@
       animation: fadeInUp 0.4s ease;
     }
 
-    /* --- PAYER SECTION (INVOICE PAGE) --- */
     .ht-payer-section {
       display: none;
       animation: fadeInUp 0.4s ease;
@@ -332,7 +324,6 @@
       display: block;
     }
 
-    /* --- STATUS SECTION (DASHBOARD) --- */
     .ht-status-section {
       display: none;
       animation: fadeInUp 0.4s ease;
@@ -348,7 +339,7 @@
       border-radius: var(--ht-radius);
       padding: 20px;
       margin-bottom: 24px;
-      display: flex;
+      display: none; /* HIDDEN */
       align-items: center;
       justify-content: space-between;
       gap: 12px;
@@ -521,7 +512,6 @@
       opacity: 0.3;
     }
 
-    /* Centered account row */
     .payer-account-row {
       display: flex;
       align-items: center;
@@ -571,7 +561,6 @@
         opacity: 0;
         transform: translateY(20px);
       }
-
       to {
         opacity: 1;
         transform: translateY(0);
@@ -595,7 +584,6 @@
       height: auto !important;
     }
 
-    /* USD Worth Line */
     .ht-usd-worth {
       font-size: 1.1rem;
       font-weight: 600;
@@ -604,7 +592,6 @@
       margin-bottom: 20px;
     }
 
-    /* Status pill/link */
     .ht-status {
       border-radius: var(--ht-radius);
       font-size: 0.9rem; 
@@ -674,7 +661,6 @@
       flex: 1;
     }
 
-    /* --- BUTTONS --- */
     .ht-btn {
       width: 100%;
       padding: 16px;
@@ -706,7 +692,6 @@
       box-shadow: 0 2px 8px rgba(79, 109, 235, 0.2);
     }
 
-    /* Greenish-blue gradient when wallet connected */
     .ht-btn-primary.ht-btn-success {
       background: var(--ht-success-green);
       box-shadow: 0 4px 12px rgba(56, 181, 196, 0.2);
@@ -721,7 +706,6 @@
       box-shadow: 0 2px 8px rgba(56, 181, 196, 0.2);
     }
 
-    /* Big Pay button */
     .ht-btn-pay {
       padding: 18px 16px;
       font-size: 1.02rem;
@@ -800,7 +784,6 @@
       line-height: 1.25;
     }
 
-    /* Toast Notifications */
     .toast {
       position: fixed;
       top: 24px;
@@ -825,7 +808,6 @@
         transform: translateX(400px) scale(0.9);
         opacity: 0;
       }
-
       to {
         transform: translateX(0) scale(1);
         opacity: 1;
@@ -866,7 +848,6 @@
       }
     }
 
-    /* Powered by Hedera footer */
     .ht-powered-by {
       margin-top: 32px;
       padding-top: 24px;
@@ -885,7 +866,6 @@
       opacity: 0.7;
     }
 
-    /* Mobile Optimization */
     @media (max-width: 500px) {
       body {
         padding: 10px 0;
@@ -1041,13 +1021,11 @@
       <p class="ht-subsubtitle" id="subsubtitle">Send securely via HashPack</p>
     </div>
 
-    <!-- Connected Account Display (ONLY on home page) -->
     <div class="ht-account-display" id="accountDisplay">
       <span class="ht-account-id" id="accountId">0.0.0</span>
       <button class="ht-disconnect-btn" onclick="disconnectWallet()" title="Disconnect">×</button>
     </div>
 
-    <!-- Form Section (HOME) -->
     <div class="ht-form-section" id="formSection">
       <div class="ht-input-group">
         <label class="ht-label">USD Amount</label>
@@ -1073,7 +1051,6 @@
       <button class="ht-btn ht-btn-secondary" id="generateBtn" disabled>Generate Payment Link</button>
     </div>
 
-    <!-- Result Section (CREATOR RESULT) -->
     <div class="ht-result-section" id="resultSection">
       <div class="ht-qr-container" id="qrContainer"></div>
 
@@ -1102,7 +1079,6 @@
       </button>
     </div>
 
-    <!-- Payer Section (INVOICE PAGE) -->
     <div class="ht-payer-section" id="payerSection">
       <div class="payer-account-row">
         <div class="payer-account-id" id="payerReceiverAccount">0.0.000000</div>
@@ -1125,7 +1101,6 @@
       <div class="ht-status payer-status-hidden" id="payerStatus">⏳ Waiting for payment...</div>
     </div>
 
-    <!-- Status Section (DASHBOARD) -->
     <div class="ht-status-section" id="statusSection">
       <div class="status-header">
         <div class="status-header-left">
@@ -1142,7 +1117,6 @@
       <div id="invoiceList"></div>
     </div>
 
-    <!-- Powered by Hedera -->
     <div class="ht-powered-by">
       <span>Powered by</span>
       <img src="/hedera.png" alt="Hedera">
@@ -1151,9 +1125,8 @@
 
   <div id="toast-container"></div>
 
-  <!-- Hedera WalletConnect & QRCode SDK -->
   <script type="module">
-    import { LedgerId } from "https://esm.sh/@hashgraph/sdk@2.78.0";
+    import { LedgerId, AccountId, Hbar, TransferTransaction } from "https://esm.sh/@hashgraph/sdk@2.78.0";
     import { DAppConnector, HederaJsonRpcMethod, HederaSessionEvent, HederaChainId } from "https://esm.sh/@hashgraph/hedera-wallet-connect@2.0.4?deps=@hashgraph/sdk@2.78.0";
     import QRCode from "https://esm.sh/qrcode@1.5.3";
 
@@ -1258,6 +1231,30 @@
       disconnect() {
         this.accountId = null;
         try { dAppConnector.disconnectAll(); } catch (e) { }
+      },
+
+      async sendHbar(receiverAccountId, amountHbar) {
+        await ensureInitialized();
+
+        if (!this.accountId) {
+          throw new Error("No wallet connected");
+        }
+
+        const senderAccountId = AccountId.fromString(this.accountId);
+        const transaction = new TransferTransaction()
+          .addHbarTransfer(senderAccountId, new Hbar(-amountHbar))
+          .addHbarTransfer(AccountId.fromString(receiverAccountId), new Hbar(amountHbar))
+          .setTransactionMemo("HashToll Pay");
+
+        const txBytes = transaction.toBytes();
+
+        const result = await dAppConnector.signAndExecuteTransaction(txBytes);
+
+        if (!result || !result.transactionId) {
+          throw new Error("Transaction failed");
+        }
+
+        return result;
       }
     };
 
@@ -1272,6 +1269,8 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2dG9jenNud2FtYWlsc2pqbmZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NjE1MTksImV4cCI6MjA4MzEzNzUxOX0.3mDZ3RUo7aHi25r1X1axYj0EppgXFKEY7xGvqdhDSbM';
 
     window.supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentInvoiceData = null;
 
     function showToast(message, type = 'info') {
       const toast = document.createElement('div');
@@ -1548,6 +1547,7 @@
         payerStatus.classList.add('payer-status-hidden');
 
         const inv = await loadInvoice(slug);
+        currentInvoiceData = inv;
 
         currentCreatorAccount = inv.creator_account;
 
@@ -1789,8 +1789,51 @@
       }
     }
 
-    function payNowPlaceholder() {
-      showToast('Opening wallet… (placeholder)', 'info');
+    async function payNow() {
+      if (!currentInvoiceData) {
+        showToast('Invoice data not loaded', 'error');
+        return;
+      }
+
+      try {
+        payNowBtn.disabled = true;
+        payNowBtn.innerHTML = '<span class="spinner"></span>Connecting wallet...';
+
+        if (!window.hederaConnect) {
+          throw new Error('WalletConnect not loaded');
+        }
+
+        const payerAccount = await window.hederaConnect.connect();
+
+        payNowBtn.innerHTML = '<span class="spinner"></span>Sending payment...';
+
+        const result = await window.hederaConnect.sendHbar(
+          currentInvoiceData.receiver_account,
+          currentInvoiceData.amount_hbar
+        );
+
+        console.log('Payment successful:', result);
+
+        showToast('Payment sent! ✅', 'success');
+
+        payNowBtn.innerHTML = '✓ Payment Sent';
+
+        setTimeout(async () => {
+          await notifyPaidOnce(currentInvoiceSlug);
+        }, 1000);
+
+      } catch (err) {
+        console.error('Payment failed:', err);
+        
+        let errorMsg = err.message || 'Payment failed';
+        if (String(errorMsg).includes('closed')) errorMsg = 'Payment cancelled';
+        if (String(errorMsg).includes('rejected')) errorMsg = 'Transaction rejected';
+
+        showToast(errorMsg, 'error');
+
+        payNowBtn.innerHTML = 'Pay Now';
+        payNowBtn.disabled = false;
+      }
     }
 
     async function copyText(text, successMsg = 'Copied!') {
@@ -2188,7 +2231,7 @@
       await copyText(acct, 'Receiver account copied!');
     });
 
-    payNowBtn.addEventListener('click', payNowPlaceholder);
+    payNowBtn.addEventListener('click', payNow);
     
     iPaidBtn.addEventListener('click', async () => {
       if (!currentInvoiceSlug) return;
