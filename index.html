@@ -723,21 +723,40 @@
       border-radius: 14px;
     }
 
-    .ht-btn-secondary {
-      background: rgba(0, 0, 0, 0.04);
-      color: var(--ht-text-primary);
-      border: 1.5px solid rgba(0, 0, 0, 0.08);
-      font-weight: 600;
-    }
+   /* ✅ SECONDARY BUTTON - BECOMES PRIMARY BLUE WHEN ENABLED */
+.ht-btn-secondary {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--ht-text-primary);
+  border: 1.5px solid rgba(0, 0, 0, 0.08);
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
 
-    .ht-btn-secondary:hover:not(:disabled) {
-      background: rgba(0, 0, 0, 0.06);
-      border-color: rgba(0, 0, 0, 0.12);
-    }
+.ht-btn-secondary:not(:disabled) {
+  background: linear-gradient(180deg, #4A5F8E, var(--ht-navy));
+  color: #FFFFFF;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(47, 62, 99, 0.2);
+}
 
-    .ht-btn-secondary:active:not(:disabled) {
-      transform: scale(0.99);
-    }
+.ht-btn-secondary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--ht-navy), var(--ht-navy-dark));
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(47, 62, 99, 0.3);
+}
+
+.ht-btn-secondary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(47, 62, 99, 0.2);
+}
+
+.ht-btn-secondary:disabled {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--ht-text-secondary);
+  border: 1.5px solid rgba(0, 0, 0, 0.08);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
 
     .ht-btn-action {
       background: rgba(0, 0, 0, 0.04);
