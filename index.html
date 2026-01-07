@@ -818,6 +818,25 @@
       }
     }
 
+    /* Powered by Hedera footer */
+    .ht-powered-by {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1.5px solid rgba(0, 0, 0, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 0.875rem;
+      color: var(--ht-text-muted);
+      font-weight: 500;
+    }
+
+    .ht-powered-by img {
+      height: 20px;
+      opacity: 0.7;
+    }
+
     /* Mobile Optimization */
     @media (max-width: 500px) {
       body {
@@ -956,25 +975,6 @@
         font-size: 1rem;
       }
     }
-
-    /* Powered by Hedera footer */
-    .ht-powered-by {
-      margin-top: 32px;
-      padding-top: 24px;
-      border-top: 1.5px solid rgba(0, 0, 0, 0.06);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      font-size: 0.875rem;
-      color: var(--ht-text-muted);
-      font-weight: 500;
-    }
-
-    .ht-powered-by img {
-      height: 20px;
-      opacity: 0.8;
-    }
   </style>
 </head>
 
@@ -1009,8 +1009,7 @@
       <button class="ht-btn ht-btn-secondary" id="generateBtn" disabled>Generate Payment Link</button>
     </div>
 
-    <!-- Rest of your sections remain the same... -->
-    <!-- Result Section -->
+    <!-- Result Section (CREATOR RESULT) -->
     <div class="ht-result-section" id="resultSection">
       <div class="ht-qr-container" id="qrContainer"></div>
 
@@ -1034,7 +1033,7 @@
       </button>
     </div>
 
-    <!-- Payer Section -->
+    <!-- Payer Section (INVOICE PAGE) -->
     <div class="ht-payer-section" id="payerSection">
       <div class="payer-account-row">
         <div class="payer-account-id" id="payerReceiverAccount">0.0.000000</div>
@@ -1052,7 +1051,7 @@
       <div class="ht-status payer-status-hidden" id="payerStatus">⏳ Waiting for payment...</div>
     </div>
 
-    <!-- Status Section -->
+    <!-- Status Section (DASHBOARD) -->
     <div class="ht-status-section" id="statusSection">
       <div class="status-header">
         <div class="status-header-left">
@@ -1072,19 +1071,1072 @@
     <!-- Powered by Hedera -->
     <div class="ht-powered-by">
       <span>Powered by</span>
-      <img src="/hedera-logo.svg" alt="Hedera" onerror="this.style.display='none'">
+      <img src="/hedera.png" alt="Hedera">
     </div>
   </div>
 
   <div id="toast-container"></div>
 
-  <!-- Keep all your existing JavaScript exactly as is -->
+  <!-- Hedera WalletConnect & QRCode SDK -->
   <script type="module">
-    // ... (all your existing JavaScript code remains unchanged)
+    import { LedgerId } from "https://esm.sh/@hashgraph/sdk@2.78.0";
+    import { DAppConnector, HederaJsonRpcMethod, HederaSessionEvent, HederaChainId } from "https://esm.sh/@hashgraph/hedera-wallet-connect@2.0.4?deps=@hashgraph/sdk@2.78.0";
+    import QRCode from "https://esm.sh/qrcode@1.5.3";
+
+    const PROJECT_ID = "1acd173110297b885db0bad6276e6868";
+
+    const metadata = {
+      name: "HashToll Pay",
+      description: "Create Hedera Payment Links",
+      url: window.location.origin,
+      icons: [`${window.location.origin}/favicon.png`]
+    };
+
+    const dAppConnector = new DAppConnector(
+      metadata,
+      LedgerId.MAINNET,
+      PROJECT_ID,
+      Object.values(HederaJsonRpcMethod),
+      Object.values(HederaSessionEvent),
+      [HederaChainId.Mainnet]
+    );
+
+    let initialized = false;
+
+    async function ensureInitialized() {
+      if (initialized) return;
+      try {
+        await dAppConnector.init({ logger: "error" });
+        initialized = true;
+      } catch (err) {
+        console.error("❌ WalletConnect init failed:", err);
+        throw err;
+      }
+    }
+
+    const hederaConnect = {
+      dAppConnector,
+      accountId: null,
+
+      async connect() {
+        await ensureInitialized();
+
+        if (this.accountId) return this.accountId;
+
+        const cleanup = () => document.body.classList.remove("walletconnect-open");
+
+        try {
+          document.body.classList.add("walletconnect-open");
+
+          const existingSessions = dAppConnector.walletConnectClient?.session?.getAll() ?? [];
+          if (existingSessions.length > 0) {
+            const accounts = existingSessions[0]?.namespaces?.hedera?.accounts ?? [];
+            if (accounts.length > 0) {
+              this.accountId = accounts[0].split(':')[2];
+              cleanup();
+              return this.accountId;
+            }
+          }
+
+          dAppConnector.openModal();
+
+          return new Promise((resolve, reject) => {
+            let modalEverVisible = false;
+
+            const poll = setInterval(() => {
+              const sessions = dAppConnector.walletConnectClient?.session?.getAll() ?? [];
+              const accounts = sessions[0]?.namespaces?.hedera?.accounts ?? [];
+
+              if (accounts.length > 0) {
+                clearInterval(poll);
+                cleanup();
+                this.accountId = accounts[0].split(':')[2];
+                resolve(this.accountId);
+                return;
+              }
+
+              const modal = document.querySelector("wcm-modal, w3m-modal, [data-testid='wui-modal'], [data-testid='wcm-modal']");
+              if (modal) {
+                const isVisible = getComputedStyle(modal).display !== "none";
+                if (isVisible) modalEverVisible = true;
+
+                if (!isVisible && modalEverVisible && sessions.length === 0) {
+                  clearInterval(poll);
+                  cleanup();
+                  reject(new Error("User closed wallet modal"));
+                }
+              }
+            }, 400);
+
+            setTimeout(() => {
+              clearInterval(poll);
+              cleanup();
+              reject(new Error("⏱️ Connection timeout"));
+            }, 90000);
+          });
+
+        } catch (err) {
+          cleanup();
+          throw err;
+        }
+      },
+
+      disconnect() {
+        this.accountId = null;
+        try { dAppConnector.disconnectAll(); } catch (e) { }
+      }
+    };
+
+    window.hederaConnect = hederaConnect;
+    window.QRCode = QRCode;
+
+    ensureInitialized().catch(() => { });
   </script>
 
   <script>
-    // ... (all your existing JavaScript code remains unchanged)
+    const SUPABASE_URL = 'https://pvtoczsnwamailsjjnfn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2dG9jenNud2FtYWlsc2pqbmZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NjE1MTksImV4cCI6MjA4MzEzNzUxOX0.3mDZ3RUo7aHi25r1X1axYj0EppgXFKEY7xGvqdhDSbM';
+
+    window.supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+
+      const icons = { success: '✓', error: '✕', info: 'ℹ' };
+
+      const icon = document.createElement('span');
+      icon.className = 'toast-icon';
+      icon.textContent = icons[type] || icons.info;
+
+      const text = document.createElement('span');
+      text.textContent = message;
+
+      toast.appendChild(icon);
+      toast.appendChild(text);
+
+      document.getElementById('toast-container').appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.add('removing');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function hbarToTinybars(hbar) {
+      return Math.round(Number(hbar) * 100000000);
+    }
+
+    function tinybarsToHbar(tb) {
+      return (Number(tb) / 100000000).toFixed(7);
+    }
+
+    function makeUniquePayAmount(requestedHbar) {
+      const baseTb = hbarToTinybars(requestedHbar);
+      const tagTb = Math.floor(50 + Math.random() * 4950);
+      const payTb = baseTb + tagTb;
+
+      return {
+        requested_amount_hbar: Number(requestedHbar),
+        amount_hbar: Number(tinybarsToHbar(payTb)),
+        amount_tinybars: payTb
+      };
+    }
+
+    function getInvoiceSlugFromUrl() {
+      const path = window.location.pathname;
+      const match = path.match(/^\/invoice\/([a-zA-Z0-9_-]+)$/);
+      return match ? match[1] : null;
+    }
+
+    function getWalletIdFromUrl() {
+      const path = window.location.pathname;
+      const match = path.match(/^\/(\d+\.\d+\.\d+)$/);
+      return match ? match[1] : null;
+    }
+
+    function isInvoicePage() {
+      return !!getInvoiceSlugFromUrl();
+    }
+
+    function isStatusPage() {
+      return !!getWalletIdFromUrl();
+    }
+
+    let accountId = null;
+    let isWalletConnected = false;
+    let currentCreatorAccount = null;
+
+    let currentPaymentLink = null;
+    let currentAmount = null;
+    let currentInvoiceSlug = null;
+
+    const input = document.getElementById('amountInput');
+
+    function setVhUnit() {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+
+    (function initVhFix() {
+      document.body.classList.add('use-vh-fallback');
+      setVhUnit();
+      window.addEventListener('resize', setVhUnit);
+      window.addEventListener('orientationchange', () => setTimeout(setVhUnit, 250));
+    })();
+
+    function isIOS() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    input.addEventListener('focus', () => {
+      if (!isIOS()) return;
+
+      document.body.classList.add('keyboard-open');
+      setTimeout(() => {
+        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 250);
+    });
+
+    input.addEventListener('blur', () => {
+      if (!isIOS()) return;
+
+      document.body.classList.remove('keyboard-open');
+      setTimeout(setVhUnit, 150);
+    });
+
+    const connectBtn = document.getElementById('connectBtn');
+    const generateBtn = document.getElementById('generateBtn');
+    const accountDisplay = document.getElementById('accountDisplay');
+    const accountIdSpan = document.getElementById('accountId');
+    const formSection = document.getElementById('formSection');
+    const resultSection = document.getElementById('resultSection');
+    const qrContainer = document.getElementById('qrContainer');
+    const linkDisplay = document.getElementById('linkDisplay');
+    const copyBtn = document.getElementById('copyBtn');
+    const shareBtn = document.getElementById('shareBtn');
+    const createAnotherBtn = document.getElementById('createAnotherBtn');
+
+    const subtitle = document.getElementById('subtitle');
+    const subsubtitle = document.getElementById('subsubtitle');
+
+    const payerSection = document.getElementById('payerSection');
+    const payerReceiverAccount = document.getElementById('payerReceiverAccount');
+    const copyReceiverBtn = document.getElementById('copyReceiverBtn');
+    const payerUsdAmount = document.getElementById('payerUsdAmount');
+    const payNowBtn = document.getElementById('payNowBtn');
+    const iPaidBtn = document.getElementById('iPaidBtn');
+    const payerStatus = document.getElementById('payerStatus');
+
+    const statusSection = document.getElementById('statusSection');
+    const statusWalletId = document.getElementById('statusWalletId');
+    const invoiceList = document.getElementById('invoiceList');
+    const createNewFromStatus = document.getElementById('createNewFromStatus');
+
+    const statusPageLink = document.getElementById('statusPageLink');
+
+    function enterHomeMode() {
+      if (isWalletConnected && accountId) {
+        accountDisplay.classList.add('active');
+        accountIdSpan.textContent = accountId;
+      } else {
+        accountDisplay.classList.remove('active');
+      }
+      payerSection.classList.remove('active');
+      resultSection.classList.remove('active');
+      statusSection.classList.remove('active');
+      formSection.classList.remove('hidden');
+
+      subsubtitle.classList.remove('active');
+      subtitle.textContent = 'Create a payment link in seconds';
+    }
+
+    function enterCreatorResultMode() {
+      accountDisplay.classList.remove('active');
+      payerSection.classList.remove('active');
+      statusSection.classList.remove('active');
+      formSection.classList.add('hidden');
+      resultSection.classList.add('active');
+
+      subsubtitle.classList.remove('active');
+      subtitle.textContent = 'Your payment link is ready!';
+    }
+
+    function enterInvoiceMode() {
+      accountDisplay.classList.remove('active');
+      formSection.classList.add('hidden');
+      resultSection.classList.remove('active');
+      statusSection.classList.remove('active');
+      payerSection.classList.add('active');
+
+      subsubtitle.classList.add('active');
+    }
+
+    function enterStatusMode() {
+      accountDisplay.classList.remove('active');
+      formSection.classList.add('hidden');
+      resultSection.classList.remove('active');
+      payerSection.classList.remove('active');
+      statusSection.classList.add('active');
+
+      subsubtitle.classList.remove('active');
+      subtitle.textContent = 'My Invoices';
+    }
+
+    async function renderQrInto(containerEl, url) {
+      containerEl.innerHTML = '';
+
+      if (!window.QRCode) {
+        showToast('QR code library not loaded', 'error');
+        return;
+      }
+
+      const isMobile = window.innerWidth <= 500;
+      const qrSize = isMobile ? Math.min(260, window.innerWidth - 110) : 260;
+
+      window.QRCode.toCanvas(url, {
+        width: qrSize,
+        margin: 2,
+        errorCorrectionLevel: 'H',
+        color: { dark: '#000000', light: '#FFFFFF' }
+      }, (err, canvas) => {
+        if (err) {
+          console.error(err);
+          showToast('Failed to generate QR', 'error');
+          return;
+        }
+
+        canvas.style.borderRadius = '8px';
+        containerEl.appendChild(canvas);
+
+        const ctx = canvas.getContext('2d');
+        const logo = new Image();
+        logo.src = `${window.location.origin}/qr_logo.png?v=2`;
+
+        logo.onload = () => {
+          const logoSize = canvas.width * 0.18;
+          const padding = logoSize * 0.25;
+          const circleRadius = (logoSize + padding * 2) / 2;
+          const centerX = canvas.width / 2;
+          const centerY = canvas.height / 2;
+
+          ctx.save();
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, circleRadius, 0, Math.PI * 2);
+          ctx.fill();
+
+          const logoX = (canvas.width - logoSize) / 2;
+          const logoY = (canvas.height - logoSize) / 2;
+          ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+          ctx.restore();
+        };
+      });
+    }
+
+    function setPayerStatus(text, type = 'default') {
+      payerStatus.classList.remove('payer-status-hidden');
+      payerStatus.textContent = text;
+      payerStatus.classList.remove('paid', 'warn');
+
+      if (type === 'paid') payerStatus.classList.add('paid');
+      if (type === 'warn') payerStatus.classList.add('warn');
+    }
+
+    async function loadInvoice(slug) {
+      const { data, error } = await window.supabaseClient
+        .from("invoices")
+        .select("slug, receiver_account, creator_account, requested_amount_hbar, amount_hbar, status, confirmed_by_creator, created_at")
+        .eq("slug", slug)
+        .single();
+
+      if (error) throw error;
+      return data;
+    }
+
+    async function loadInvoiceAndRenderPayer(slug) {
+      currentInvoiceSlug = slug;
+
+      try {
+        enterInvoiceMode();
+
+        payerReceiverAccount.textContent = 'Loading...';
+        payerUsdAmount.textContent = '...';
+        
+        payerStatus.classList.add('payer-status-hidden');
+
+        const inv = await loadInvoice(slug);
+
+        currentCreatorAccount = inv.creator_account;
+
+        const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
+        currentPaymentLink = invoiceUrl;
+        currentAmount = inv.requested_amount_hbar;
+
+        subtitle.innerHTML = `<a href="/${inv.creator_account}" style="color: var(--ht-primary-blue); text-decoration: none;">→ Check Payment Status</a>`;
+
+        payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
+        payerUsdAmount.textContent = inv.requested_amount_hbar;
+
+        if (inv.status === 'paid') {
+          setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+        }
+
+        startPayerRealtime(slug);
+
+      } catch (err) {
+        console.error(err);
+        showToast('Invoice not found', 'error');
+        enterHomeMode();
+      }
+    }
+
+    async function loadStatusPage(walletId) {
+      try {
+        enterStatusMode();
+        
+        statusWalletId.textContent = walletId;
+        invoiceList.innerHTML = '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
+
+        const { data: invoices, error } = await window.supabaseClient
+          .from("invoices")
+          .select("slug, receiver_account, requested_amount_hbar, status, confirmed_by_creator, created_at")
+          .eq("creator_account", walletId)
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+
+        if (!invoices || invoices.length === 0) {
+          invoiceList.innerHTML = `
+            <div class="no-invoices">
+              <div class="no-invoices-icon">📭</div>
+              No invoices found for this wallet.<br>
+              Create your first payment link above!
+            </div>
+          `;
+          return;
+        }
+
+        invoiceList.innerHTML = '';
+        
+        invoices.forEach(inv => {
+          const card = document.createElement('div');
+          card.className = 'invoice-card';
+          
+          const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
+          
+          let badge = '';
+          let actionBtn = '';
+          
+          if (inv.status === 'paid' && inv.confirmed_by_creator) {
+            badge = '<span class="invoice-badge confirmed">✅ Confirmed</span>';
+            actionBtn = `
+              <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" onclick="toggleInvoiceStatus('${inv.slug}', 'unpaid')">
+                Mark as Unpaid
+              </button>
+            `;
+          } else if (inv.status === 'paid' && !inv.confirmed_by_creator) {
+            badge = '<span class="invoice-badge paid">💰 Paid</span>';
+            actionBtn = `
+              <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary" onclick="confirmInvoicePayment('${inv.slug}')">
+                Confirm Payment
+              </button>
+            `;
+          } else {
+            badge = '<span class="invoice-badge unpaid">⏳ Unpaid</span>';
+            actionBtn = `
+              <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
+                Waiting...
+              </button>
+            `;
+          }
+          
+          card.innerHTML = `
+            <div class="invoice-header">
+              <div class="invoice-header-left">
+                <div class="invoice-slug">#${inv.slug}</div>
+                <div class="invoice-amount">$${inv.requested_amount_hbar} HBAR</div>
+              </div>
+              ${badge}
+            </div>
+            <div class="invoice-url">${invoiceUrl}</div>
+            <div class="invoice-actions">
+              ${actionBtn}
+              <button class="ht-btn ht-btn-action ht-btn-small" onclick="copyInvoiceLink('${invoiceUrl}')">📋 Copy</button>
+              <button class="ht-btn ht-btn-action ht-btn-small" onclick="shareInvoiceLink('${invoiceUrl}', ${inv.requested_amount_hbar})">🔗 Share</button>
+            </div>
+          `;
+          
+          invoiceList.appendChild(card);
+        });
+
+        startStatusPageRealtime(walletId);
+
+      } catch (err) {
+        console.error(err);
+        showToast('Failed to load invoices', 'error');
+        invoiceList.innerHTML = `
+          <div class="no-invoices">
+            <div class="no-invoices-icon">⚠️</div>
+            Error loading invoices.<br>
+            Please try again.
+          </div>
+        `;
+      }
+    }
+
+    window.confirmInvoicePayment = async function(slug) {
+      try {
+        const { error } = await window.supabaseClient
+          .from("invoices")
+          .update({ 
+            confirmed_by_creator: true,
+            status: 'paid'
+          })
+          .eq("slug", slug);
+
+        if (error) throw error;
+
+        showToast('Payment confirmed! ✅', 'success');
+        
+        const walletId = getWalletIdFromUrl();
+        if (walletId) {
+          await loadStatusPage(walletId);
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Failed to confirm payment', 'error');
+      }
+    };
+
+    window.toggleInvoiceStatus = async function(slug, newStatus) {
+      try {
+        const { error } = await window.supabaseClient
+          .from("invoices")
+          .update({ 
+            status: newStatus,
+            confirmed_by_creator: false
+          })
+          .eq("slug", slug);
+
+        if (error) throw error;
+
+        showToast('Status updated', 'success');
+        
+        const walletId = getWalletIdFromUrl();
+        if (walletId) {
+          await loadStatusPage(walletId);
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Failed to update status', 'error');
+      }
+    };
+
+    window.copyInvoiceLink = async function(url) {
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast('Link copied! ✅', 'success');
+      } catch (e) {
+        console.error(e);
+        showToast('Copy failed', 'error');
+      }
+    };
+
+    window.shareInvoiceLink = async function(url, amount) {
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: `Pay $${amount} in HBAR`,
+            text: `Send $${amount} worth of HBAR via HashToll:`,
+            url: url
+          });
+          showToast('Shared!', 'success');
+        } catch (e) {
+          if (e?.name !== 'AbortError') {
+            await navigator.clipboard.writeText(url);
+            showToast('Link copied!', 'success');
+          }
+        }
+      } else {
+        await navigator.clipboard.writeText(url);
+        showToast('Link copied!', 'success');
+      }
+    };
+
+    async function notifyPaidOnce(slug) {
+      try {
+        iPaidBtn.disabled = true;
+        iPaidBtn.innerHTML = '<span class="spinner"></span>Marking paid...';
+
+        setPayerStatus('📩 Marking as PAID...', 'default');
+
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
+          method: 'POST',
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+            "apikey": SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({ slug })
+        });
+
+        const result = await res.json();
+        if (!res.ok) throw new Error(result?.error || "Notify failed");
+
+        setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+        showToast('Marked as paid ✅', 'success');
+
+      } catch (err) {
+        console.error(err);
+        setPayerStatus('⚠️ Could not mark paid — try again', 'warn');
+        showToast('Mark paid failed', 'error');
+      } finally {
+        iPaidBtn.disabled = false;
+        iPaidBtn.innerHTML = '✅ I Paid (Notify Receiver)';
+      }
+    }
+
+    function payNowPlaceholder() {
+      showToast('Opening wallet… (placeholder)', 'info');
+    }
+
+    async function copyText(text, successMsg = 'Copied!') {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast(successMsg, 'success');
+      } catch (e) {
+        console.error(e);
+        showToast('Copy failed', 'error');
+      }
+    }
+
+    async function shareCurrentLink() {
+      if (!currentPaymentLink) return;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: `Pay $${currentAmount} in HBAR`,
+            text: `Send $${currentAmount} worth of HBAR via HashToll:`,
+            url: currentPaymentLink
+          });
+          showToast('Shared!', 'success');
+        } catch (e) {
+          if (e?.name !== 'AbortError') {
+            await copyText(currentPaymentLink, 'Link copied!');
+          }
+        }
+      } else {
+        await copyText(currentPaymentLink, 'Link copied!');
+      }
+    }
+
+    let realtimeChannel = null;
+    let fallbackPollInterval = null;
+
+    function stopRealtime() {
+      try {
+        if (realtimeChannel) {
+          window.supabaseClient.removeChannel(realtimeChannel);
+          realtimeChannel = null;
+        }
+        if (fallbackPollInterval) {
+          clearInterval(fallbackPollInterval);
+          fallbackPollInterval = null;
+        }
+      } catch (e) {
+        console.warn("Error stopping realtime:", e);
+      }
+    }
+
+    async function fallbackPollInvoiceStatus(slug) {
+      try {
+        const inv = await loadInvoice(slug);
+        const payStatus = document.getElementById("payStatus");
+        
+        if (inv.status === "paid") {
+          const link = statusPageLink;
+          link.href = `/${inv.creator_account}`;
+          link.textContent = "✅ Payment marked — Check status";
+          showToast("Payment marked paid ✅", "success");
+          stopRealtime();
+        }
+      } catch (err) {
+        console.warn("Fallback poll error:", err);
+      }
+    }
+
+    function startCreatorRealtime(slug) {
+      stopRealtime();
+
+      let realtimeEventReceived = false;
+
+      realtimeChannel = window.supabaseClient
+        .channel(`invoice-status-${slug}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "invoices",
+            filter: `slug=eq.${slug}`
+          },
+          (payload) => {
+            console.log("Realtime update received:", payload);
+            realtimeEventReceived = true;
+            
+            const newStatus = payload?.new?.status;
+
+            if (newStatus === "paid") {
+              const link = statusPageLink;
+              link.href = `/${payload.new.creator_account}`;
+              link.textContent = "✅ Payment marked — Check status";
+              showToast("Payment marked paid ✅", "success");
+              stopRealtime();
+            }
+          }
+        )
+        .subscribe((status) => {
+          console.log("Realtime subscription status:", status);
+        });
+
+      setTimeout(() => {
+        if (!realtimeEventReceived && !fallbackPollInterval) {
+          console.log("No realtime events received, starting fallback polling");
+          fallbackPollInterval = setInterval(() => fallbackPollInvoiceStatus(slug), 3000);
+        }
+      }, 5000);
+    }
+
+    function startStatusPageRealtime(walletId) {
+      stopRealtime();
+
+      realtimeChannel = window.supabaseClient
+        .channel(`creator-status-${walletId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "invoices",
+            filter: `creator_account=eq.${walletId}`
+          },
+          (payload) => {
+            console.log("Status page realtime update:", payload);
+            loadStatusPage(walletId);
+          }
+        )
+        .subscribe((status) => {
+          console.log("Status page subscription status:", status);
+        });
+    }
+
+    function startPayerRealtime(slug) {
+      stopRealtime();
+
+      realtimeChannel = window.supabaseClient
+        .channel(`payer-invoice-${slug}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "invoices",
+            filter: `slug=eq.${slug}`
+          },
+          (payload) => {
+            console.log("Payer realtime update:", payload);
+            
+            const newStatus = payload?.new?.status;
+            
+            if (newStatus === "paid") {
+              setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+            } else if (newStatus === "unpaid") {
+              setPayerStatus('⏳ Waiting for payment...', 'default');
+            }
+          }
+        )
+        .subscribe();
+    }
+
+    async function createInvoiceViaEdge({ receiver_account, requested_amount_hbar, amount_hbar }) {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-invoice`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "apikey": SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({
+          receiver_account,
+          requested_amount_hbar,
+          amount_hbar
+        })
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "create-invoice failed");
+      return json;
+    }
+
+    async function generatePaymentLink() {
+      const requestedAmount = Number(input.value);
+
+      if (!requestedAmount || requestedAmount <= 0) {
+        showToast("Please enter a valid amount", "error");
+        return;
+      }
+
+      if (!isWalletConnected || !accountId) {
+        showToast("Please connect your wallet first", "error");
+        return;
+      }
+
+      try {
+        generateBtn.innerHTML = '<span class="spinner"></span>Generating...';
+        generateBtn.disabled = true;
+
+        const { requested_amount_hbar, amount_hbar } = makeUniquePayAmount(requestedAmount);
+
+        const inv = await createInvoiceViaEdge({
+          receiver_account: accountId,
+          requested_amount_hbar,
+          amount_hbar
+        });
+
+        const paymentLink = `${window.location.origin}/invoice/${inv.slug}`;
+        currentPaymentLink = paymentLink;
+        currentAmount = requestedAmount;
+
+        document.getElementById('usdAmount').textContent = requestedAmount;
+
+        enterCreatorResultMode();
+
+        linkDisplay.textContent = paymentLink;
+
+        statusPageLink.href = `/${accountId}`;
+
+        await renderQrInto(qrContainer, paymentLink);
+
+        showToast("Invoice created! 🎉", "success");
+
+        startCreatorRealtime(inv.slug);
+
+      } catch (err) {
+        console.error(err);
+        showToast("Failed to create invoice", "error");
+        generateBtn.innerHTML = "Generate Payment Link";
+        generateBtn.disabled = false;
+      }
+    }
+
+    function showFormView() {
+      stopRealtime();
+
+      formSection.classList.remove('hidden');
+      resultSection.classList.remove('active');
+      payerSection.classList.remove('active');
+      statusSection.classList.remove('active');
+
+      subsubtitle.classList.remove('active');
+      subtitle.textContent = 'Create a payment link in seconds';
+
+      generateBtn.innerHTML = 'Generate Payment Link';
+      updateGenerateButton();
+    }
+
+    function createAnother() {
+      stopRealtime();
+      
+      input.value = '';
+      currentPaymentLink = null;
+      currentAmount = null;
+      showFormView();
+    }
+
+    function updateGenerateButton() {
+      if (isWalletConnected && input.value && Number(input.value) > 0) {
+        generateBtn.disabled = false;
+      } else {
+        generateBtn.disabled = true;
+      }
+    }
+
+    async function connectWallet() {
+      if (isInvoicePage() || isStatusPage()) {
+        showToast('Wallet connection is not required on this page', 'info');
+        return;
+      }
+      
+      if (isWalletConnected) return;
+
+      try {
+        connectBtn.innerHTML = '<span class="spinner"></span>Connecting...';
+        connectBtn.disabled = true;
+
+        if (!window.hederaConnect) throw new Error('WalletConnect not loaded yet');
+
+        accountId = await window.hederaConnect.connect();
+
+        isWalletConnected = true;
+        
+        connectBtn.innerHTML = '✓ Wallet Connected';
+        connectBtn.classList.add('ht-btn-success');
+        connectBtn.disabled = true;
+
+        accountIdSpan.textContent = accountId;
+        accountDisplay.classList.add('active');
+
+        updateGenerateButton();
+      } catch (error) {
+        console.error('Connection failed:', error);
+        let errorMsg = error.message || 'Unknown error';
+        if (String(errorMsg).includes('closed')) errorMsg = 'Connection cancelled';
+
+        showToast('Failed to connect: ' + errorMsg, 'error');
+
+        connectBtn.innerHTML = 'Connect Wallet';
+        connectBtn.disabled = false;
+      }
+    }
+
+    function disconnectWallet() {
+      if (!window.hederaConnect) return;
+
+      window.hederaConnect.disconnect();
+
+      isWalletConnected = false;
+      accountId = null;
+
+      connectBtn.innerHTML = 'Connect Wallet';
+      connectBtn.classList.remove('ht-btn-success');
+      connectBtn.disabled = false;
+
+      accountDisplay.classList.remove('active');
+
+      if (isStatusPage()) {
+        window.location.href = '/';
+        return;
+      }
+
+      showFormView();
+
+      generateBtn.disabled = true;
+      input.value = '';
+
+      showToast('Wallet disconnected', 'info');
+    }
+
+    window.disconnectWallet = disconnectWallet;
+
+    const placeholderText = 'Enter Amount';
+    let charIndex = 0;
+    let isTyping = true;
+
+    function typePlaceholder() {
+      if (document.activeElement === input) return;
+
+      if (isTyping) {
+        if (charIndex < placeholderText.length) {
+          input.placeholder = placeholderText.substring(0, charIndex + 1);
+          charIndex++;
+        } else {
+          isTyping = false;
+          setTimeout(typePlaceholder, 2000);
+          return;
+        }
+      } else {
+        if (charIndex > 0) {
+          input.placeholder = placeholderText.substring(0, charIndex - 1);
+          charIndex--;
+        } else {
+          isTyping = true;
+          setTimeout(typePlaceholder, 1000);
+          return;
+        }
+      }
+
+      setTimeout(typePlaceholder, isTyping ? 100 : 50);
+    }
+
+    setTimeout(typePlaceholder, 500);
+    input.addEventListener('focus', () => { if (!input.value) input.placeholder = 'Enter Amount'; });
+
+    connectBtn.addEventListener('click', connectWallet);
+    generateBtn.addEventListener('click', generatePaymentLink);
+    createAnotherBtn.addEventListener('click', createAnother);
+    createNewFromStatus.addEventListener('click', () => {
+      window.location.href = '/';
+    });
+    input.addEventListener('input', updateGenerateButton);
+
+    copyBtn.addEventListener('click', async () => {
+      if (!currentPaymentLink) return;
+      await copyText(currentPaymentLink, 'Link copied!');
+    });
+    shareBtn.addEventListener('click', shareCurrentLink);
+
+    copyReceiverBtn.addEventListener('click', async () => {
+      const acct = payerReceiverAccount.textContent?.trim();
+      if (!acct || acct === 'Loading...') return;
+      await copyText(acct, 'Receiver account copied!');
+    });
+
+    payNowBtn.addEventListener('click', payNowPlaceholder);
+    
+    iPaidBtn.addEventListener('click', async () => {
+      if (!currentInvoiceSlug) return;
+      await notifyPaidOnce(currentInvoiceSlug);
+    });
+
+    window.addEventListener('beforeunload', stopRealtime);
+
+    window.addEventListener('load', async () => {
+      const slug = getInvoiceSlugFromUrl();
+      const walletId = getWalletIdFromUrl();
+
+      if (slug) {
+        formSection.classList.add('hidden');
+        accountDisplay.classList.remove('active');
+        await loadInvoiceAndRenderPayer(slug);
+        return;
+      }
+
+      if (walletId) {
+        formSection.classList.add('hidden');
+        accountDisplay.classList.remove('active');
+        await loadStatusPage(walletId);
+        return;
+      }
+
+      enterHomeMode();
+
+      try {
+        if (window.hederaConnect && window.hederaConnect.dAppConnector) {
+          const existingSessions = window.hederaConnect.dAppConnector.walletConnectClient?.session?.getAll() ?? [];
+          if (existingSessions.length > 0) {
+            const accounts = existingSessions[0]?.namespaces?.hedera?.accounts ?? [];
+            if (accounts.length > 0) {
+              accountId = accounts[0].split(':')[2];
+              isWalletConnected = true;
+
+              connectBtn.innerHTML = '✓ Wallet Connected';
+              connectBtn.classList.add('ht-btn-success');
+              connectBtn.disabled = true;
+
+              accountIdSpan.textContent = accountId;
+              accountDisplay.classList.add('active');
+
+              updateGenerateButton();
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Session restore failed:', err);
+      }
+    });
   </script>
 
 </body>
