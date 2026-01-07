@@ -190,27 +190,29 @@
       letter-spacing: 0.01em;
     }
 
-    /* ✅ DISCONNECT - SUBTLE, NOT DANGEROUS */
-    .ht-disconnect-btn {
-      background: transparent;
-      border: none;
-      color: var(--ht-text-secondary);
-      font-size: 0.85rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      padding: 4px 8px;
-      border-radius: 6px;
-    }
+   /* ✅ DISCONNECT - SUBTLE BORDERED BUTTON LIKE REFERENCE */
+.ht-disconnect-btn {
+  background: #FFFFFF;
+  border: 1px solid var(--ht-connected-border);
+  color: var(--ht-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 6px 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
 
-    .ht-disconnect-btn:hover {
-      color: var(--ht-connected-text);
-      text-decoration: underline;
-    }
+.ht-disconnect-btn:hover {
+  background: var(--ht-connected-bg);
+  color: var(--ht-connected-text);
+  border-color: #CBD5E1;
+}
 
-    .ht-disconnect-btn:active {
-      transform: scale(0.98);
-    }
+.ht-disconnect-btn:active {
+  transform: scale(0.98);
+}
 
     .ht-form-section {
       transition: all 0.4s ease;
