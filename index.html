@@ -37,26 +37,26 @@
       --ht-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
     }
 
- body {
-  margin: 0;
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  min-height: 100dvh;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  
-  /* More visible texture with lighter gradient overlay */
-  background: 
-    linear-gradient(135deg, rgba(232, 234, 246, 0.50) 0%, rgba(245, 247, 250, 0.60) 50%, rgba(227, 242, 253, 0.50) 100%),
-    url('/home_bg2.png') center center / cover no-repeat fixed;
-  
-  color: var(--ht-text-dark);
-  overflow-x: hidden;
-  overflow-y: auto;
-  position: relative;
-}
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      
+      /* More visible texture with lighter gradient overlay */
+      background: 
+        linear-gradient(135deg, rgba(232, 234, 246, 0.50) 0%, rgba(245, 247, 250, 0.60) 50%, rgba(227, 242, 253, 0.50) 100%),
+        url('/home_bg2.png') center center / cover no-repeat fixed;
+      
+      color: var(--ht-text-dark);
+      overflow-x: hidden;
+      overflow-y: auto;
+      position: relative;
+    }
 
     @supports (-webkit-touch-callout: none) {
       body {
@@ -251,6 +251,10 @@
       -moz-appearance: textfield;
     }
 
+    .ht-input.no-prefix {
+      padding: 16px;
+    }
+
     .ht-input::-webkit-outer-spin-button,
     .ht-input::-webkit-inner-spin-button {
       -webkit-appearance: none;
@@ -259,12 +263,52 @@
 
     .ht-input:focus {
       background: #ffffff;
-      border-color: var(--ht-primary-blue);
+      border-color: #4f6deb;
       box-shadow: 0 0 0 3px rgba(79, 109, 235, 0.1);
     }
 
     .ht-input::placeholder {
       color: rgba(108, 117, 125, 0.5);
+    }
+
+    /* Payment Description Display */
+    .ht-description {
+      background: linear-gradient(135deg, rgba(79, 109, 235, 0.05) 0%, rgba(56, 181, 196, 0.05) 100%);
+      border: 1.5px solid rgba(79, 109, 235, 0.15);
+      border-radius: var(--ht-radius);
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 0.95rem;
+      color: var(--ht-text-dark);
+      font-weight: 500;
+      line-height: 1.5;
+      text-align: center;
+      display: none;
+    }
+
+    .ht-description.active {
+      display: block;
+    }
+
+    .ht-description-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--ht-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .invoice-description {
+      font-size: 0.85rem;
+      color: var(--ht-text-dark);
+      background: rgba(0, 0, 0, 0.02);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin: 12px 0 8px 0;
+      line-height: 1.4;
+      font-style: italic;
     }
 
     /* --- RESULT SECTION (CREATOR AFTER GENERATE) --- */
@@ -803,7 +847,7 @@
     .toast-info {
       border-color: rgba(79, 109, 235, 0.3);
       background: rgba(79, 109, 235, 0.05);
-      color: var(--ht-primary-blue);
+      color: #4f6deb;
     }
 
     .toast-icon {
@@ -892,6 +936,10 @@
       .ht-input {
         font-size: 1.1rem;
         padding: 14px 14px 14px 40px;
+      }
+
+      .ht-input.no-prefix {
+        padding: 14px;
       }
 
       .ht-btn {
@@ -1009,6 +1057,18 @@
         </div>
       </div>
 
+      <div class="ht-input-group">
+        <label class="ht-label">Payment Description <span style="color: var(--ht-text-muted); font-weight: 400;">(optional)</span></label>
+        <div class="ht-input-wrapper">
+          <input 
+            type="text" 
+            class="ht-input no-prefix" 
+            id="descriptionInput" 
+            placeholder="What is this payment for?" 
+            maxlength="100">
+        </div>
+      </div>
+
       <button class="ht-btn ht-btn-primary" id="connectBtn">Connect Wallet</button>
       <button class="ht-btn ht-btn-secondary" id="generateBtn" disabled>Generate Payment Link</button>
     </div>
@@ -1019,6 +1079,11 @@
 
       <div class="ht-usd-worth" id="usdWorthLine">
         Pay $<span id="usdAmount">50</span> of HBAR
+      </div>
+
+      <div class="ht-description" id="creatorDescription">
+        <span class="ht-description-label">Payment For</span>
+        <div id="creatorDescriptionText"></div>
       </div>
 
       <div class="ht-status" id="payStatus">
@@ -1046,6 +1111,11 @@
 
       <div class="ht-usd-worth">
         Send $<span id="payerUsdAmount">0</span> in HBAR
+      </div>
+
+      <div class="ht-description" id="payerDescription">
+        <span class="ht-description-label">Payment For</span>
+        <div id="payerDescriptionText"></div>
       </div>
 
       <button class="ht-btn ht-btn-primary ht-btn-pay" id="payNowBtn">Pay Now</button>
@@ -1276,6 +1346,12 @@
     let currentInvoiceSlug = null;
 
     const input = document.getElementById('amountInput');
+    const descriptionInput = document.getElementById('descriptionInput');
+
+    const creatorDescription = document.getElementById('creatorDescription');
+    const creatorDescriptionText = document.getElementById('creatorDescriptionText');
+    const payerDescription = document.getElementById('payerDescription');
+    const payerDescriptionText = document.getElementById('payerDescriptionText');
 
     function setVhUnit() {
       const vh = window.innerHeight * 0.01;
@@ -1294,20 +1370,20 @@
              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     }
 
-    input.addEventListener('focus', () => {
-      if (!isIOS()) return;
+    [input, descriptionInput].forEach(el => {
+      el.addEventListener('focus', () => {
+        if (!isIOS()) return;
+        document.body.classList.add('keyboard-open');
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 250);
+      });
 
-      document.body.classList.add('keyboard-open');
-      setTimeout(() => {
-        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 250);
-    });
-
-    input.addEventListener('blur', () => {
-      if (!isIOS()) return;
-
-      document.body.classList.remove('keyboard-open');
-      setTimeout(setVhUnit, 150);
+      el.addEventListener('blur', () => {
+        if (!isIOS()) return;
+        document.body.classList.remove('keyboard-open');
+        setTimeout(setVhUnit, 150);
+      });
     });
 
     const connectBtn = document.getElementById('connectBtn');
@@ -1451,7 +1527,7 @@
     async function loadInvoice(slug) {
       const { data, error } = await window.supabaseClient
         .from("invoices")
-        .select("slug, receiver_account, creator_account, requested_amount_hbar, amount_hbar, status, confirmed_by_creator, created_at")
+        .select("slug, receiver_account, creator_account, requested_amount_hbar, amount_hbar, status, confirmed_by_creator, description, created_at")
         .eq("slug", slug)
         .single();
 
@@ -1467,6 +1543,7 @@
 
         payerReceiverAccount.textContent = 'Loading...';
         payerUsdAmount.textContent = '...';
+        payerDescription.classList.remove('active');
         
         payerStatus.classList.add('payer-status-hidden');
 
@@ -1478,10 +1555,15 @@
         currentPaymentLink = invoiceUrl;
         currentAmount = inv.requested_amount_hbar;
 
-        subtitle.innerHTML = `<a href="/${inv.creator_account}" style="color: var(--ht-primary-blue); text-decoration: none;">→ Check Payment Status</a>`;
+        subtitle.innerHTML = `<a href="/${inv.creator_account}" style="color: #152858; text-decoration: none;">→ Check Payment Status</a>`;
 
         payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
         payerUsdAmount.textContent = inv.requested_amount_hbar;
+
+        if (inv.description && inv.description.trim()) {
+          payerDescriptionText.textContent = inv.description;
+          payerDescription.classList.add('active');
+        }
 
         if (inv.status === 'paid') {
           setPayerStatus('✅ PAID — Receiver notified!', 'paid');
@@ -1505,7 +1587,7 @@
 
         const { data: invoices, error } = await window.supabaseClient
           .from("invoices")
-          .select("slug, receiver_account, requested_amount_hbar, status, confirmed_by_creator, created_at")
+          .select("slug, receiver_account, requested_amount_hbar, status, confirmed_by_creator, description, created_at")
           .eq("creator_account", walletId)
           .order("created_at", { ascending: false });
 
@@ -1529,6 +1611,10 @@
           card.className = 'invoice-card';
           
           const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
+          
+          const descriptionHtml = inv.description && inv.description.trim() 
+            ? `<div class="invoice-description">"${inv.description}"</div>` 
+            : '';
           
           let badge = '';
           let actionBtn = '';
@@ -1564,6 +1650,7 @@
               </div>
               ${badge}
             </div>
+            ${descriptionHtml}
             <div class="invoice-url">${invoiceUrl}</div>
             <div class="invoice-actions">
               ${actionBtn}
@@ -1865,7 +1952,7 @@
         .subscribe();
     }
 
-    async function createInvoiceViaEdge({ receiver_account, requested_amount_hbar, amount_hbar }) {
+    async function createInvoiceViaEdge({ receiver_account, requested_amount_hbar, amount_hbar, description }) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/create-invoice`, {
         method: "POST",
         headers: {
@@ -1876,7 +1963,8 @@
         body: JSON.stringify({
           receiver_account,
           requested_amount_hbar,
-          amount_hbar
+          amount_hbar,
+          description: description || null
         })
       });
 
@@ -1887,6 +1975,7 @@
 
     async function generatePaymentLink() {
       const requestedAmount = Number(input.value);
+      const description = descriptionInput.value.trim();
 
       if (!requestedAmount || requestedAmount <= 0) {
         showToast("Please enter a valid amount", "error");
@@ -1907,7 +1996,8 @@
         const inv = await createInvoiceViaEdge({
           receiver_account: accountId,
           requested_amount_hbar,
-          amount_hbar
+          amount_hbar,
+          description: description || null
         });
 
         const paymentLink = `${window.location.origin}/invoice/${inv.slug}`;
@@ -1915,6 +2005,13 @@
         currentAmount = requestedAmount;
 
         document.getElementById('usdAmount').textContent = requestedAmount;
+
+        if (description) {
+          creatorDescriptionText.textContent = description;
+          creatorDescription.classList.add('active');
+        } else {
+          creatorDescription.classList.remove('active');
+        }
 
         enterCreatorResultMode();
 
@@ -1955,8 +2052,10 @@
       stopRealtime();
       
       input.value = '';
+      descriptionInput.value = '';
       currentPaymentLink = null;
       currentAmount = null;
+      creatorDescription.classList.remove('active');
       showFormView();
     }
 
@@ -2029,6 +2128,7 @@
 
       generateBtn.disabled = true;
       input.value = '';
+      descriptionInput.value = '';
 
       showToast('Wallet disconnected', 'info');
     }
