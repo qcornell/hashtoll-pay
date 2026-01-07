@@ -25,13 +25,19 @@
     /* --- CSS VARIABLES --- */
     :root {
       --ht-card-width: 440px;
-      --ht-primary-hover: #315089;
-      --ht-success-green: #38b5c4;
-      --ht-success-green-dark: #26b181;
+      --ht-navy: #2F3E63;
+      --ht-navy-dark: #1F2937;
+      --ht-navy-light: #344B7A;
+      --ht-connected-bg: #F1F5F9;
+      --ht-connected-border: #E2E8F0;
+      --ht-connected-text: #1F3A5F;
+      --ht-check-green: #2F7A68;
+      --ht-check-bg: #E8F4F1;
       --ht-logo-max-width: 260px;
-      --ht-input-bg: #f5f5f7;
-      --ht-text-dark: #2c3e50;
-      --ht-text-muted: #6c757d;
+      --ht-input-bg: #F8FAFC;
+      --ht-input-border: #CBD5E1;
+      --ht-text-primary: #0F172A;
+      --ht-text-secondary: #64748B;
       --ht-radius: 12px;
       --ht-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
     }
@@ -44,13 +50,13 @@
       align-items: center;
       min-height: 100vh;
       min-height: 100dvh;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, Helvetica, Arial, sans-serif;
       
       background: 
         linear-gradient(135deg, rgba(232, 234, 246, 0.50) 0%, rgba(245, 247, 250, 0.60) 50%, rgba(227, 242, 253, 0.50) 100%),
         url('/home_bg2.png') center center / cover no-repeat fixed;
       
-      color: var(--ht-text-dark);
+      color: var(--ht-text-primary);
       overflow-x: hidden;
       overflow-y: auto;
       position: relative;
@@ -116,14 +122,14 @@
 
     .ht-subtitle {
       margin: 12px 0 0 0;
-      color: var(--ht-text-muted);
+      color: var(--ht-text-secondary);
       font-size: 0.95rem;
       font-weight: 500;
     }
 
     .ht-subsubtitle {
       margin: 6px 0 0 0;
-      color: var(--ht-text-muted);
+      color: var(--ht-text-secondary);
       font-size: 0.85rem;
       font-weight: 500;
       display: none;
@@ -133,62 +139,77 @@
       display: block;
     }
 
+    /* ✅ NEW CONNECTED STATE - PROFESSIONAL & STABLE */
     .ht-account-display {
       display: none;
-      background: linear-gradient(135deg, rgba(56, 181, 196, 0.08) 0%, rgba(38, 177, 129, 0.08) 100%);
-      border: 1.5px solid rgba(56, 181, 196, 0.2);
+      background: var(--ht-connected-bg);
+      border: 1px solid var(--ht-connected-border);
       border-radius: var(--ht-radius);
-      padding: 16px 20px;
+      padding: 10px 14px;
       margin-bottom: 24px;
       align-items: center;
       justify-content: space-between;
       transition: all 0.3s ease;
       gap: 12px;
-      position: relative;
     }
 
     .ht-account-display.active {
-       display: flex; 
+      display: flex; 
     }
 
-    .ht-account-id {
-      font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
-      font-size: 1.05rem;
-      color: var(--ht-success-green-dark);
-      font-weight: 600;
+    .ht-account-display-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       flex: 1;
-      word-break: break-all;
-      letter-spacing: 0.02em;
+      min-width: 0;
     }
 
-    .ht-disconnect-btn {
-      background: rgba(0, 0, 0, 0.04);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      color: var(--ht-text-muted);
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      font-size: 1.2rem;
-      font-weight: 300;
-      cursor: pointer;
-      transition: all 0.2s;
+    /* ✅ CHECK ICON - MUTED, NOT CELEBRATORY */
+    .ht-check-icon {
+      width: 16px;
+      height: 16px;
+      background: var(--ht-check-bg);
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      line-height: 1;
-      padding: 0;
+      font-size: 10px;
+      color: var(--ht-check-green);
+      font-weight: 700;
+    }
+
+    .ht-account-id {
+      font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+      font-size: 0.95rem;
+      color: var(--ht-connected-text);
+      font-weight: 500;
+      flex: 1;
+      word-break: break-all;
+      letter-spacing: 0.01em;
+    }
+
+    /* ✅ DISCONNECT - SUBTLE, NOT DANGEROUS */
+    .ht-disconnect-btn {
+      background: transparent;
+      border: none;
+      color: var(--ht-text-secondary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      padding: 4px 8px;
+      border-radius: 6px;
     }
 
     .ht-disconnect-btn:hover {
-      background: rgba(0, 0, 0, 0.08);
-      border-color: rgba(0, 0, 0, 0.12);
-      color: var(--ht-text-dark);
-      transform: scale(1.05);
+      color: var(--ht-connected-text);
+      text-decoration: underline;
     }
 
     .ht-disconnect-btn:active {
-      transform: scale(0.95);
+      transform: scale(0.98);
     }
 
     .ht-form-section {
@@ -212,7 +233,7 @@
       display: block;
       font-size: 0.875rem;
       font-weight: 600;
-      color: var(--ht-text-dark);
+      color: var(--ht-text-primary);
       margin-bottom: 8px;
     }
 
@@ -227,27 +248,28 @@
       left: 18px;
       font-size: 1.25rem;
       font-weight: 500;
-      color: var(--ht-text-muted);
+      color: var(--ht-text-secondary);
       pointer-events: none;
     }
 
     .ht-input {
       width: 100%;
+      height: 44px;
       box-sizing: border-box;
       background: var(--ht-input-bg);
-      border: 1.5px solid transparent;
+      border: 1px solid var(--ht-input-border);
       border-radius: var(--ht-radius);
-      padding: 16px 16px 16px 42px;
-      font-size: 1.125rem;
-      color: var(--ht-text-dark);
-      font-weight: 500;
+      padding: 0 16px 0 42px;
+      font-size: 0.95rem;
+      color: var(--ht-text-primary);
+      font-weight: 400;
       outline: none;
       transition: 0.2s ease;
       -moz-appearance: textfield;
     }
 
     .ht-input.no-prefix {
-      padding: 16px;
+      padding: 0 16px;
     }
 
     .ht-input::-webkit-outer-spin-button,
@@ -258,12 +280,12 @@
 
     .ht-input:focus {
       background: #ffffff;
-      border-color: #2f446c;
-      box-shadow: 0 0 0 3px rgba(79, 109, 235, 0.1);
+      border-color: var(--ht-navy);
+      box-shadow: 0 0 0 3px rgba(47, 62, 99, 0.1);
     }
 
     .ht-input::placeholder {
-      color: rgba(108, 117, 125, 0.5);
+      color: rgba(100, 116, 139, 0.6);
     }
 
     .ht-description {
@@ -273,7 +295,7 @@
       padding: 14px 18px;
       margin: 16px 0;
       font-size: 0.95rem;
-      color: var(--ht-text-dark);
+      color: var(--ht-text-primary);
       font-weight: 500;
       line-height: 1.5;
       text-align: center;
@@ -287,7 +309,7 @@
     .ht-description-label {
       font-size: 0.75rem;
       font-weight: 700;
-      color: var(--ht-text-muted);
+      color: var(--ht-text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.05em;
       margin-bottom: 6px;
@@ -296,7 +318,7 @@
 
     .invoice-description {
       font-size: 0.85rem;
-      color: var(--ht-text-dark);
+      color: var(--ht-text-primary);
       background: rgba(0, 0, 0, 0.02);
       border-radius: 8px;
       padding: 10px 12px;
@@ -339,7 +361,7 @@
       border-radius: var(--ht-radius);
       padding: 20px;
       margin-bottom: 24px;
-      display: none; /* HIDDEN */
+      display: none;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
@@ -353,7 +375,7 @@
     .status-header-title {
       font-size: 0.75rem;
       font-weight: 700;
-      color: var(--ht-text-muted);
+      color: var(--ht-text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.05em;
       margin-bottom: 6px;
@@ -362,7 +384,7 @@
     .status-wallet-id {
       font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
       font-size: 1.1rem;
-      color: var(--ht-success-green-dark);
+      color: var(--ht-check-green);
       font-weight: 700;
       letter-spacing: 0.02em;
       word-break: break-all;
@@ -371,7 +393,7 @@
     .status-disconnect-btn {
       background: rgba(0, 0, 0, 0.04);
       border: 1px solid rgba(0, 0, 0, 0.08);
-      color: var(--ht-text-muted);
+      color: var(--ht-text-secondary);
       width: 36px;
       height: 36px;
       border-radius: 10px;
@@ -390,7 +412,7 @@
     .status-disconnect-btn:hover {
       background: rgba(0, 0, 0, 0.08);
       border-color: rgba(0, 0, 0, 0.12);
-      color: var(--ht-text-dark);
+      color: var(--ht-text-primary);
       transform: scale(1.05);
     }
 
@@ -432,7 +454,7 @@
     .invoice-slug {
       font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
       font-size: 0.8rem;
-      color: var(--ht-text-muted);
+      color: var(--ht-text-secondary);
       font-weight: 600;
       letter-spacing: 0.03em;
       margin-bottom: 8px;
@@ -441,7 +463,7 @@
     .invoice-amount {
       font-size: 1.4rem;
       font-weight: 800;
-      color: var(--ht-text-dark);
+      color: var(--ht-text-primary);
       line-height: 1.2;
       margin-bottom: 4px;
     }
@@ -449,7 +471,7 @@
     .invoice-url {
       font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
       font-size: 0.7rem;
-      color: var(--ht-text-muted);
+      color: var(--ht-text-secondary);
       word-break: break-all;
       line-height: 1.4;
       margin-top: 12px;
@@ -501,7 +523,7 @@
     .no-invoices {
       text-align: center;
       padding: 60px 20px;
-      color: var(--ht-text-muted);
+      color: var(--ht-text-secondary);
       font-size: 0.95rem;
       line-height: 1.6;
     }
@@ -523,7 +545,7 @@
     .payer-account-id {
       font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
       font-size: 0.98rem;
-      color: var(--ht-text-dark);
+      color: var(--ht-text-primary);
       font-weight: 700;
       letter-spacing: 0.01em;
       text-align: center;
@@ -535,7 +557,7 @@
       border-radius: 999px;
       border: 1.5px solid rgba(0, 0, 0, 0.08);
       background: rgba(0, 0, 0, 0.04);
-      color: var(--ht-text-muted);
+      color: var(--ht-text-secondary);
       cursor: pointer;
       transition: all 0.18s ease;
       display: flex;
@@ -587,7 +609,7 @@
     .ht-usd-worth {
       font-size: 1.1rem;
       font-weight: 600;
-      color: var(--ht-text-dark);
+      color: var(--ht-text-primary);
       margin-top: 20px;
       margin-bottom: 20px;
     }
@@ -595,7 +617,7 @@
     .ht-status {
       border-radius: var(--ht-radius);
       font-size: 0.9rem; 
-      color: var(--ht-text-muted);
+      color: var(--ht-text-secondary);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -603,14 +625,14 @@
     }
 
     .ht-status a {
-      color: #152858;
+      color: var(--ht-navy);
       text-decoration: none;
       font-weight: 700;
       transition: all 0.2s ease;
     }
 
     .ht-status a:hover {
-      color: var(--ht-primary-hover);
+      color: var(--ht-navy-light);
       text-decoration: underline;
     }
 
@@ -644,7 +666,7 @@
       margin: 16px 0;
       font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
       font-size: 0.8rem;
-      color: var(--ht-text-dark);
+      color: var(--ht-text-primary);
       word-break: break-all;
       text-align: center;
       line-height: 1.4;
@@ -661,6 +683,7 @@
       flex: 1;
     }
 
+    /* ✅ PRIMARY BUTTON - NAVY GRADIENT, PROFESSIONAL */
     .ht-btn {
       width: 100%;
       padding: 16px;
@@ -676,34 +699,20 @@
     }
 
     .ht-btn-primary {
-      background: #2f446c;
+      background: linear-gradient(180deg, var(--ht-navy-light), var(--ht-navy));
       color: #fff;
-      box-shadow: 0 4px 12px rgba(79, 109, 235, 0.2);
+      box-shadow: 0 4px 12px rgba(47, 62, 99, 0.2);
     }
 
     .ht-btn-primary:hover:not(:disabled) {
-      background: var(--ht-primary-hover);
+      background: linear-gradient(180deg, var(--ht-navy), var(--ht-navy-dark));
       transform: translateY(-1px);
-      box-shadow: 0 6px 16px rgba(79, 109, 235, 0.3);
+      box-shadow: 0 6px 16px rgba(47, 62, 99, 0.3);
     }
 
     .ht-btn-primary:active:not(:disabled) {
       transform: translateY(0);
-      box-shadow: 0 2px 8px rgba(79, 109, 235, 0.2);
-    }
-
-    .ht-btn-primary.ht-btn-success {
-      background: var(--ht-success-green);
-      box-shadow: 0 4px 12px rgba(56, 181, 196, 0.2);
-    }
-
-    .ht-btn-primary.ht-btn-success:hover:not(:disabled) {
-      background: var(--ht-success-green-dark);
-      box-shadow: 0 6px 16px rgba(56, 181, 196, 0.3);
-    }
-
-    .ht-btn-primary.ht-btn-success:active:not(:disabled) {
-      box-shadow: 0 2px 8px rgba(56, 181, 196, 0.2);
+      box-shadow: 0 2px 8px rgba(47, 62, 99, 0.2);
     }
 
     .ht-btn-pay {
@@ -714,7 +723,7 @@
 
     .ht-btn-secondary {
       background: rgba(0, 0, 0, 0.04);
-      color: var(--ht-text-dark);
+      color: var(--ht-text-primary);
       border: 1.5px solid rgba(0, 0, 0, 0.08);
       font-weight: 600;
     }
@@ -730,7 +739,7 @@
 
     .ht-btn-action {
       background: rgba(0, 0, 0, 0.04);
-      color: var(--ht-text-dark);
+      color: var(--ht-text-primary);
       border: 1.5px solid rgba(0, 0, 0, 0.08);
       font-weight: 600;
     }
@@ -758,7 +767,7 @@
     }
 
     .spinner {
-      border: 2px solid rgba(0, 0, 0, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.3);
       border-top-color: currentColor;
       border-radius: 50%;
       width: 16px;
@@ -775,13 +784,14 @@
       }
     }
 
+    /* ✅ TRUST MICROCOPY - ENTERPRISE STYLE */
     .ht-helper-text {
-      margin-top: 8px;
+      margin-top: 12px;
       margin-bottom: 10px;
-      color: var(--ht-text-muted);
-      font-size: 0.82rem;
-      font-weight: 500;
-      line-height: 1.25;
+      color: var(--ht-text-secondary);
+      font-size: 0.8rem;
+      font-weight: 400;
+      line-height: 1.4;
     }
 
     .toast {
@@ -856,9 +866,9 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      font-size: 0.875rem;
-      color: var(--ht-text-muted);
-      font-weight: 500;
+      font-size: 0.8rem;
+      color: var(--ht-text-secondary);
+      font-weight: 400;
     }
 
     .ht-powered-by img {
@@ -896,17 +906,11 @@
       }
 
       .ht-account-display {
-        padding: 14px 16px;
+        padding: 10px 12px;
       }
 
       .ht-account-id {
-        font-size: 0.95rem;
-      }
-
-      .ht-disconnect-btn {
-        width: 28px;
-        height: 28px;
-        font-size: 1.1rem;
+        font-size: 0.88rem;
       }
 
       .ht-form-section.hidden {
@@ -914,12 +918,8 @@
       }
 
       .ht-input {
-        font-size: 1.1rem;
-        padding: 14px 14px 14px 40px;
-      }
-
-      .ht-input.no-prefix {
-        padding: 14px;
+        font-size: 0.95rem;
+        height: 44px;
       }
 
       .ht-btn {
@@ -1004,7 +1004,7 @@
       }
 
       .ht-input {
-        font-size: 1rem;
+        font-size: 0.9rem;
       }
     }
   </style>
@@ -1021,9 +1021,13 @@
       <p class="ht-subsubtitle" id="subsubtitle">Send securely via HashPack</p>
     </div>
 
+    <!-- ✅ NEW CONNECTED WALLET DISPLAY -->
     <div class="ht-account-display" id="accountDisplay">
-      <span class="ht-account-id" id="accountId">0.0.0</span>
-      <button class="ht-disconnect-btn" onclick="disconnectWallet()" title="Disconnect">×</button>
+      <div class="ht-account-display-left">
+        <span class="ht-check-icon">✓</span>
+        <span class="ht-account-id">Connected · <span id="accountId">0.0.0</span></span>
+      </div>
+      <button class="ht-disconnect-btn" onclick="disconnectWallet()">Disconnect</button>
     </div>
 
     <div class="ht-form-section" id="formSection">
@@ -1036,7 +1040,7 @@
       </div>
 
       <div class="ht-input-group">
-        <label class="ht-label">Payment Description <span style="color: var(--ht-text-muted); font-weight: 400;">(optional)</span></label>
+        <label class="ht-label">Payment Description <span style="color: var(--ht-text-secondary); font-weight: 400;">(optional)</span></label>
         <div class="ht-input-wrapper">
           <input 
             type="text" 
@@ -1049,6 +1053,10 @@
 
       <button class="ht-btn ht-btn-primary" id="connectBtn">Connect Wallet</button>
       <button class="ht-btn ht-btn-secondary" id="generateBtn" disabled>Generate Payment Link</button>
+      
+      <div class="ht-helper-text" style="text-align: center; margin-top: 16px;">
+        Secure · Non-custodial · Powered by <strong>Hedera</strong>
+      </div>
     </div>
 
     <div class="ht-result-section" id="resultSection">
@@ -1555,7 +1563,7 @@
         currentPaymentLink = invoiceUrl;
         currentAmount = inv.requested_amount_hbar;
 
-        subtitle.innerHTML = `<a href="/${inv.creator_account}" style="color: #152858; text-decoration: none;">→ Check Payment Status</a>`;
+        subtitle.innerHTML = `<a href="/${inv.creator_account}" style="color: var(--ht-navy); text-decoration: none;">→ Check Payment Status</a>`;
 
         payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
         payerUsdAmount.textContent = inv.requested_amount_hbar;
@@ -2128,9 +2136,8 @@
 
         isWalletConnected = true;
         
-        connectBtn.innerHTML = '✓ Wallet Connected';
-        connectBtn.classList.add('ht-btn-success');
-        connectBtn.disabled = true;
+        // ✅ HIDE CONNECT BUTTON COMPLETELY
+        connectBtn.style.display = 'none';
 
         accountIdSpan.textContent = accountId;
         accountDisplay.classList.add('active');
@@ -2156,8 +2163,9 @@
       isWalletConnected = false;
       accountId = null;
 
+      // ✅ SHOW CONNECT BUTTON AGAIN
+      connectBtn.style.display = 'block';
       connectBtn.innerHTML = 'Connect Wallet';
-      connectBtn.classList.remove('ht-btn-success');
       connectBtn.disabled = false;
 
       accountDisplay.classList.remove('active');
@@ -2269,9 +2277,8 @@
               accountId = accounts[0].split(':')[2];
               isWalletConnected = true;
 
-              connectBtn.innerHTML = '✓ Wallet Connected';
-              connectBtn.classList.add('ht-btn-success');
-              connectBtn.disabled = true;
+              // ✅ HIDE CONNECT BUTTON ON RESTORE
+              connectBtn.style.display = 'none';
 
               accountIdSpan.textContent = accountId;
               accountDisplay.classList.add('active');
