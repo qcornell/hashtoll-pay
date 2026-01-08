@@ -78,12 +78,10 @@
       padding-top: 16px;
     }
 
+    /* ✅ FIXED: Mobile WalletConnect - Use scroll lock instead of pointer-events */
     body.walletconnect-open {
-      pointer-events: none !important;
-    }
-
-    body.walletconnect-open .ht-card {
-      pointer-events: auto;
+      overflow: hidden !important;
+      touch-action: none;
     }
 
     .ht-card {
@@ -1750,10 +1748,6 @@
           
           const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
           
-          const descriptionHtml = inv.description && inv.description.trim() 
-            ? `<div class="invoice-description">${inv.description}</div>` 
-            : '';
-          
           let badge = '';
           let actionBtn = '';
           
@@ -1780,6 +1774,7 @@
             `;
           }
           
+          // ✅ FIXED: Build card HTML structure first
           card.innerHTML = `
             <div class="invoice-header">
               <div class="invoice-header-left">
@@ -1788,7 +1783,6 @@
               </div>
               ${badge}
             </div>
-            ${descriptionHtml}
             <div class="invoice-url">${invoiceUrl}</div>
             <div class="invoice-actions">
               ${actionBtn}
@@ -1796,6 +1790,17 @@
               <button class="ht-btn ht-btn-action ht-btn-small" onclick="shareInvoiceLink('${invoiceUrl}', ${inv.requested_amount_hbar})">Share</button>
             </div>
           `;
+          
+          // ✅ FIXED: Insert description SAFELY using textContent
+          if (inv.description && String(inv.description).trim()) {
+            const descDiv = document.createElement('div');
+            descDiv.className = 'invoice-description';
+            descDiv.textContent = String(inv.description).trim();
+            
+            // Insert between header and URL
+            const urlDiv = card.querySelector('.invoice-url');
+            card.insertBefore(descDiv, urlDiv);
+          }
           
           invoiceList.appendChild(card);
         });
