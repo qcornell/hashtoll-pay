@@ -2219,7 +2219,7 @@ function startPayerRealtime(slug) {
       }
     )
     .subscribe();
-}}
+}
 
     async function createInvoiceViaEdge({ receiver_account, requested_amount_hbar, amount_hbar, description }) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/create-invoice`, {
