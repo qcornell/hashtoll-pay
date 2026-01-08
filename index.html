@@ -2221,6 +2221,26 @@ function startPayerRealtime(slug) {
     .subscribe();
 }
 
+    function startStatusPageRealtime(walletId) {
+  stopRealtime();
+
+  realtimeChannel = window.supabaseClient
+    .channel(`status-wallet-${walletId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "invoices",
+        filter: `creator_account=eq.${walletId}`
+      },
+      async () => {
+        await loadStatusPage(walletId);
+      }
+    )
+    .subscribe();
+}
+
     async function createInvoiceViaEdge({ receiver_account, requested_amount_hbar, amount_hbar, description }) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/create-invoice`, {
         method: "POST",
