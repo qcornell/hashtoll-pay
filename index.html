@@ -2002,7 +2002,6 @@
     );
 
     payNowBtn.innerHTML = '<span class="spinner"></span>Finalizing...';
-    ...
   } catch (err) {
     const msg = String(err?.message || err);
     if (msg.toLowerCase().includes("closed")) {
