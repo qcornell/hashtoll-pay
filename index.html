@@ -1730,15 +1730,18 @@
 }
 
     async function loadInvoice(slug) {
-      const { data, error } = await window.supabaseClient
-        .from("invoices")
-        .select("slug, receiver_account, creator_account, requested_amount_hbar, amount_hbar, status, confirmed_by_creator, description, created_at")
-        .eq("slug", slug)
-        .single();
+  const { data, error } = await window.supabaseClient
+    .from("invoices")
+    .select("slug, receiver_account, creator_account, requested_amount_hbar, amount_hbar, status, confirmed_by_creator, description, created_at")
+    .eq("slug", slug)
+    .maybeSingle(); // ✅ doesn't throw 406 when 0 rows
 
-      if (error) throw error;
-      return data;
-    }
+  if (error) throw error;
+  if (!data) throw new Error("Invoice not found"); // ✅ clean handling
+
+  return data;
+}
+
 
    async function loadInvoiceAndRenderPayer(slug) {
   currentInvoiceSlug = slug;
