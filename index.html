@@ -1369,29 +1369,29 @@
         try { dAppConnector.disconnectAll(); } catch (e) { }
       },
 
-      async sendHbar(receiverAccountId, amountHbar) {
-        await ensureInitialized();
+     async sendHbar(receiverAccountId, amountHbar, memo = "HashToll Pay") {
+  await ensureInitialized();
 
-        if (!this.accountId) {
-          throw new Error("No wallet connected");
-        }
+  if (!this.accountId) {
+    throw new Error("No wallet connected");
+  }
 
-        const senderAccountId = AccountId.fromString(this.accountId);
-        const transaction = new TransferTransaction()
-          .addHbarTransfer(senderAccountId, new Hbar(-amountHbar))
-          .addHbarTransfer(AccountId.fromString(receiverAccountId), new Hbar(amountHbar))
-          .setTransactionMemo(`HT:${currentInvoiceData.slug}`);
+  const senderAccountId = AccountId.fromString(this.accountId);
+  const transaction = new TransferTransaction()
+    .addHbarTransfer(senderAccountId, new Hbar(-amountHbar))
+    .addHbarTransfer(AccountId.fromString(receiverAccountId), new Hbar(amountHbar))
+    .setTransactionMemo(memo); // ✅ Changed from hardcoded to parameter
 
-        const txBytes = transaction.toBytes();
+  const txBytes = transaction.toBytes();
 
-        const result = await dAppConnector.signAndExecuteTransaction(txBytes);
+  const result = await dAppConnector.signAndExecuteTransaction(txBytes);
 
-        if (!result || !result.transactionId) {
-          throw new Error("Transaction failed");
-        }
+  if (!result || !result.transactionId) {
+    throw new Error("Transaction failed");
+  }
 
-        return result;
-      }
+  return result;
+}
     };
 
     window.hederaConnect = hederaConnect;
