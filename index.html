@@ -1262,144 +1262,174 @@
   <div id="toast-container"></div>
 
   <script type="module">
-    import { LedgerId, AccountId, Hbar, TransferTransaction } from "https://esm.sh/@hashgraph/sdk@2.78.0";
-    import { DAppConnector, HederaJsonRpcMethod, HederaSessionEvent, HederaChainId } from "https://esm.sh/@hashgraph/hedera-wallet-connect@2.0.4?deps=@hashgraph/sdk@2.78.0";
-    import QRCode from "https://esm.sh/qrcode@1.5.3";
+  import { 
+    LedgerId, 
+    AccountId, 
+    Hbar, 
+    TransferTransaction,
+    TransactionId 
+  } from "https://esm.sh/@hashgraph/sdk@2.78.0";
+  
+  import { 
+    DAppConnector, 
+    HederaJsonRpcMethod, 
+    HederaSessionEvent, 
+    HederaChainId 
+  } from "https://esm.sh/@hashgraph/hedera-wallet-connect@2.0.4?deps=@hashgraph/sdk@2.78.0";
+  
+  import QRCode from "https://esm.sh/qrcode@1.5.3";
 
-    const PROJECT_ID = "1acd173110297b885db0bad6276e6868";
+  const PROJECT_ID = "1acd173110297b885db0bad6276e6868";
 
-    const metadata = {
-      name: "HashToll Pay",
-      description: "Create Hedera Payment Links",
-      url: window.location.origin,
-      icons: [`${window.location.origin}/favicon.png`]
-    };
+  const metadata = {
+    name: "HashToll Pay",
+    description: "Create Hedera Payment Links",
+    url: window.location.origin,
+    icons: [`${window.location.origin}/favicon.png`]
+  };
 
-    const dAppConnector = new DAppConnector(
-      metadata,
-      LedgerId.MAINNET,
-      PROJECT_ID,
-      Object.values(HederaJsonRpcMethod),
-      Object.values(HederaSessionEvent),
-      [HederaChainId.Mainnet]
-    );
+  const dAppConnector = new DAppConnector(
+    metadata,
+    LedgerId.MAINNET,
+    PROJECT_ID,
+    Object.values(HederaJsonRpcMethod),
+    Object.values(HederaSessionEvent),
+    [HederaChainId.Mainnet]
+  );
 
-    let initialized = false;
+  let initialized = false;
 
-    async function ensureInitialized() {
-      if (initialized) return;
-      try {
-        await dAppConnector.init({ logger: "error" });
-        initialized = true;
-      } catch (err) {
-        console.error("❌ WalletConnect init failed:", err);
-        throw err;
-      }
+  async function ensureInitialized() {
+    if (initialized) return;
+    try {
+      await dAppConnector.init({ logger: "error" });
+      initialized = true;
+    } catch (err) {
+      console.error("❌ WalletConnect init failed:", err);
+      throw err;
     }
+  }
 
-    const hederaConnect = {
-      dAppConnector,
-      accountId: null,
+  const hederaConnect = {
+    dAppConnector,
+    accountId: null,
 
-      async connect() {
-        await ensureInitialized();
+    async connect() {
+      await ensureInitialized();
 
-        if (this.accountId) return this.accountId;
+      if (this.accountId) return this.accountId;
 
-        const cleanup = () => document.body.classList.remove("walletconnect-open");
+      const cleanup = () => document.body.classList.remove("walletconnect-open");
 
-        try {
-          document.body.classList.add("walletconnect-open");
+      try {
+        document.body.classList.add("walletconnect-open");
 
-          const existingSessions = dAppConnector.walletConnectClient?.session?.getAll() ?? [];
-          if (existingSessions.length > 0) {
-            const accounts = existingSessions[0]?.namespaces?.hedera?.accounts ?? [];
-            if (accounts.length > 0) {
-              this.accountId = accounts[0].split(':')[2];
-              cleanup();
-              return this.accountId;
-            }
+        const existingSessions = dAppConnector.walletConnectClient?.session?.getAll() ?? [];
+        if (existingSessions.length > 0) {
+          const accounts = existingSessions[0]?.namespaces?.hedera?.accounts ?? [];
+          if (accounts.length > 0) {
+            this.accountId = accounts[0].split(':')[2];
+            cleanup();
+            return this.accountId;
           }
+        }
 
-          dAppConnector.openModal();
+        dAppConnector.openModal();
 
-          return new Promise((resolve, reject) => {
-            let modalEverVisible = false;
+        return new Promise((resolve, reject) => {
+          let modalEverVisible = false;
 
-            const poll = setInterval(() => {
-              const sessions = dAppConnector.walletConnectClient?.session?.getAll() ?? [];
-              const accounts = sessions[0]?.namespaces?.hedera?.accounts ?? [];
+          const poll = setInterval(() => {
+            const sessions = dAppConnector.walletConnectClient?.session?.getAll() ?? [];
+            const accounts = sessions[0]?.namespaces?.hedera?.accounts ?? [];
 
-              if (accounts.length > 0) {
-                clearInterval(poll);
-                cleanup();
-                this.accountId = accounts[0].split(':')[2];
-                resolve(this.accountId);
-                return;
-              }
-
-              const modal = document.querySelector("wcm-modal, w3m-modal, [data-testid='wui-modal'], [data-testid='wcm-modal']");
-              if (modal) {
-                const isVisible = getComputedStyle(modal).display !== "none";
-                if (isVisible) modalEverVisible = true;
-
-                if (!isVisible && modalEverVisible && sessions.length === 0) {
-                  clearInterval(poll);
-                  cleanup();
-                  reject(new Error("User closed wallet modal"));
-                }
-              }
-            }, 400);
-
-            setTimeout(() => {
+            if (accounts.length > 0) {
               clearInterval(poll);
               cleanup();
-              reject(new Error("⏱️ Connection timeout"));
-            }, 90000);
-          });
+              this.accountId = accounts[0].split(':')[2];
+              resolve(this.accountId);
+              return;
+            }
 
-        } catch (err) {
-          cleanup();
-          throw err;
-        }
-      },
+            const modal = document.querySelector("wcm-modal, w3m-modal, [data-testid='wui-modal'], [data-testid='wcm-modal']");
+            if (modal) {
+              const isVisible = getComputedStyle(modal).display !== "none";
+              if (isVisible) modalEverVisible = true;
 
-      disconnect() {
-        this.accountId = null;
-        try { dAppConnector.disconnectAll(); } catch (e) { }
-      },
+              if (!isVisible && modalEverVisible && sessions.length === 0) {
+                clearInterval(poll);
+                cleanup();
+                reject(new Error("User closed wallet modal"));
+              }
+            }
+          }, 400);
 
-     async sendHbar(receiverAccountId, amountHbar, memo = "HashToll Pay") {
-  await ensureInitialized();
+          setTimeout(() => {
+            clearInterval(poll);
+            cleanup();
+            reject(new Error("⏱️ Connection timeout"));
+          }, 90000);
+        });
 
-  if (!this.accountId) {
-    throw new Error("No wallet connected");
-  }
+      } catch (err) {
+        cleanup();
+        throw err;
+      }
+    },
 
-  const senderAccountId = AccountId.fromString(this.accountId);
-  const transaction = new TransferTransaction()
-    .addHbarTransfer(senderAccountId, new Hbar(-amountHbar))
-    .addHbarTransfer(AccountId.fromString(receiverAccountId), new Hbar(amountHbar))
-    .setTransactionMemo(memo); // ✅ Changed from hardcoded to parameter
+    disconnect() {
+      this.accountId = null;
+      try { dAppConnector.disconnectAll(); } catch (e) { }
+    },
 
-  const txBytes = transaction.toBytes();
+    // ✅ FIXED: Properly freeze transaction before sending to wallet
+    async sendHbar(receiverAccountId, amountHbar, memo = "HashToll Pay") {
+      await ensureInitialized();
 
-  const result = await dAppConnector.signAndExecuteTransaction(txBytes);
+      if (!this.accountId) {
+        throw new Error("No wallet connected");
+      }
 
-  if (!result || !result.transactionId) {
-    throw new Error("Transaction failed");
-  }
+      const sender = AccountId.fromString(this.accountId);
+      const receiver = AccountId.fromString(receiverAccountId);
+      
+      // ✅ Use a valid Hedera mainnet node
+      const node = AccountId.fromString("0.0.3");
 
-  return result;
-}
-    };
+      // ✅ Build transaction with all required fields
+      const transaction = new TransferTransaction()
+        .addHbarTransfer(sender, new Hbar(-Number(amountHbar)))
+        .addHbarTransfer(receiver, new Hbar(Number(amountHbar)))
+        .setTransactionMemo(memo)
+        .setTransactionId(TransactionId.generate(sender))
+        .setNodeAccountIds([node])
+        .freeze(); // ✅ CRITICAL: Must freeze before sending to wallet
 
-    window.hederaConnect = hederaConnect;
-    window.QRCode = QRCode;
+      const txBytes = transaction.toBytes();
 
-    ensureInitialized().catch(() => { });
-  </script>
+      const result = await dAppConnector.signAndExecuteTransaction(txBytes);
 
+      // ✅ Robust transaction ID extraction
+      const txId = 
+        result?.transactionId?.toString?.() ?? 
+        result?.transactionId ?? 
+        result?.txId ?? 
+        null;
+
+      if (!txId) {
+        console.error("Wallet result:", result);
+        throw new Error("No transaction ID returned from wallet");
+      }
+
+      return { ...result, transactionId: txId };
+    }
+  };
+
+  window.hederaConnect = hederaConnect;
+  window.QRCode = QRCode;
+
+  ensureInitialized().catch(() => { });
+</script>
   <script>
     const SUPABASE_URL = 'https://pvtoczsnwamailsjjnfn.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2dG9jenNud2FtYWlsc2pqbmZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NjE1MTksImV4cCI6MjA4MzEzNzUxOX0.3mDZ3RUo7aHi25r1X1axYj0EppgXFKEY7xGvqdhDSbM';
@@ -1933,20 +1963,23 @@
     }
 
     async function payNow() {
+  const originalText = "Pay Now";
+
   try {
     payNowBtn.disabled = true;
     payNowBtn.innerHTML = '<span class="spinner"></span>Connecting...';
 
     const payerAccount = await window.hederaConnect.connect();
     
-    payNowBtn.innerHTML = '<span class="spinner"></span>Sending payment...';
+    payNowBtn.innerHTML = '<span class="spinner"></span>Check HashPack to approve...';
 
-    // ✅ Send with unique memo
     const result = await window.hederaConnect.sendHbar(
       currentInvoiceData.receiver_account,
       currentInvoiceData.amount_hbar,
-      `HT:${currentInvoiceData.slug}` // ✅ Include slug in memo
+      `HT:${currentInvoiceData.slug}`
     );
+
+    payNowBtn.innerHTML = '<span class="spinner"></span>Finalizing...';
 
     // ✅ Auto-notify with transaction proof
     await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
@@ -1958,9 +1991,9 @@
       },
       body: JSON.stringify({
         slug: currentInvoiceSlug,
-        tx_id: result.transactionId, // ✅ Proof
-        payer_account: payerAccount,  // ✅ Who paid
-        memo: `HT:${currentInvoiceData.slug}` // ✅ Expected memo
+        tx_id: result.transactionId,
+        payer_account: payerAccount,
+        memo: `HT:${currentInvoiceData.slug}`
       })
     });
 
@@ -1969,13 +2002,23 @@
 
   } catch (err) {
     console.error('Payment failed:', err);
-    showToast(err.message || 'Payment failed', 'error');
+    
+    const msg = String(err?.message || err);
+
+    // ✅ Handle user rejection gracefully
+    if (msg.toLowerCase().includes("reject") || 
+        msg.toLowerCase().includes("denied") || 
+        msg.toLowerCase().includes("closed")) {
+      showToast('Transaction cancelled', 'info');
+    } else {
+      showToast(msg || 'Payment failed', 'error');
+    }
+
   } finally {
     payNowBtn.disabled = false;
-    payNowBtn.innerHTML = 'Pay Now';
+    payNowBtn.innerHTML = originalText;
   }
 }
-
     async function copyText(text, successMsg = 'Copied!') {
       try {
         await navigator.clipboard.writeText(text);
