@@ -1245,211 +1245,204 @@
   <div id="toast-container"></div>
 
   <!-- ✅ MODULE SCRIPT - WalletConnect Logic -->
-  <script type="module">
-    import {
-      LedgerId,
-      AccountId,
-      Hbar,
-      TransferTransaction,
-      TransactionId
-    } from "https://esm.sh/@hashgraph/sdk@2.78.0";
+ <script type="module">
+  import {
+    LedgerId,
+    AccountId,
+    Hbar,
+    TransferTransaction,
+    TransactionId
+  } from "https://esm.sh/@hashgraph/sdk@2.78.0";
 
-    import {
-      DAppConnector,
-      HederaJsonRpcMethod,
-      HederaSessionEvent,
-      HederaChainId
-    } from "https://esm.sh/@hashgraph/hedera-wallet-connect@2.0.4?deps=@hashgraph/sdk@2.78.0";
+  import {
+    DAppConnector,
+    HederaJsonRpcMethod,
+    HederaSessionEvent,
+    HederaChainId
+  } from "https://esm.sh/@hashgraph/hedera-wallet-connect@2.0.4?deps=@hashgraph/sdk@2.78.0";
 
-    import QRCode from "https://esm.sh/qrcode@1.5.3";
+  import QRCode from "https://esm.sh/qrcode@1.5.3";
 
-    const PROJECT_ID = "1acd173110297b885db0bad6276e6868";
+  const PROJECT_ID = "1acd173110297b885db0bad6276e6868";
 
-    const metadata = {
-      name: "HashToll Pay",
-      description: "Create Hedera Payment Links",
-      url: window.location.origin,
-      icons: [`${window.location.origin}/favicon.png`]
-    };
+  const metadata = {
+    name: "HashToll Pay",
+    description: "Create Hedera Payment Links",
+    url: window.location.origin,
+    icons: [`${window.location.origin}/favicon.png`]
+  };
 
-    const dAppConnector = new DAppConnector(
-      metadata,
-      LedgerId.MAINNET,
-      PROJECT_ID,
-      Object.values(HederaJsonRpcMethod),
-      Object.values(HederaSessionEvent),
-      [HederaChainId.Mainnet]
-    );
+  const dAppConnector = new DAppConnector(
+    metadata,
+    LedgerId.MAINNET,
+    PROJECT_ID,
+    Object.values(HederaJsonRpcMethod),
+    Object.values(HederaSessionEvent),
+    [HederaChainId.Mainnet]
+  );
 
-    let initialized = false;
+  let initialized = false;
 
-    async function ensureInitialized() {
-      if (initialized) return;
-      await dAppConnector.init({ logger: "error" });
-      initialized = true;
+  async function ensureInitialized() {
+    if (initialized) return;
+    await dAppConnector.init({ logger: "error" });
+    initialized = true;
+  }
+
+  function getSessionAccountId() {
+    const sessions = dAppConnector.walletConnectClient?.session?.getAll?.() ?? [];
+    if (!sessions.length) return null;
+
+    const accounts = sessions[0]?.namespaces?.hedera?.accounts ?? [];
+    if (!accounts.length) return null;
+
+    return accounts[0].split(":")[2] || null;
+  }
+
+  function bytesToBase64(bytes) {
+    let binary = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
     }
+    return btoa(binary);
+  }
 
-    function getSessionAccountId() {
-      const sessions = dAppConnector.walletConnectClient?.session?.getAll?.() ?? [];
-      if (!sessions.length) return null;
+  const hederaConnect = {
+    dAppConnector,
+    accountId: null,
 
-      const accounts = sessions[0]?.namespaces?.hedera?.accounts ?? [];
-      if (!accounts.length) return null;
+    isConnected() {
+      return !!this.accountId;
+    },
 
-      return accounts[0].split(":")[2] || null;
-    }
-
-    // ✅ FIX 1: Helper to convert bytes to base64
-    function bytesToBase64(bytes) {
-      let binary = "";
-      const chunk = 0x8000;
-      for (let i = 0; i < bytes.length; i += chunk) {
-        binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+    async restoreSession() {
+      await ensureInitialized();
+      const acct = getSessionAccountId();
+      if (acct) {
+        this.accountId = acct;
+        return acct;
       }
-      return btoa(binary);
-    }
+      this.accountId = null;
+      return null;
+    },
 
-    const hederaConnect = {
-      dAppConnector,
-      accountId: null,
+    async connect() {
+      await ensureInitialized();
 
-      isConnected() {
-        return !!this.accountId;
-      },
+      if (this.accountId) return this.accountId;
 
-      async restoreSession() {
-        await ensureInitialized();
-        const acct = getSessionAccountId();
-        if (acct) {
-          this.accountId = acct;
-          return acct;
-        }
-        this.accountId = null;
-        return null;
-      },
+      const restored = await this.restoreSession();
+      if (restored) return restored;
 
-      async connect() {
-        await ensureInitialized();
+      const cleanup = () => document.body.classList.remove("walletconnect-open");
 
-        if (this.accountId) return this.accountId;
+      try {
+        document.body.classList.add("walletconnect-open");
+        dAppConnector.openModal();
 
-        const restored = await this.restoreSession();
-        if (restored) return restored;
+        return await new Promise((resolve, reject) => {
+          let modalEverVisible = false;
 
-        const cleanup = () => document.body.classList.remove("walletconnect-open");
+          const poll = setInterval(() => {
+            const acct = getSessionAccountId();
 
-        try {
-          document.body.classList.add("walletconnect-open");
-          dAppConnector.openModal();
-
-          return await new Promise((resolve, reject) => {
-            let modalEverVisible = false;
-
-            const poll = setInterval(() => {
-              const acct = getSessionAccountId();
-
-              if (acct) {
-                clearInterval(poll);
-                cleanup();
-                this.accountId = acct;
-                resolve(acct);
-                return;
-              }
-
-              const modal = document.querySelector(
-                "wcm-modal, w3m-modal, [data-testid='wui-modal'], [data-testid='wcm-modal']"
-              );
-
-              if (modal) {
-                const isVisible = getComputedStyle(modal).display !== "none";
-                if (isVisible) modalEverVisible = true;
-
-                if (!isVisible && modalEverVisible) {
-                  clearInterval(poll);
-                  cleanup();
-                  reject(new Error("User closed wallet modal"));
-                }
-              }
-            }, 350);
-
-            setTimeout(() => {
+            if (acct) {
               clearInterval(poll);
               cleanup();
-              reject(new Error("Connection timeout"));
-            }, 90000);
-          });
+              this.accountId = acct;
+              resolve(acct);
+              return;
+            }
 
-        } catch (err) {
-          cleanup();
-          throw err;
-        }
-      },
+            const modal = document.querySelector(
+              "wcm-modal, w3m-modal, [data-testid='wui-modal'], [data-testid='wcm-modal']"
+            );
 
-      disconnect() {
-        this.accountId = null;
-        try { dAppConnector.disconnectAll(); } catch (e) {}
-      },
+            if (modal) {
+              const isVisible = getComputedStyle(modal).display !== "none";
+              if (isVisible) modalEverVisible = true;
 
-      // ✅ FIX 1: Updated sendHbar with signerAccountId + transactionList
-      async sendHbar(receiverAccountId, amountHbar, memo = "HashToll Pay") {
-        await ensureInitialized();
+              if (!isVisible && modalEverVisible) {
+                clearInterval(poll);
+                cleanup();
+                reject(new Error("User closed wallet modal"));
+              }
+            }
+          }, 350);
 
-        if (!this.accountId) {
-          await this.connect();
-        }
-
-        if (!this.accountId) {
-          throw new Error("No wallet connected");
-        }
-
-        const sender = AccountId.fromString(this.accountId);
-        const receiver = AccountId.fromString(receiverAccountId);
-        const node = AccountId.fromString("0.0.3");
-
-        const tx = new TransferTransaction()
-          .addHbarTransfer(sender, new Hbar(-Number(amountHbar)))
-          .addHbarTransfer(receiver, new Hbar(Number(amountHbar)))
-          .setTransactionMemo(memo)
-          .setTransactionId(TransactionId.generate(sender))
-          .setNodeAccountIds([node])
-          .freeze();
-
-        const base64Tx = bytesToBase64(tx.toBytes());
-
-        // ✅ THIS FIXES "UNKNOWN ACCOUNT"
-        const signerCaip = `hedera:mainnet:${this.accountId}`;
-
-        const result = await dAppConnector.signAndExecuteTransaction({
-          signerAccountId: signerCaip,
-          transactionList: [base64Tx]
+          setTimeout(() => {
+            clearInterval(poll);
+            cleanup();
+            reject(new Error("Connection timeout"));
+          }, 90000);
         });
 
-        const txId =
-          result?.transactionId?.toString?.() ??
-          result?.transactionId ??
-          result?.txId ??
-          null;
-
-        if (!txId) {
-          console.log("Wallet result:", result);
-          throw new Error("No transactionId returned from wallet");
-        }
-
-        return { ...result, transactionId: txId };
+      } catch (err) {
+        cleanup();
+        throw err;
       }
-    };
+    },
 
-    window.hederaConnect = hederaConnect;
-    window.QRCode = QRCode;
+    disconnect() {
+      this.accountId = null;
+      try { dAppConnector.disconnectAll(); } catch (e) {}
+    },
 
-    // ✅ FIX 2: Create ready promise for main script to await
-    window.hederaReady = (async () => {
+    // ✅ FIXED: No auto-connect + transactionList as STRING
+    async sendHbar(receiverAccountId, amountHbar, memo = "HashToll Pay") {
       await ensureInitialized();
-      await hederaConnect.restoreSession().catch(() => {});
-      return hederaConnect.accountId;
-    })();
-  </script>
 
+      // ✅ Don't auto-connect - throw error instead
+      if (!this.accountId) {
+        throw new Error("Wallet not connected");
+      }
+
+      const sender = AccountId.fromString(this.accountId);
+      const receiver = AccountId.fromString(receiverAccountId);
+      const node = AccountId.fromString("0.0.3");
+
+      const tx = new TransferTransaction()
+        .addHbarTransfer(sender, new Hbar(-Number(amountHbar)))
+        .addHbarTransfer(receiver, new Hbar(Number(amountHbar)))
+        .setTransactionMemo(memo)
+        .setTransactionId(TransactionId.generate(sender))
+        .setNodeAccountIds([node])
+        .freeze();
+
+      const base64Tx = bytesToBase64(tx.toBytes());
+      const signerCaip = `hedera:mainnet:${this.accountId}`;
+
+      // ✅ Send as STRING, not array
+      const result = await dAppConnector.signAndExecuteTransaction({
+        signerAccountId: signerCaip,
+        transactionList: base64Tx  // ✅ Not [base64Tx]
+      });
+
+      const txId =
+        result?.transactionId?.toString?.() ??
+        result?.transactionId ??
+        result?.txId ??
+        null;
+
+      if (!txId) {
+        console.log("Wallet result:", result);
+        throw new Error("No transactionId returned from wallet");
+      }
+
+      return { ...result, transactionId: txId };
+    }
+  };
+
+  window.hederaConnect = hederaConnect;
+  window.QRCode = QRCode;
+
+  window.hederaReady = (async () => {
+    await ensureInitialized();
+    await hederaConnect.restoreSession().catch(() => {});
+    return hederaConnect.accountId;
+  })();
+</script>
   <!-- ✅ MAIN SCRIPT - App Logic -->
   <script>
     const SUPABASE_URL = 'https://pvtoczsnwamailsjjnfn.supabase.co';
@@ -1980,35 +1973,67 @@
       }
     }
 
-   async function payNow() {
+async function payNow() {
   const originalText = "Pay Now";
+  
   try {
     payNowBtn.disabled = true;
 
-    // Step 1: connect (or restore)
+    // Step 1: Connect wallet
     payNowBtn.innerHTML = '<span class="spinner"></span>Connect wallet...';
     const payerAccount = await window.hederaConnect.connect();
-
+    
     if (!payerAccount) {
       throw new Error("Wallet not connected");
     }
 
-    // Step 2: approve tx
+    // ✅ Let modal settle before showing transaction
+    await new Promise(r => setTimeout(r, 250));
+
+    // Step 2: Send transaction
     payNowBtn.innerHTML = '<span class="spinner"></span>Check HashPack to approve...';
+    
     const result = await window.hederaConnect.sendHbar(
       currentInvoiceData.receiver_account,
       currentInvoiceData.amount_hbar,
       `HT:${currentInvoiceData.slug}`
     );
 
+    // Step 3: Notify backend
     payNowBtn.innerHTML = '<span class="spinner"></span>Finalizing...';
+
+    await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "apikey": SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({
+        slug: currentInvoiceSlug,
+        tx_id: result.transactionId,
+        payer_account: payerAccount,
+        memo: `HT:${currentInvoiceData.slug}`
+      })
+    });
+
+    setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+    showToast('Payment sent! ✅', 'success');
+
   } catch (err) {
+    console.error('Payment failed:', err);
+    
     const msg = String(err?.message || err);
-    if (msg.toLowerCase().includes("closed")) {
-      showToast("Connection cancelled", "info");
+    
+    if (msg.toLowerCase().includes("reject") || 
+        msg.toLowerCase().includes("denied") || 
+        msg.toLowerCase().includes("closed") ||
+        msg.toLowerCase().includes("modal")) {
+      showToast('Transaction cancelled', 'info');
     } else {
-      showToast(msg, "error");
+      showToast(msg || 'Payment failed', 'error');
     }
+
   } finally {
     payNowBtn.disabled = false;
     payNowBtn.innerHTML = originalText;
