@@ -1380,7 +1380,7 @@
         const transaction = new TransferTransaction()
           .addHbarTransfer(senderAccountId, new Hbar(-amountHbar))
           .addHbarTransfer(AccountId.fromString(receiverAccountId), new Hbar(amountHbar))
-          .setTransactionMemo("HashToll Pay");
+          .setTransactionMemo(`HT:${currentInvoiceData.slug}`);
 
         const txBytes = transaction.toBytes();
 
@@ -1933,51 +1933,48 @@
     }
 
     async function payNow() {
-      if (!currentInvoiceData) {
-        showToast('Invoice data not loaded', 'error');
-        return;
-      }
+  try {
+    payNowBtn.disabled = true;
+    payNowBtn.innerHTML = '<span class="spinner"></span>Connecting...';
 
-      try {
-        payNowBtn.disabled = true;
-        payNowBtn.innerHTML = '<span class="spinner"></span>Connecting wallet...';
+    const payerAccount = await window.hederaConnect.connect();
+    
+    payNowBtn.innerHTML = '<span class="spinner"></span>Sending payment...';
 
-        if (!window.hederaConnect) {
-          throw new Error('WalletConnect not loaded');
-        }
+    // ✅ Send with unique memo
+    const result = await window.hederaConnect.sendHbar(
+      currentInvoiceData.receiver_account,
+      currentInvoiceData.amount_hbar,
+      `HT:${currentInvoiceData.slug}` // ✅ Include slug in memo
+    );
 
-        const payerAccount = await window.hederaConnect.connect();
+    // ✅ Auto-notify with transaction proof
+    await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "apikey": SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({
+        slug: currentInvoiceSlug,
+        tx_id: result.transactionId, // ✅ Proof
+        payer_account: payerAccount,  // ✅ Who paid
+        memo: `HT:${currentInvoiceData.slug}` // ✅ Expected memo
+      })
+    });
 
-        payNowBtn.innerHTML = '<span class="spinner"></span>Sending payment...';
+    setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+    showToast('Payment sent! ✅', 'success');
 
-        const result = await window.hederaConnect.sendHbar(
-          currentInvoiceData.receiver_account,
-          currentInvoiceData.amount_hbar
-        );
-
-        console.log('Payment successful:', result);
-
-        showToast('Payment sent! ✅', 'success');
-
-        payNowBtn.innerHTML = '✓ Payment Sent';
-
-        setTimeout(async () => {
-          await notifyPaidOnce(currentInvoiceSlug);
-        }, 1000);
-
-      } catch (err) {
-        console.error('Payment failed:', err);
-        
-        let errorMsg = err.message || 'Payment failed';
-        if (String(errorMsg).includes('closed')) errorMsg = 'Payment cancelled';
-        if (String(errorMsg).includes('rejected')) errorMsg = 'Transaction rejected';
-
-        showToast(errorMsg, 'error');
-
-        payNowBtn.innerHTML = 'Pay Now';
-        payNowBtn.disabled = false;
-      }
-    }
+  } catch (err) {
+    console.error('Payment failed:', err);
+    showToast(err.message || 'Payment failed', 'error');
+  } finally {
+    payNowBtn.disabled = false;
+    payNowBtn.innerHTML = 'Pay Now';
+  }
+}
 
     async function copyText(text, successMsg = 'Copied!') {
       try {
