@@ -1980,61 +1980,42 @@
       }
     }
 
-    async function payNow() {
-      const originalText = "Pay Now";
+   async function payNow() {
+  const originalText = "Pay Now";
+  try {
+    payNowBtn.disabled = true;
 
-      try {
-        payNowBtn.disabled = true;
+    // Step 1: connect (or restore)
+    payNowBtn.innerHTML = '<span class="spinner"></span>Connect wallet...';
+    const payerAccount = await window.hederaConnect.connect();
 
-        payNowBtn.innerHTML = '<span class="spinner"></span>Connect wallet...';
-        const payerAccount = await window.hederaConnect.connect();
-
-        payNowBtn.innerHTML = '<span class="spinner"></span>Check HashPack to approve...';
-
-        const result = await window.hederaConnect.sendHbar(
-          currentInvoiceData.receiver_account,
-          currentInvoiceData.amount_hbar,
-          `HT:${currentInvoiceData.slug}`
-        );
-
-        payNowBtn.innerHTML = '<span class="spinner"></span>Finalizing...';
-
-        await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
-          method: 'POST',
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-            "apikey": SUPABASE_ANON_KEY
-          },
-          body: JSON.stringify({
-            slug: currentInvoiceSlug,
-            tx_id: result.transactionId,
-            payer_account: payerAccount,
-            memo: `HT:${currentInvoiceData.slug}`
-          })
-        });
-
-        setPayerStatus('✅ PAID — Receiver notified!', 'paid');
-        showToast('Payment sent! ✅', 'success');
-
-      } catch (err) {
-        console.error('Payment failed:', err);
-        
-        const msg = String(err?.message || err);
-
-        if (msg.toLowerCase().includes("reject") || 
-            msg.toLowerCase().includes("denied") || 
-            msg.toLowerCase().includes("closed")) {
-          showToast('Transaction cancelled', 'info');
-        } else {
-          showToast(msg || 'Payment failed', 'error');
-        }
-
-      } finally {
-        payNowBtn.disabled = false;
-        payNowBtn.innerHTML = originalText;
-      }
+    if (!payerAccount) {
+      throw new Error("Wallet not connected");
     }
+
+    // Step 2: approve tx
+    payNowBtn.innerHTML = '<span class="spinner"></span>Check HashPack to approve...';
+    const result = await window.hederaConnect.sendHbar(
+      currentInvoiceData.receiver_account,
+      currentInvoiceData.amount_hbar,
+      `HT:${currentInvoiceData.slug}`
+    );
+
+    payNowBtn.innerHTML = '<span class="spinner"></span>Finalizing...';
+    ...
+  } catch (err) {
+    const msg = String(err?.message || err);
+    if (msg.toLowerCase().includes("closed")) {
+      showToast("Connection cancelled", "info");
+    } else {
+      showToast(msg, "error");
+    }
+  } finally {
+    payNowBtn.disabled = false;
+    payNowBtn.innerHTML = originalText;
+  }
+}
+
 
     async function copyText(text, successMsg = 'Copied!') {
       try {
