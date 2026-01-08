@@ -24,20 +24,21 @@
   <style>
     /* --- CSS VARIABLES --- */
     :root {
-      --ht-card-width: 440px;
-      --ht-navy: #2F3E63;
+      --ht-card-width: 520px;
+      --ht-navy: #2F436E;
       --ht-navy-dark: #1F2937;
-      --ht-navy-light: #344B7A;
+      --ht-navy-light: #4A5F8E;
       --ht-connected-bg: #F1F5F9;
       --ht-connected-border: #E2E8F0;
       --ht-connected-text: #1F3A5F;
-      --ht-check-green: #2F7A68;
-      --ht-check-bg: #E8F4F1;
-      --ht-logo-max-width: 260px;
+      --ht-check-green: #10B981;
+      --ht-check-bg: #D1FAE5;
+      --ht-logo-max-width: 280px;
       --ht-input-bg: #F8FAFC;
       --ht-input-border: #CBD5E1;
       --ht-text-primary: #0F172A;
       --ht-text-secondary: #64748B;
+      --ht-text-muted: #94A3B8;
       --ht-radius: 12px;
       --ht-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
     }
@@ -50,7 +51,7 @@
       align-items: center;
       min-height: 100vh;
       min-height: 100dvh;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       
       background: 
         linear-gradient(135deg, rgba(232, 234, 246, 0.50) 0%, rgba(245, 247, 250, 0.60) 50%, rgba(227, 242, 253, 0.50) 100%),
@@ -89,7 +90,7 @@
       width: 100%;
       max-width: var(--ht-card-width);
       position: relative;
-      padding: 48px 40px;
+      padding: 56px 48px;
       box-sizing: border-box;
       background: #ffffff;
       border-radius: 24px;
@@ -101,7 +102,7 @@
     }
 
     .ht-logo-area {
-      margin-bottom: 24px;
+      margin-bottom: 16px;
     }
 
     .ht-title {
@@ -121,17 +122,18 @@
     }
 
     .ht-subtitle {
-      margin: 12px 0 0 0;
+      margin: 14px 0 0 0;
       color: var(--ht-text-secondary);
-      font-size: 0.95rem;
+      font-size: 1rem;
       font-weight: 500;
+      letter-spacing: -0.01em;
     }
 
     .ht-subsubtitle {
       margin: 6px 0 0 0;
       color: var(--ht-text-secondary);
-      font-size: 0.85rem;
-      font-weight: 500;
+      font-size: 0.875rem;
+      font-weight: 400;
       display: none;
     }
 
@@ -139,14 +141,14 @@
       display: block;
     }
 
-    /* ✅ NEW CONNECTED STATE - PROFESSIONAL & STABLE */
+    /* ✅ CONNECTED STATE - ENTERPRISE MINIMAL */
     .ht-account-display {
       display: none;
       background: var(--ht-connected-bg);
       border: 1px solid var(--ht-connected-border);
       border-radius: var(--ht-radius);
-      padding: 10px 14px;
-      margin-bottom: 24px;
+      padding: 12px 16px;
+      margin-bottom: 28px;
       align-items: center;
       justify-content: space-between;
       transition: all 0.3s ease;
@@ -160,59 +162,56 @@
     .ht-account-display-left {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       flex: 1;
       min-width: 0;
     }
 
-    /* ✅ CHECK ICON - MUTED, NOT CELEBRATORY */
     .ht-check-icon {
-      width: 16px;
-      height: 16px;
+      width: 18px;
+      height: 18px;
       background: var(--ht-check-bg);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      font-size: 20px;
+      font-size: 12px;
       color: var(--ht-check-green);
       font-weight: 700;
     }
 
     .ht-account-id {
-      /* font-family: 'SF Mono', 'Monaco', 'Courier New', monospace; */
-      font-size: 0.95rem;
+      font-size: 0.9375rem;
       color: var(--ht-connected-text);
       font-weight: 500;
       flex: 1;
       word-break: break-all;
-      letter-spacing: 0.01em;
+      letter-spacing: -0.01em;
     }
 
-   /* ✅ DISCONNECT - SUBTLE BORDERED BUTTON LIKE REFERENCE */
-.ht-disconnect-btn {
-  background: #FFFFFF;
-  border: 1px solid var(--ht-connected-border);
-  color: var(--ht-text-secondary);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  padding: 6px 12px;
-  border-radius: 8px;
-  white-space: nowrap;
-}
+    .ht-disconnect-btn {
+      background: #FFFFFF;
+      border: 1px solid var(--ht-connected-border);
+      color: var(--ht-text-secondary);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      padding: 6px 14px;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
 
-.ht-disconnect-btn:hover {
-  background: var(--ht-connected-bg);
-  color: var(--ht-connected-text);
-  border-color: #CBD5E1;
-}
+    .ht-disconnect-btn:hover {
+      background: var(--ht-connected-bg);
+      color: var(--ht-connected-text);
+      border-color: #CBD5E1;
+    }
 
-.ht-disconnect-btn:active {
-  transform: scale(0.98);
-}
+    .ht-disconnect-btn:active {
+      transform: scale(0.98);
+    }
 
     .ht-form-section {
       transition: all 0.4s ease;
@@ -223,7 +222,7 @@
       transform: translateY(-20px);
       pointer-events: none;
       position: absolute;
-      width: calc(100% - 80px);
+      width: calc(100% - 96px);
     }
 
     .ht-input-group {
@@ -237,6 +236,7 @@
       font-weight: 600;
       color: var(--ht-text-primary);
       margin-bottom: 8px;
+      letter-spacing: -0.01em;
     }
 
     .ht-input-wrapper {
@@ -256,18 +256,19 @@
 
     .ht-input {
       width: 100%;
-      height: 44px;
+      height: 48px;
       box-sizing: border-box;
       background: var(--ht-input-bg);
       border: 1px solid var(--ht-input-border);
       border-radius: var(--ht-radius);
       padding: 0 16px 0 42px;
-      font-size: 0.95rem;
+      font-size: 0.9375rem;
       color: var(--ht-text-primary);
       font-weight: 400;
       outline: none;
       transition: 0.2s ease;
       -moz-appearance: textfield;
+      letter-spacing: -0.01em;
     }
 
     .ht-input.no-prefix {
@@ -283,52 +284,14 @@
     .ht-input:focus {
       background: #ffffff;
       border-color: var(--ht-navy);
-      box-shadow: 0 0 0 3px rgba(47, 62, 99, 0.1);
+      box-shadow: 0 0 0 3px rgba(47, 67, 110, 0.1);
     }
 
     .ht-input::placeholder {
-      color: rgba(100, 116, 139, 0.6);
+      color: var(--ht-text-muted);
     }
 
-    .ht-description {
-      background: linear-gradient(135deg, rgba(79, 109, 235, 0.05) 0%, rgba(56, 181, 196, 0.05) 100%);
-      border: 1.5px solid rgba(79, 109, 235, 0.15);
-      border-radius: var(--ht-radius);
-      padding: 14px 18px;
-      margin: 16px 0;
-      font-size: 0.95rem;
-      color: var(--ht-text-primary);
-      font-weight: 500;
-      line-height: 1.5;
-      text-align: center;
-      display: none;
-    }
-
-    .ht-description.active {
-      display: block;
-    }
-
-    .ht-description-label {
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: var(--ht-text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 6px;
-      display: block;
-    }
-
-    .invoice-description {
-      font-size: 0.85rem;
-      color: var(--ht-text-primary);
-      background: rgba(0, 0, 0, 0.02);
-      border-radius: 8px;
-      padding: 10px 12px;
-      margin: 12px 0 8px 0;
-      line-height: 1.4;
-      font-style: italic;
-    }
-
+    /* ✅ RESULT PAGE - MASSIVE AMOUNT DISPLAY */
     .ht-result-section {
       display: none;
       transition: all 0.4s ease;
@@ -336,7 +299,137 @@
 
     .ht-result-section.active {
       display: block;
-      animation: fadeInUp 0.4s ease;
+      animation: fadeInUp 0.5s ease;
+    }
+
+    /* ✅ LARGE PROFESSIONAL AMOUNT - LIKE STRIPE */
+    .ht-result-amount {
+      font-size: 3.25rem;
+      font-weight: 700;
+      color: var(--ht-navy);
+      margin: 32px 0 16px 0;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+
+    /* ✅ STATUS LINK - DASHBOARD STYLE */
+    .ht-result-status-link {
+      margin-bottom: 36px;
+    }
+
+    .ht-result-status-link a {
+      color: var(--ht-navy);
+      text-decoration: none;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      letter-spacing: -0.01em;
+    }
+
+    .ht-result-status-link a:hover {
+      color: var(--ht-navy-light);
+      text-decoration: underline;
+    }
+
+    /* ✅ QR CODE - PROFESSIONAL CARD */
+    .ht-qr-card {
+      background: #FFFFFF;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 0 auto 24px auto;
+      max-width: 320px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    .ht-qr-container {
+      border-radius: 12px;
+      overflow: hidden;
+      display: inline-block;
+      max-width: 100%;
+    }
+
+    .ht-qr-container canvas {
+      border-radius: 12px;
+      display: block;
+      max-width: 100%;
+      height: auto !important;
+    }
+
+    /* ✅ TRUST TEXT BELOW QR */
+    .ht-qr-trust {
+      margin-top: 20px;
+      font-size: 0.8125rem;
+      color: var(--ht-text-muted);
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+
+    .ht-qr-trust strong {
+      color: var(--ht-text-secondary);
+      font-weight: 600;
+    }
+
+    /* ✅ DESCRIPTION SECTION - MINIMAL */
+    .ht-result-description {
+      background: rgba(0, 0, 0, 0.02);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: var(--ht-radius);
+      padding: 20px 24px;
+      margin: 24px 0;
+      text-align: center;
+      display: none;
+    }
+
+    .ht-result-description.active {
+      display: block;
+    }
+
+    .ht-result-description-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--ht-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .ht-result-description-text {
+      font-size: 1.0625rem;
+      color: var(--ht-text-primary);
+      font-weight: 500;
+      line-height: 1.5;
+      letter-spacing: -0.01em;
+    }
+
+    /* ✅ ACTION BUTTONS - SIDE BY SIDE */
+    .ht-result-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 24px 0;
+    }
+
+    /* ✅ SECONDARY ACTION - TEXT LINK */
+    .ht-result-secondary-action {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .ht-result-secondary-action a {
+      color: var(--ht-text-secondary);
+      text-decoration: none;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      letter-spacing: -0.01em;
+    }
+
+    .ht-result-secondary-action a:hover {
+      color: var(--ht-navy);
+      text-decoration: underline;
     }
 
     .ht-payer-section {
@@ -591,23 +684,6 @@
       }
     }
 
-    .ht-qr-container {
-      border-radius: var(--ht-radius);
-      display: inline-block;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-      max-width: 100%;
-      padding: 16px;
-      background: #ffffff;
-      border: 1.5px solid rgba(0, 0, 0, 0.06);
-    }
-
-    .ht-qr-container canvas {
-      border-radius: 8px;
-      display: block;
-      max-width: 100%;
-      height: auto !important;
-    }
-
     .ht-usd-worth {
       font-size: 1.1rem;
       font-weight: 600;
@@ -675,98 +751,87 @@
       display: none;
     }
 
-    .ht-action-buttons {
-      display: flex;
-      gap: 10px;
-      margin-top: 16px;
-    }
-
-    .ht-action-buttons button {
-      flex: 1;
-    }
-
-    /* ✅ PRIMARY BUTTON - NAVY GRADIENT, PROFESSIONAL */
+    /* ✅ BUTTONS - REFINED ENTERPRISE STYLE */
     .ht-btn {
       width: 100%;
-      padding: 16px;
+      padding: 16px 20px;
       border-radius: var(--ht-radius);
       border: none;
-      font-size: 0.95rem;
+      font-size: 0.9375rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s ease;
       margin-bottom: 12px;
       font-family: inherit;
-      letter-spacing: 0.3px;
+      letter-spacing: -0.01em;
     }
 
     .ht-btn-primary {
       background: linear-gradient(180deg, var(--ht-navy-light), var(--ht-navy));
       color: #fff;
-      box-shadow: 0 4px 12px rgba(47, 62, 99, 0.2);
+      box-shadow: 0 4px 12px rgba(47, 67, 110, 0.2);
     }
 
     .ht-btn-primary:hover:not(:disabled) {
       background: linear-gradient(180deg, var(--ht-navy), var(--ht-navy-dark));
       transform: translateY(-1px);
-      box-shadow: 0 6px 16px rgba(47, 62, 99, 0.3);
+      box-shadow: 0 6px 16px rgba(47, 67, 110, 0.3);
     }
 
     .ht-btn-primary:active:not(:disabled) {
       transform: translateY(0);
-      box-shadow: 0 2px 8px rgba(47, 62, 99, 0.2);
+      box-shadow: 0 2px 8px rgba(47, 67, 110, 0.2);
     }
 
     .ht-btn-pay {
-      padding: 18px 16px;
-      font-size: 1.02rem;
+      padding: 18px 20px;
+      font-size: 1.0625rem;
       border-radius: 14px;
     }
 
-   /* ✅ SECONDARY BUTTON - BECOMES PRIMARY BLUE WHEN ENABLED */
-.ht-btn-secondary {
-  background: rgba(0, 0, 0, 0.04);
-  color: var(--ht-text-primary);
-  border: 1.5px solid rgba(0, 0, 0, 0.08);
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
+    .ht-btn-secondary {
+      background: rgba(0, 0, 0, 0.04);
+      color: var(--ht-text-primary);
+      border: 1.5px solid rgba(0, 0, 0, 0.08);
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
 
-.ht-btn-secondary:not(:disabled) {
-  background: linear-gradient(180deg, #4A5F8E, var(--ht-navy));
-  color: #FFFFFF;
-  border-color: transparent;
-  box-shadow: 0 4px 12px rgba(47, 62, 99, 0.2);
-}
+    .ht-btn-secondary:not(:disabled) {
+      background: linear-gradient(180deg, var(--ht-navy-light), var(--ht-navy));
+      color: #FFFFFF;
+      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(47, 67, 110, 0.2);
+    }
 
-.ht-btn-secondary:hover:not(:disabled) {
-  background: linear-gradient(180deg, var(--ht-navy), var(--ht-navy-dark));
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(47, 62, 99, 0.3);
-}
+    .ht-btn-secondary:hover:not(:disabled) {
+      background: linear-gradient(180deg, var(--ht-navy), var(--ht-navy-dark));
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(47, 67, 110, 0.3);
+    }
 
-.ht-btn-secondary:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(47, 62, 99, 0.2);
-}
+    .ht-btn-secondary:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(47, 67, 110, 0.2);
+    }
 
-.ht-btn-secondary:disabled {
-  background: rgba(0, 0, 0, 0.04);
-  color: var(--ht-text-secondary);
-  border: 1.5px solid rgba(0, 0, 0, 0.08);
-  cursor: not-allowed;
-  opacity: 0.5;
-}
+    .ht-btn-secondary:disabled {
+      background: rgba(0, 0, 0, 0.04);
+      color: var(--ht-text-secondary);
+      border: 1.5px solid rgba(0, 0, 0, 0.08);
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
 
     .ht-btn-action {
-      background: rgba(0, 0, 0, 0.04);
+      background: #FFFFFF;
       color: var(--ht-text-primary);
       border: 1.5px solid rgba(0, 0, 0, 0.08);
       font-weight: 600;
     }
 
     .ht-btn-action:hover:not(:disabled) {
-      background: rgba(0, 0, 0, 0.06);
+      background: rgba(0, 0, 0, 0.04);
       transform: translateY(-1px);
       border-color: rgba(0, 0, 0, 0.12);
     }
@@ -776,8 +841,8 @@
     }
 
     .ht-btn-small {
-      padding: 13px 16px;
-      font-size: 0.88rem;
+      padding: 14px 18px;
+      font-size: 0.875rem;
       margin-bottom: 0;
       border-radius: 10px;
     }
@@ -805,12 +870,11 @@
       }
     }
 
-    /* ✅ TRUST MICROCOPY - ENTERPRISE STYLE */
     .ht-helper-text {
       margin-top: 12px;
       margin-bottom: 10px;
       color: var(--ht-text-secondary);
-      font-size: 0.8rem;
+      font-size: 0.8125rem;
       font-weight: 400;
       line-height: 1.4;
     }
@@ -880,24 +944,24 @@
     }
 
     .ht-powered-by {
-      margin-top: 32px;
-      padding-top: 24px;
-      border-top: 1.5px solid rgba(0, 0, 0, 0.06);
+      margin-top: 40px;
+      padding-top: 28px;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      font-size: 0.8rem;
-      color: var(--ht-text-secondary);
+      gap: 10px;
+      font-size: 0.8125rem;
+      color: var(--ht-text-muted);
       font-weight: 400;
     }
 
     .ht-powered-by img {
-      height: 50px;
-      opacity: 0.7;
+      height: 18px;
+      opacity: 0.6;
     }
 
-    @media (max-width: 500px) {
+    @media (max-width: 600px) {
       body {
         padding: 10px 0;
       }
@@ -905,97 +969,50 @@
       .ht-card {
         width: calc(100% - 20px);
         max-width: 100%;
-        padding: 32px 24px;
+        padding: 40px 28px;
         margin: 10px;
         border-radius: 20px;
       }
 
       .ht-logo-area {
-        margin-bottom: 20px;
+        margin-bottom: 12px;
       }
 
       .ht-title img {
-        max-width: 200px;
+        max-width: 220px;
       }
 
       .ht-subtitle {
-        font-size: 0.88rem;
+        font-size: 0.9375rem;
       }
 
-      .ht-subsubtitle {
-        font-size: 0.78rem;
+      .ht-result-amount {
+        font-size: 2.5rem;
+        margin: 24px 0 12px 0;
       }
 
-      .ht-account-display {
-        padding: 10px 12px;
-      }
-
-      .ht-account-id {
-        font-size: 0.88rem;
-      }
-
-      .ht-form-section.hidden {
-        width: calc(100% - 48px);
-      }
-
-      .ht-input {
-        font-size: 0.95rem;
-        height: 44px;
-      }
-
-      .ht-btn {
-        padding: 14px;
-        font-size: 0.9rem;
-      }
-
-      .ht-btn-pay {
-        padding: 16px;
-        font-size: 0.95rem;
-      }
-
-      .ht-btn-small {
-        padding: 12px;
-        font-size: 0.85rem;
-      }
-
-      .ht-qr-container {
-        padding: 12px;
-        width: calc(100% - 24px);
+      .ht-qr-card {
+        padding: 20px;
         max-width: 280px;
       }
 
-      .ht-qr-container canvas {
-        width: 100% !important;
+      .ht-result-actions {
+        grid-template-columns: 1fr;
+        gap: 10px;
       }
 
-      .ht-usd-worth {
-        font-size: 0.98rem;
+      .ht-btn {
+        padding: 14px 18px;
+        font-size: 0.9375rem;
       }
 
-      .payer-account-id {
-        font-size: 0.92rem;
-      }
-
-      .status-header {
-        padding: 16px;
-      }
-
-      .status-wallet-id {
-        font-size: 0.95rem;
-      }
-
-      .status-disconnect-btn {
-        width: 32px;
-        height: 32px;
-        font-size: 1.2rem;
+      .ht-btn-small {
+        padding: 12px 16px;
+        font-size: 0.875rem;
       }
 
       .invoice-card {
         padding: 16px;
-      }
-
-      .invoice-amount {
-        font-size: 1.2rem;
       }
 
       .invoice-actions {
@@ -1015,18 +1032,51 @@
       }
     }
 
-    @media (max-width: 360px) {
+    @media (max-width: 400px) {
       .ht-card {
-        padding: 28px 20px;
+        padding: 32px 20px;
       }
 
       .ht-title img {
         max-width: 180px;
       }
 
-      .ht-input {
-        font-size: 0.9rem;
+      .ht-result-amount {
+        font-size: 2rem;
       }
+    }
+
+    /* Payer description */
+    .ht-description {
+      background: rgba(0, 0, 0, 0.02);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: var(--ht-radius);
+      padding: 18px 20px;
+      margin: 20px 0;
+      text-align: center;
+      display: none;
+    }
+
+    .ht-description.active {
+      display: block;
+    }
+
+    .ht-description-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--ht-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    #payerDescriptionText,
+    #creatorDescriptionText {
+      font-size: 1rem;
+      color: var(--ht-text-primary);
+      font-weight: 500;
+      line-height: 1.5;
     }
   </style>
 </head>
@@ -1042,7 +1092,6 @@
       <p class="ht-subsubtitle" id="subsubtitle">Send securely via HashPack</p>
     </div>
 
-    <!-- ✅ NEW CONNECTED WALLET DISPLAY -->
     <div class="ht-account-display" id="accountDisplay">
       <div class="ht-account-display-left">
         <span class="ht-check-icon">✓</span>
@@ -1080,32 +1129,34 @@
       </div>
     </div>
 
+    <!-- ✅ REDESIGNED RESULT SECTION -->
     <div class="ht-result-section" id="resultSection">
-      <div class="ht-qr-container" id="qrContainer"></div>
-
-      <div class="ht-usd-worth" id="usdWorthLine">
-        Pay $<span id="usdAmount">50</span> of HBAR
+      <div class="ht-result-amount">$<span id="usdAmount">60.00</span> HBAR</div>
+      
+      <div class="ht-result-status-link">
+        <a href="#" id="statusPageLink">→ View payment status</a>
       </div>
 
-      <div class="ht-description" id="creatorDescription">
-        <span class="ht-description-label">Payment For</span>
-        <div id="creatorDescriptionText"></div>
+      <div class="ht-qr-card">
+        <div class="ht-qr-container" id="qrContainer"></div>
+        <div class="ht-qr-trust">
+          Secure · Non-custodial · Powered by <strong>Hedera</strong>
+        </div>
       </div>
 
-      <div class="ht-status" id="payStatus">
-        <a href="#" id="statusPageLink">→ Check Payment Status</a>
+      <div class="ht-result-description" id="creatorDescription">
+        <span class="ht-result-description-label">Description</span>
+        <div class="ht-result-description-text" id="creatorDescriptionText"></div>
       </div>
 
-      <div class="ht-link-display" id="linkDisplay"></div>
-
-      <div class="ht-action-buttons">
-        <button class="ht-btn ht-btn-action ht-btn-small" id="copyBtn">📋 Copy Link</button>
+      <div class="ht-result-actions">
+        <button class="ht-btn ht-btn-primary ht-btn-small" id="copyBtn">📋 Copy Link</button>
         <button class="ht-btn ht-btn-action ht-btn-small" id="shareBtn">🔗 Share</button>
       </div>
 
-      <button class="ht-btn ht-btn-secondary ht-btn-small" id="createAnotherBtn" style="margin-top: 8px;">
-        + New Link
-      </button>
+      <div class="ht-result-secondary-action">
+        <a href="#" id="createAnotherBtn">Create another payment</a>
+      </div>
     </div>
 
     <div class="ht-payer-section" id="payerSection">
@@ -1500,8 +1551,8 @@
         return;
       }
 
-      const isMobile = window.innerWidth <= 500;
-      const qrSize = isMobile ? Math.min(260, window.innerWidth - 110) : 260;
+      const isMobile = window.innerWidth <= 600;
+      const qrSize = isMobile ? Math.min(240, window.innerWidth - 120) : 260;
 
       window.QRCode.toCanvas(url, {
         width: qrSize,
@@ -1515,7 +1566,7 @@
           return;
         }
 
-        canvas.style.borderRadius = '8px';
+        canvas.style.borderRadius = '12px';
         containerEl.appendChild(canvas);
 
         const ctx = canvas.getContext('2d');
@@ -1642,7 +1693,7 @@
           const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
           
           const descriptionHtml = inv.description && inv.description.trim() 
-            ? `<div class="invoice-description">"${inv.description}"</div>` 
+            ? `<div class="invoice-description" style="font-size: 0.875rem; color: var(--ht-text-primary); background: rgba(0, 0, 0, 0.02); border-radius: 8px; padding: 10px 12px; margin: 12px 0 8px 0; line-height: 1.4; font-style: italic;">"${inv.description}"</div>` 
             : '';
           
           let badge = '';
@@ -1917,7 +1968,6 @@
     async function fallbackPollInvoiceStatus(slug) {
       try {
         const inv = await loadInvoice(slug);
-        const payStatus = document.getElementById("payStatus");
         
         if (inv.status === "paid") {
           const link = statusPageLink;
@@ -2076,7 +2126,7 @@
         currentPaymentLink = paymentLink;
         currentAmount = requestedAmount;
 
-        document.getElementById('usdAmount').textContent = requestedAmount;
+        document.getElementById('usdAmount').textContent = requestedAmount.toFixed(2);
 
         if (description) {
           creatorDescriptionText.textContent = description;
@@ -2086,8 +2136,6 @@
         }
 
         enterCreatorResultMode();
-
-        linkDisplay.textContent = paymentLink;
 
         statusPageLink.href = `/${accountId}`;
 
@@ -2157,7 +2205,6 @@
 
         isWalletConnected = true;
         
-        // ✅ HIDE CONNECT BUTTON COMPLETELY
         connectBtn.style.display = 'none';
 
         accountIdSpan.textContent = accountId;
@@ -2184,7 +2231,6 @@
       isWalletConnected = false;
       accountId = null;
 
-      // ✅ SHOW CONNECT BUTTON AGAIN
       connectBtn.style.display = 'block';
       connectBtn.innerHTML = 'Connect Wallet';
       connectBtn.disabled = false;
@@ -2242,7 +2288,10 @@
 
     connectBtn.addEventListener('click', connectWallet);
     generateBtn.addEventListener('click', generatePaymentLink);
-    createAnotherBtn.addEventListener('click', createAnother);
+    createAnotherBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      createAnother();
+    });
     createNewFromStatus.addEventListener('click', () => {
       window.location.href = '/';
     });
@@ -2298,7 +2347,6 @@
               accountId = accounts[0].split(':')[2];
               isWalletConnected = true;
 
-              // ✅ HIDE CONNECT BUTTON ON RESTORE
               connectBtn.style.display = 'none';
 
               accountIdSpan.textContent = accountId;
