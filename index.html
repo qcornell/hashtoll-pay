@@ -2052,6 +2052,10 @@ async function payNow() {
 
     const json = await res.json().catch(() => ({}));
 
+    console.log("notify-paid status:", res.status);
+console.log("notify-paid response:", json);
+
+
     // ✅ Only mark as paid if backend confirms
     if (!res.ok) {
       console.error("notify-paid failed:", json);
