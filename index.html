@@ -1782,6 +1782,17 @@
     if (isPaid) {
       setPayerStatus('✅ PAID — Receiver notified!', 'paid');
     }
+    // ✅ FIX 4: Restore "paid" UI from localStorage (survives refresh)
+    const saved = localStorage.getItem(`ht_paid_${slug}`);
+    if (saved) {
+      try {
+        const j = JSON.parse(saved);
+        if (j?.paid) {
+          setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+          setPayButtonsState({ paid: true, modeText: "✅ Paid" });
+        }
+      } catch {}
+    }
 
     startPayerRealtime(slug);
 
@@ -2071,6 +2082,15 @@ console.log("notify-paid response:", json);
     setPayerStatus('✅ PAID — Receiver notified!', 'paid');
     setPayButtonsState({ paid: true, modeText: "✅ Paid" });
     showToast('Payment confirmed! ✅', 'success');
+    setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+    setPayButtonsState({ paid: true, modeText: "✅ Paid" });
+    showToast('Payment confirmed! ✅', 'success');
+
+    // ✅ FIX 3: Remember this invoice was paid (survives refresh)
+    localStorage.setItem(`ht_paid_${currentInvoiceSlug}`, JSON.stringify({
+      paid: true,
+      at: Date.now()
+    }));
 
   } catch (err) {
     console.error('Payment failed:', err);
@@ -2135,6 +2155,11 @@ console.log("notify-paid response:", json);
           clearInterval(fallbackPollInterval);
           fallbackPollInterval = null;
         }
+        // ✅ FIX 2: Stop status page poll too
+    if (window.__statusPoll) {
+      clearInterval(window.__statusPoll);
+      window.__statusPoll = null;
+    }
       } catch (e) {
         console.warn("Error stopping realtime:", e);
       }
