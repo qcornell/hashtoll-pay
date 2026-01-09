@@ -1932,13 +1932,13 @@
                 🔒 Unlock Manage to edit
               </button>
             `;
-          } else if (inv.status === 'paid' && inv.confirmed_by_creator) {
-           badge = '<span class="invoice-badge confirmed">Confirmed</span>';
-          actionBtn = `
-            <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
-           ✅ Confirmed (Final)
-         </button>
-           `;
+         if (inv.confirmed_by_creator) {
+  badge = '<span class="invoice-badge confirmed">Confirmed</span>';
+  actionBtn = `
+    <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
+      ✓ Confirmed
+    </button>
+  `;
           } else if (inv.status === 'paid' && !inv.confirmed_by_creator) {
             badge = '<span class="invoice-badge paid">Paid</span>';
             actionBtn = `
