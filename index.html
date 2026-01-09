@@ -744,7 +744,6 @@
       background: rgba(16, 185, 129, 0.1);
       border: 1.5px solid rgba(16, 185, 129, 0.2);
       color: #2f436e;
-      /* font-weight: 700; */
       padding: 12px;
       border-radius: 12px;
     }
@@ -1233,6 +1232,10 @@
         + Create New Invoice
       </button>
 
+      <button class="ht-btn ht-btn-action" id="manageBtn" style="margin-bottom: 16px;">
+        🔒 Manage (Unlock)
+      </button>
+
       <div id="invoiceList"></div>
     </div>
 
@@ -1242,10 +1245,37 @@
     </div>
   </div>
 
+  <!-- ✅ PIN MODAL -->
+  <div id="pinModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:2000; align-items:center; justify-content:center; padding:16px;">
+    <div style="width:100%; max-width:420px; background:#fff; border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,0.25); padding:20px;">
+      <div style="font-weight:800; font-size:1.1rem; margin-bottom:6px;" id="pinModalTitle">Set your 4-digit PIN</div>
+      <div style="color:#64748B; font-size:0.9rem; line-height:1.4; margin-bottom:14px;" id="pinModalSubtitle">
+        This unlocks Manage controls on your invoice dashboard.
+      </div>
+
+      <div id="pinSetupFields">
+        <label style="display:block; font-size:0.85rem; font-weight:700; margin:10px 0 6px;">PIN</label>
+        <input id="pinA" inputmode="numeric" maxlength="4" class="ht-input no-prefix" placeholder="4 digits" style="padding:0 16px;" />
+        <label style="display:block; font-size:0.85rem; font-weight:700; margin:10px 0 6px;">Confirm PIN</label>
+        <input id="pinB" inputmode="numeric" maxlength="4" class="ht-input no-prefix" placeholder="4 digits" style="padding:0 16px;" />
+      </div>
+
+      <div id="pinUnlockFields" style="display:none;">
+        <label style="display:block; font-size:0.85rem; font-weight:700; margin:10px 0 6px;">Enter PIN</label>
+        <input id="pinOnly" inputmode="numeric" maxlength="4" class="ht-input no-prefix" placeholder="4 digits" style="padding:0 16px;" />
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button id="pinCancelBtn" class="ht-btn ht-btn-action ht-btn-small" style="width:40%;">Cancel</button>
+        <button id="pinOkBtn" class="ht-btn ht-btn-primary ht-btn-small" style="width:60%;">Save PIN</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast-container"></div>
 
   <!-- ✅ MODULE SCRIPT - WalletConnect Logic -->
- <script type="module">
+  <script type="module">
   import {
     LedgerId,
     AccountId,
@@ -1389,11 +1419,9 @@
       try { dAppConnector.disconnectAll(); } catch (e) {}
     },
 
-    // ✅ FIXED: No auto-connect + transactionList as STRING
     async sendHbar(receiverAccountId, amountHbar, memo = "HashToll Pay") {
       await ensureInitialized();
 
-      // ✅ Don't auto-connect - throw error instead
       if (!this.accountId) {
         throw new Error("Wallet not connected");
       }
@@ -1413,10 +1441,9 @@
       const base64Tx = bytesToBase64(tx.toBytes());
       const signerCaip = `hedera:mainnet:${this.accountId}`;
 
-      // ✅ Send as STRING, not array
       const result = await dAppConnector.signAndExecuteTransaction({
         signerAccountId: signerCaip,
-        transactionList: base64Tx  // ✅ Not [base64Tx]
+        transactionList: base64Tx
       });
 
       const txId =
@@ -1443,6 +1470,7 @@
     return hederaConnect.accountId;
   })();
 </script>
+
   <!-- ✅ MAIN SCRIPT - App Logic -->
   <script>
     const SUPABASE_URL = 'https://pvtoczsnwamailsjjnfn.supabase.co';
@@ -1450,8 +1478,66 @@
 
     window.supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // ✅ PIN SYSTEM GLOBALS
+    let manageToken = null;
+    let manageTokenExpiresAt = null;
+
+    const pinModal = document.getElementById("pinModal");
+    const pinModalTitle = document.getElementById("pinModalTitle");
+    const pinModalSubtitle = document.getElementById("pinModalSubtitle");
+    const pinSetupFields = document.getElementById("pinSetupFields");
+    const pinUnlockFields = document.getElementById("pinUnlockFields");
+    const pinCancelBtn = document.getElementById("pinCancelBtn");
+    const pinOkBtn = document.getElementById("pinOkBtn");
+    const pinA = document.getElementById("pinA");
+    const pinB = document.getElementById("pinB");
+    const pinOnly = document.getElementById("pinOnly");
+    const manageBtn = document.getElementById("manageBtn");
+
+    function openPinModal(mode) {
+      pinA.value = ""; pinB.value = ""; pinOnly.value = "";
+      pinModal.style.display = "flex";
+
+      if (mode === "setup") {
+        pinModalTitle.textContent = "Set your 4-digit PIN";
+        pinModalSubtitle.textContent = "This unlocks Manage controls on your invoice dashboard.";
+        pinSetupFields.style.display = "block";
+        pinUnlockFields.style.display = "none";
+        pinOkBtn.textContent = "Save PIN";
+      } else {
+        pinModalTitle.textContent = "Unlock Manage";
+        pinModalSubtitle.textContent = "Enter your PIN to edit invoice statuses.";
+        pinSetupFields.style.display = "none";
+        pinUnlockFields.style.display = "block";
+        pinOkBtn.textContent = "Unlock";
+      }
+    }
+
+    function closePinModal() {
+      pinModal.style.display = "none";
+    }
+
+    pinCancelBtn.addEventListener("click", () => closePinModal());
+
+    function is4(pin) { return /^[0-9]{4}$/.test(String(pin || "")); }
+
+    async function callFn(name, body) {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "apikey": SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify(body)
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || `${name} failed`);
+      return json;
+    }
+
     let currentInvoiceData = null;
-    let statusRealtimeStartedFor = null; // ✅ FIX A: Prevent re-subscribing
+    let statusRealtimeStartedFor = null;
 
     function showToast(message, type = 'info') {
       const toast = document.createElement('div');
@@ -1829,6 +1915,8 @@
 
         invoiceList.innerHTML = '';
         
+        const unlocked = !!manageToken;
+        
         invoices.forEach(inv => {
           const card = document.createElement('div');
           card.className = 'invoice-card';
@@ -1838,7 +1926,13 @@
           let badge = '';
           let actionBtn = '';
           
-          if (inv.status === 'paid' && inv.confirmed_by_creator) {
+          if (!unlocked) {
+            actionBtn = `
+              <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
+                🔒 Unlock Manage to edit
+              </button>
+            `;
+          } else if (inv.status === 'paid' && inv.confirmed_by_creator) {
             badge = '<span class="invoice-badge confirmed">Confirmed</span>';
             actionBtn = `
               <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" onclick="toggleInvoiceStatus('${inv.slug}', 'unpaid')">
@@ -1889,11 +1983,40 @@
           invoiceList.appendChild(card);
         });
 
-        // ✅ FIX A: Only subscribe once per wallet
         if (statusRealtimeStartedFor !== walletId) {
           startStatusPageRealtime(walletId);
           statusRealtimeStartedFor = walletId;
         }
+
+        // ✅ Setup Manage button
+        manageBtn.onclick = async () => {
+          openPinModal("unlock");
+
+          pinOkBtn.onclick = async () => {
+            const p = pinOnly.value.trim();
+            if (!is4(p)) return showToast("PIN must be 4 digits", "error");
+
+            pinOkBtn.disabled = true;
+            pinOkBtn.innerHTML = '<span class="spinner"></span>Unlocking...';
+
+            try {
+              const r = await callFn("unlock-manage", { creator_account: walletId, pin: p });
+              manageToken = r.manage_token;
+              manageTokenExpiresAt = r.expires_at;
+
+              showToast("Manage unlocked ✅", "success");
+              manageBtn.textContent = "✅ Manage Unlocked";
+              closePinModal();
+
+              await loadStatusPage(walletId);
+            } catch (e) {
+              showToast(String(e.message || e), "error");
+            } finally {
+              pinOkBtn.disabled = false;
+              pinOkBtn.textContent = "Unlock";
+            }
+          };
+        };
 
       } catch (err) {
         console.error(err);
@@ -1908,51 +2031,52 @@
       }
     }
 
+    // ✅ REPLACED: Token-gated updates
     window.confirmInvoicePayment = async function(slug) {
       try {
-        const { error } = await window.supabaseClient
-          .from("invoices")
-          .update({ 
-            confirmed_by_creator: true,
-            status: 'paid'
-          })
-          .eq("slug", slug);
-
-        if (error) throw error;
-
-        showToast('Payment confirmed! ✅', 'success');
-        
-        const walletId = getWalletIdFromUrl();
-        if (walletId) {
-          await loadStatusPage(walletId);
+        if (!manageToken) {
+          showToast("Tap Manage and enter PIN first", "info");
+          return;
         }
+
+        await callFn("seller-update-status", {
+          slug,
+          manage_token: manageToken,
+          action: "confirm_paid"
+        });
+
+        showToast("Payment confirmed! ✅", "success");
+
+        const walletId = getWalletIdFromUrl();
+        if (walletId) await loadStatusPage(walletId);
       } catch (err) {
         console.error(err);
-        showToast('Failed to confirm payment', 'error');
+        showToast("Failed to confirm payment", "error");
       }
     };
 
     window.toggleInvoiceStatus = async function(slug, newStatus) {
       try {
-        const { error } = await window.supabaseClient
-          .from("invoices")
-          .update({ 
-            status: newStatus,
-            confirmed_by_creator: false
-          })
-          .eq("slug", slug);
-
-        if (error) throw error;
-
-        showToast('Status updated', 'success');
-        
-        const walletId = getWalletIdFromUrl();
-        if (walletId) {
-          await loadStatusPage(walletId);
+        if (!manageToken) {
+          showToast("Tap Manage and enter PIN first", "info");
+          return;
         }
+
+        const action = newStatus === "unpaid" ? "mark_unpaid" : "confirm_paid";
+
+        await callFn("seller-update-status", {
+          slug,
+          manage_token: manageToken,
+          action
+        });
+
+        showToast("Status updated ✅", "success");
+
+        const walletId = getWalletIdFromUrl();
+        if (walletId) await loadStatusPage(walletId);
       } catch (err) {
         console.error(err);
-        showToast('Failed to update status', 'error');
+        showToast("Failed to update status", "error");
       }
     };
 
@@ -2144,11 +2268,7 @@
           clearInterval(fallbackPollInterval);
           fallbackPollInterval = null;
         }
-        if (window.__statusPoll) {
-          clearInterval(window.__statusPoll);
-          window.__statusPoll = null;
-        }
-        statusRealtimeStartedFor = null; // ✅ Reset flag
+        statusRealtimeStartedFor = null;
       } catch (e) {
         console.warn("Error stopping realtime:", e);
       }
@@ -2242,7 +2362,6 @@
         .subscribe();
     }
 
-    // ✅ FIX B: Subscribe without filter, then filter in JS
     function startStatusPageRealtime(walletId) {
       stopRealtime();
 
@@ -2254,15 +2373,12 @@
             event: "UPDATE",
             schema: "public",
             table: "invoices"
-            // ✅ No filter here - we filter in JS below
           },
           async (payload) => {
-            // ✅ Filter in JavaScript instead
             if (payload?.new?.creator_account !== walletId) return;
 
             console.log("Status page invoice update:", payload.new.slug, payload.new.status);
 
-            // ✅ Re-render list WITHOUT re-subscribing (thanks to Fix A)
             await loadStatusPage(walletId);
           }
         )
@@ -2341,6 +2457,40 @@
         showToast("Invoice created! 🎉", "success");
 
         startCreatorRealtime(inv.slug);
+
+        // ✅ PROMPT TO SET PIN AFTER FIRST INVOICE
+        try {
+          const pin = localStorage.getItem(`ht_has_pin_${accountId}`);
+          if (!pin) {
+            openPinModal("setup");
+
+            pinOkBtn.onclick = async () => {
+              const a = pinA.value.trim();
+              const b = pinB.value.trim();
+              if (!is4(a) || !is4(b)) return showToast("PIN must be 4 digits", "error");
+              if (a !== b) return showToast("PINs do not match", "error");
+
+              pinOkBtn.disabled = true;
+              pinOkBtn.innerHTML = '<span class="spinner"></span>Saving...';
+
+              try {
+                const r = await callFn("set-creator-pin", { creator_account: accountId, pin: a });
+                if (r?.already_set) {
+                  showToast("PIN already exists for this wallet ✅", "info");
+                } else {
+                  showToast("PIN saved ✅", "success");
+                }
+                localStorage.setItem(`ht_has_pin_${accountId}`, "1");
+                closePinModal();
+              } catch (e) {
+                showToast(String(e.message || e), "error");
+              } finally {
+                pinOkBtn.disabled = false;
+                pinOkBtn.textContent = "Save PIN";
+              }
+            };
+          }
+        } catch {}
 
       } catch (err) {
         console.error(err);
