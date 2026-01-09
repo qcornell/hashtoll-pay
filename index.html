@@ -1895,14 +1895,6 @@
           statusRealtimeStartedFor = walletId;
         }
 
-        // ✅ POLLING BACKUP: Auto-refresh every 5s
-        if (window.__statusPoll) clearInterval(window.__statusPoll);
-        window.__statusPoll = setInterval(() => {
-          if (getWalletIdFromUrl() === walletId) {
-            loadStatusPage(walletId).catch(() => {});
-          }
-        }, 5000);
-
       } catch (err) {
         console.error(err);
         showToast('Failed to load invoices', 'error');
