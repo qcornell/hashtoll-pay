@@ -1451,6 +1451,7 @@
     window.supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let currentInvoiceData = null;
+    let statusRealtimeStartedFor = null; // ✅ FIX A: Prevent re-subscribing
 
     function showToast(message, type = 'info') {
       const toast = document.createElement('div');
@@ -1704,104 +1705,102 @@
     }
 
     function setPayButtonsState({ paid, modeText } = { paid: false, modeText: null }) {
-  if (paid) {
-    payNowBtn.disabled = true;
-    payNowBtn.innerHTML = modeText || "✅ Paid";
-    payNowBtn.style.opacity = "0.55";
-    payNowBtn.style.cursor = "not-allowed";
+      if (paid) {
+        payNowBtn.disabled = true;
+        payNowBtn.innerHTML = modeText || "✅ Paid";
+        payNowBtn.style.opacity = "0.55";
+        payNowBtn.style.cursor = "not-allowed";
 
-    iPaidBtn.disabled = true;
-    iPaidBtn.innerHTML = "✅ Payment Confirmed";
-    iPaidBtn.style.opacity = "0.55";
-    iPaidBtn.style.cursor = "not-allowed";
-    return;
-  }
+        iPaidBtn.disabled = true;
+        iPaidBtn.innerHTML = "✅ Payment Confirmed";
+        iPaidBtn.style.opacity = "0.55";
+        iPaidBtn.style.cursor = "not-allowed";
+        return;
+      }
 
-  // Reset to unpaid state
-  payNowBtn.disabled = false;
-  payNowBtn.innerHTML = "Pay Now";
-  payNowBtn.style.opacity = "";
-  payNowBtn.style.cursor = "";
+      payNowBtn.disabled = false;
+      payNowBtn.innerHTML = "Pay Now";
+      payNowBtn.style.opacity = "";
+      payNowBtn.style.cursor = "";
 
-  iPaidBtn.disabled = false;
-  iPaidBtn.innerHTML = "✅ I Paid (Notify Receiver)";
-  iPaidBtn.style.opacity = "";
-  iPaidBtn.style.cursor = "";
-}
+      iPaidBtn.disabled = false;
+      iPaidBtn.innerHTML = "✅ I Paid (Notify Receiver)";
+      iPaidBtn.style.opacity = "";
+      iPaidBtn.style.cursor = "";
+    }
 
     async function loadInvoice(slug) {
-  const { data, error } = await window.supabaseClient
-    .from("invoices")
-    .select("slug, receiver_account, creator_account, requested_amount_hbar, amount_hbar, status, confirmed_by_creator, description, created_at")
-    .eq("slug", slug)
-    .maybeSingle(); // ✅ doesn't throw 406 when 0 rows
+      const { data, error } = await window.supabaseClient
+        .from("invoices")
+        .select("slug, receiver_account, creator_account, requested_amount_hbar, amount_hbar, status, confirmed_by_creator, description, created_at")
+        .eq("slug", slug)
+        .maybeSingle();
 
-  if (error) throw error;
-  if (!data) throw new Error("Invoice not found"); // ✅ clean handling
+      if (error) throw error;
+      if (!data) throw new Error("Invoice not found");
 
-  return data;
-}
-
-
-   async function loadInvoiceAndRenderPayer(slug) {
-  currentInvoiceSlug = slug;
-
-  try {
-    enterInvoiceMode();
-
-    payerReceiverAccount.textContent = 'Loading...';
-    payerUsdAmount.textContent = '...';
-    payerDescription.classList.remove('active');
-    payerStatus.classList.add('payer-status-hidden');
-
-    const inv = await loadInvoice(slug);
-    currentInvoiceData = inv;
-    currentCreatorAccount = inv.creator_account;
-
-    const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
-    currentPaymentLink = invoiceUrl;
-    currentAmount = inv.requested_amount_hbar;
-
-    subtitle.innerHTML = `<a href="/${inv.creator_account}" style="color: var(--ht-navy); text-decoration: none;">→ Check Payment Status</a>`;
-
-    payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
-    payerUsdAmount.textContent = inv.requested_amount_hbar;
-
-    if (inv.description && inv.description.trim()) {
-      payerDescriptionText.textContent = inv.description;
-      payerDescription.classList.add('active');
+      return data;
     }
 
-    // ✅ Set button states based on invoice status
-    const isPaid = inv.status === 'paid';
-    setPayButtonsState({ 
-      paid: isPaid, 
-      modeText: isPaid ? "✅ Paid" : null 
-    });
+    async function loadInvoiceAndRenderPayer(slug) {
+      currentInvoiceSlug = slug;
 
-    if (isPaid) {
-      setPayerStatus('✅ PAID — Receiver notified!', 'paid');
-    }
-    // ✅ FIX 4: Restore "paid" UI from localStorage (survives refresh)
-    const saved = localStorage.getItem(`ht_paid_${slug}`);
-    if (saved) {
       try {
-        const j = JSON.parse(saved);
-        if (j?.paid) {
-          setPayerStatus('✅ PAID — Receiver notified!', 'paid');
-          setPayButtonsState({ paid: true, modeText: "✅ Paid" });
+        enterInvoiceMode();
+
+        payerReceiverAccount.textContent = 'Loading...';
+        payerUsdAmount.textContent = '...';
+        payerDescription.classList.remove('active');
+        payerStatus.classList.add('payer-status-hidden');
+
+        const inv = await loadInvoice(slug);
+        currentInvoiceData = inv;
+        currentCreatorAccount = inv.creator_account;
+
+        const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
+        currentPaymentLink = invoiceUrl;
+        currentAmount = inv.requested_amount_hbar;
+
+        subtitle.innerHTML = `<a href="/${inv.creator_account}" style="color: var(--ht-navy); text-decoration: none;">→ Check Payment Status</a>`;
+
+        payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
+        payerUsdAmount.textContent = inv.requested_amount_hbar;
+
+        if (inv.description && inv.description.trim()) {
+          payerDescriptionText.textContent = inv.description;
+          payerDescription.classList.add('active');
         }
-      } catch {}
+
+        const isPaid = inv.status === 'paid';
+        setPayButtonsState({ 
+          paid: isPaid, 
+          modeText: isPaid ? "✅ Paid" : null 
+        });
+
+        if (isPaid) {
+          setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+        }
+
+        const saved = localStorage.getItem(`ht_paid_${slug}`);
+        if (saved) {
+          try {
+            const j = JSON.parse(saved);
+            if (j?.paid) {
+              setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+              setPayButtonsState({ paid: true, modeText: "✅ Paid" });
+            }
+          } catch {}
+        }
+
+        startPayerRealtime(slug);
+
+      } catch (err) {
+        console.error(err);
+        showToast('Invoice not found', 'error');
+        enterHomeMode();
+      }
     }
 
-    startPayerRealtime(slug);
-
-  } catch (err) {
-    console.error(err);
-    showToast('Invoice not found', 'error');
-    enterHomeMode();
-  }
-}
     async function loadStatusPage(walletId) {
       try {
         enterStatusMode();
@@ -1890,7 +1889,19 @@
           invoiceList.appendChild(card);
         });
 
-        startStatusPageRealtime(walletId);
+        // ✅ FIX A: Only subscribe once per wallet
+        if (statusRealtimeStartedFor !== walletId) {
+          startStatusPageRealtime(walletId);
+          statusRealtimeStartedFor = walletId;
+        }
+
+        // ✅ POLLING BACKUP: Auto-refresh every 5s
+        if (window.__statusPoll) clearInterval(window.__statusPoll);
+        window.__statusPoll = setInterval(() => {
+          if (getWalletIdFromUrl() === walletId) {
+            loadStatusPage(walletId).catch(() => {});
+          }
+        }, 5000);
 
       } catch (err) {
         console.error(err);
@@ -2017,99 +2028,85 @@
       }
     }
 
-async function payNow() {
-  const originalText = "Pay Now";
-  
-  try {
-    payNowBtn.disabled = true;
-
-    // Step 1: Connect wallet
-    payNowBtn.innerHTML = '<span class="spinner"></span>Connect wallet...';
-    const payerAccount = await window.hederaConnect.connect();
-    
-    if (!payerAccount) {
-      throw new Error("Wallet not connected");
-    }
-
-    // ✅ Let modal settle
-    await new Promise(r => setTimeout(r, 250));
-
-    // Step 2: Send transaction
-    payNowBtn.innerHTML = '<span class="spinner"></span>Check HashPack to approve...';
-    
-    const result = await window.hederaConnect.sendHbar(
-      currentInvoiceData.receiver_account,
-      currentInvoiceData.amount_hbar,
-      `HT:${currentInvoiceData.slug}`
-    );
-
-    // Step 3: Notify backend and verify
-    payNowBtn.innerHTML = '<span class="spinner"></span>Verifying payment...';
-
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
-      method: 'POST',
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-        "apikey": SUPABASE_ANON_KEY
-      },
-      body: JSON.stringify({
-        slug: currentInvoiceSlug,
-        tx_id: result.transactionId,
-        payer_account: payerAccount,
-        memo: `HT:${currentInvoiceData.slug}`
-      })
-    });
-
-    const json = await res.json().catch(() => ({}));
-
-    console.log("notify-paid status:", res.status);
-console.log("notify-paid response:", json);
-
-
-    // ✅ Only mark as paid if backend confirms
-    if (!res.ok) {
-      console.error("notify-paid failed:", json);
-      setPayerStatus('⚠️ Payment sent, but verification failed — tap "I Paid"', 'warn');
-      showToast(json?.error || "Verification failed — use I Paid button", "error");
+    async function payNow() {
+      const originalText = "Pay Now";
       
-      payNowBtn.disabled = false;
-      payNowBtn.innerHTML = originalText;
-      return;
+      try {
+        payNowBtn.disabled = true;
+
+        payNowBtn.innerHTML = '<span class="spinner"></span>Connect wallet...';
+        const payerAccount = await window.hederaConnect.connect();
+        
+        if (!payerAccount) {
+          throw new Error("Wallet not connected");
+        }
+
+        await new Promise(r => setTimeout(r, 250));
+
+        payNowBtn.innerHTML = '<span class="spinner"></span>Check HashPack to approve...';
+        
+        const result = await window.hederaConnect.sendHbar(
+          currentInvoiceData.receiver_account,
+          currentInvoiceData.amount_hbar,
+          `HT:${currentInvoiceData.slug}`
+        );
+
+        payNowBtn.innerHTML = '<span class="spinner"></span>Verifying payment...';
+
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
+          method: 'POST',
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+            "apikey": SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({
+            slug: currentInvoiceSlug,
+            tx_id: result.transactionId,
+            payer_account: payerAccount,
+            memo: `HT:${currentInvoiceData.slug}`
+          })
+        });
+
+        const json = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          console.error("notify-paid failed:", json);
+          setPayerStatus('⚠️ Payment sent, but verification failed — tap "I Paid"', 'warn');
+          showToast(json?.error || "Verification failed — use I Paid button", "error");
+          
+          payNowBtn.disabled = false;
+          payNowBtn.innerHTML = originalText;
+          return;
+        }
+
+        setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+        setPayButtonsState({ paid: true, modeText: "✅ Paid" });
+        showToast('Payment confirmed! ✅', 'success');
+
+        localStorage.setItem(`ht_paid_${currentInvoiceSlug}`, JSON.stringify({
+          paid: true,
+          at: Date.now()
+        }));
+
+      } catch (err) {
+        console.error('Payment failed:', err);
+        
+        const msg = String(err?.message || err);
+        
+        if (msg.toLowerCase().includes("reject") || 
+            msg.toLowerCase().includes("denied") || 
+            msg.toLowerCase().includes("closed") ||
+            msg.toLowerCase().includes("modal")) {
+          showToast('Transaction cancelled', 'info');
+        } else {
+          showToast(msg || 'Payment failed', 'error');
+        }
+
+        payNowBtn.disabled = false;
+        payNowBtn.innerHTML = originalText;
+      }
     }
-
-    // ✅ Success - lock the buttons
-    setPayerStatus('✅ PAID — Receiver notified!', 'paid');
-    setPayButtonsState({ paid: true, modeText: "✅ Paid" });
-    showToast('Payment confirmed! ✅', 'success');
-    setPayerStatus('✅ PAID — Receiver notified!', 'paid');
-    setPayButtonsState({ paid: true, modeText: "✅ Paid" });
-    showToast('Payment confirmed! ✅', 'success');
-
-    // ✅ FIX 3: Remember this invoice was paid (survives refresh)
-    localStorage.setItem(`ht_paid_${currentInvoiceSlug}`, JSON.stringify({
-      paid: true,
-      at: Date.now()
-    }));
-
-  } catch (err) {
-    console.error('Payment failed:', err);
-    
-    const msg = String(err?.message || err);
-    
-    if (msg.toLowerCase().includes("reject") || 
-        msg.toLowerCase().includes("denied") || 
-        msg.toLowerCase().includes("closed") ||
-        msg.toLowerCase().includes("modal")) {
-      showToast('Transaction cancelled', 'info');
-    } else {
-      showToast(msg || 'Payment failed', 'error');
-    }
-
-    payNowBtn.disabled = false;
-    payNowBtn.innerHTML = originalText;
-  }
-}
 
     async function copyText(text, successMsg = 'Copied!') {
       try {
@@ -2155,11 +2152,11 @@ console.log("notify-paid response:", json);
           clearInterval(fallbackPollInterval);
           fallbackPollInterval = null;
         }
-        // ✅ FIX 2: Stop status page poll too
-    if (window.__statusPoll) {
-      clearInterval(window.__statusPoll);
-      window.__statusPoll = null;
-    }
+        if (window.__statusPoll) {
+          clearInterval(window.__statusPoll);
+          window.__statusPoll = null;
+        }
+        statusRealtimeStartedFor = null; // ✅ Reset flag
       } catch (e) {
         console.warn("Error stopping realtime:", e);
       }
@@ -2223,55 +2220,64 @@ console.log("notify-paid response:", json);
       }, 5000);
     }
 
-function startPayerRealtime(slug) {
-  stopRealtime();
+    function startPayerRealtime(slug) {
+      stopRealtime();
 
-  realtimeChannel = window.supabaseClient
-    .channel(`payer-invoice-${slug}`)
-    .on(
-      "postgres_changes",
-      {
-        event: "UPDATE",
-        schema: "public",
-        table: "invoices",
-        filter: `slug=eq.${slug}`
-      },
-      (payload) => {
-        console.log("Payer realtime update:", payload);
-        
-        const newStatus = payload?.new?.status;
-        
-        if (newStatus === "paid") {
-          setPayerStatus('✅ PAID — Receiver notified!', 'paid');
-          setPayButtonsState({ paid: true, modeText: "✅ Paid" }); // ✅ Lock buttons
-        } else if (newStatus === "unpaid") {
-          setPayerStatus('⏳ Waiting for payment...', 'default');
-          setPayButtonsState({ paid: false }); // ✅ Unlock buttons
-        }
-      }
-    )
-    .subscribe();
-}
+      realtimeChannel = window.supabaseClient
+        .channel(`payer-invoice-${slug}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "invoices",
+            filter: `slug=eq.${slug}`
+          },
+          (payload) => {
+            console.log("Payer realtime update:", payload);
+            
+            const newStatus = payload?.new?.status;
+            
+            if (newStatus === "paid") {
+              setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+              setPayButtonsState({ paid: true, modeText: "✅ Paid" });
+            } else if (newStatus === "unpaid") {
+              setPayerStatus('⏳ Waiting for payment...', 'default');
+              setPayButtonsState({ paid: false });
+            }
+          }
+        )
+        .subscribe();
+    }
 
+    // ✅ FIX B: Subscribe without filter, then filter in JS
     function startStatusPageRealtime(walletId) {
-  stopRealtime();
+      stopRealtime();
 
-  realtimeChannel = window.supabaseClient
-    .channel(`status-wallet-${walletId}`)
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "invoices",
-        filter: `creator_account=eq.${walletId}`
-      },
-      async () => {
-        await loadStatusPage(walletId);
-      }
-    )
-    .subscribe();
-}
+      realtimeChannel = window.supabaseClient
+        .channel(`status-wallet-${walletId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "invoices"
+            // ✅ No filter here - we filter in JS below
+          },
+          async (payload) => {
+            // ✅ Filter in JavaScript instead
+            if (payload?.new?.creator_account !== walletId) return;
+
+            console.log("Status page invoice update:", payload.new.slug, payload.new.status);
+
+            // ✅ Re-render list WITHOUT re-subscribing (thanks to Fix A)
+            await loadStatusPage(walletId);
+          }
+        )
+        .subscribe((status) => {
+          console.log("Status realtime subscription:", status);
+        });
+    }
 
     async function createInvoiceViaEdge({ receiver_account, requested_amount_hbar, amount_hbar, description }) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/create-invoice`, {
@@ -2517,7 +2523,6 @@ function startPayerRealtime(slug) {
 
     window.addEventListener('beforeunload', stopRealtime);
 
-    // ✅ FIX 3 + 4: Await hederaReady promise + visibilitychange listener
     window.addEventListener('load', async () => {
       const slug = getInvoiceSlugFromUrl();
       const walletId = getWalletIdFromUrl();
@@ -2539,7 +2544,6 @@ function startPayerRealtime(slug) {
       enterHomeMode();
 
       try {
-        // ✅ FIX 3: Wait for module to finish init + restoreSession
         await window.hederaReady;
 
         if (window.hederaConnect?.accountId) {
@@ -2557,7 +2561,6 @@ function startPayerRealtime(slug) {
       }
     });
 
-    // ✅ FIX 4: Re-check session when user returns to tab
     document.addEventListener("visibilitychange", async () => {
       if (document.visibilityState !== "visible") return;
       if (!window.hederaConnect) return;
@@ -2574,7 +2577,6 @@ function startPayerRealtime(slug) {
       }
     });
   </script>
-
 </body>
 
 </html>
