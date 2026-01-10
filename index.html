@@ -1938,264 +1938,296 @@
     }
 
     async function loadStatusPage(walletId) {
-      try {
-        enterStatusMode();
+  try {
+    enterStatusMode();
 
-        statusWalletId.textContent = walletId;
-        invoiceList.innerHTML =
-          '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
-
-        // ✅ RESTORE manage token from localStorage
-        const stored = loadManageToken(walletId);
-        if (stored) {
-          manageToken = stored.token;
-          manageTokenExpiresAt = stored.expires_at;
-          manageBtn.textContent = "✅ Manage Unlocked";
-        } else {
-          manageToken = null;
-          manageTokenExpiresAt = null;
-          manageBtn.textContent = "🔒 Manage (Unlock)";
-        }
-
-        const { data: invoices, error } = await window.supabaseClient
-          .from("invoices")
-          .select(
-            "slug, receiver_account, requested_amount_hbar, status, confirmed_by_creator, description, created_at"
-          )
-          .eq("creator_account", walletId)
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-
-        if (!invoices || invoices.length === 0) {
-          invoiceList.innerHTML = `
-            <div class="no-invoices">
-              <div class="no-invoices-icon">📭</div>
-              No invoices found for this wallet.<br>
-              Create your first payment link above!
-            </div>
-          `;
-          return;
-        }
-
-        invoiceList.innerHTML = "";
-
-        const unlocked = !!manageToken;
-
-        invoices.forEach((inv) => {
-          const card = document.createElement("div");
-          card.className = "invoice-card";
-
-          const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
-
-          let badge = "";
-          let actionBtn = "";
-
-          if (inv.confirmed_by_creator) {
-            badge = '<span class="invoice-badge confirmed">Confirmed</span>';
-            actionBtn = `
-              <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
-                ✓ Confirmed (Final)
-              </button>
-            `;
-          } else if (inv.status === "paid") {
-            badge = '<span class="invoice-badge paid">Paid</span>';
-
-            if (unlocked) {
-              actionBtn = `
-                <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary"
-                  onclick="confirmInvoicePayment('${inv.slug}')">
-                  Confirm Payment
-                </button>
-              `;
-            } else {
-              actionBtn = `
-                <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
-                  🔒 Unlock Manage to confirm
-                </button>
-              `;
-            }
-          } else {
-            badge = '<span class="invoice-badge unpaid">Unpaid</span>';
-            actionBtn = `
-              <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
-                Waiting...
-              </button>
-            `;
-          }
-
-          card.innerHTML = `
-            <div class="invoice-header">
-              <div class="invoice-header-left">
-                <div class="invoice-slug">#${inv.slug}</div>
-                <div class="invoice-amount">$${inv.requested_amount_hbar} HBAR</div>
-              </div>
-              ${badge}
-            </div>
-
-            <div class="invoice-url">${invoiceUrl}</div>
-
-            <div class="invoice-actions">
-              ${actionBtn}
-              <button class="ht-btn ht-btn-action ht-btn-small" onclick="copyInvoiceLink('${invoiceUrl}')">Copy</button>
-              <button class="ht-btn ht-btn-action ht-btn-small" onclick="shareInvoiceLink('${invoiceUrl}', ${Number(
-                inv.requested_amount_hbar
-              )})">Share</button>
-            </div>
-          `;
-
-          if (inv.description && String(inv.description).trim()) {
-            const descDiv = document.createElement("div");
-            descDiv.className = "invoice-description";
-            descDiv.textContent = String(inv.description).trim();
-
-            const urlDiv = card.querySelector(".invoice-url");
-            card.insertBefore(descDiv, urlDiv);
-          }
-
-          invoiceList.appendChild(card);
-        });
-
-        if (statusRealtimeStartedFor !== walletId) {
-          startStatusPageRealtime(walletId);
-          statusRealtimeStartedFor = walletId;
-        }
-
-        // ✅ Setup Manage button
-        manageBtn.onclick = async () => {
-          openPinModal("unlock");
-
-          pinOkBtn.onclick = async () => {
-            const p = pinOnly.value.trim();
-            if (!is4(p)) return showToast("PIN must be 4 digits", "error");
-
-            pinOkBtn.disabled = true;
-            pinOkBtn.innerHTML = '<span class="spinner"></span>Unlocking...';
-
-            try {
-              const r = await callFn("unlock-manage", {
-                creator_account: walletId,
-                pin: p,
-              });
-
-              manageToken = r.manage_token;
-              manageTokenExpiresAt = r.expires_at;
-
-              // ✅ SAVE TO LOCALSTORAGE
-              saveManageToken(walletId, manageToken, manageTokenExpiresAt);
-
-              showToast("Manage unlocked ✅", "success");
-              manageBtn.textContent = "✅ Manage Unlocked";
-              closePinModal();
-
-              await loadStatusPage(walletId);
-            } catch (e) {
-              showToast(String(e?.message || e), "error");
-            } finally {
-              pinOkBtn.disabled = false;
-              pinOkBtn.textContent = "Unlock";
-            }
-          };
-        };
-      } catch (err) {
-        console.error(err);
-        showToast("Failed to load invoices", "error");
-        invoiceList.innerHTML = `
-          <div class="no-invoices">
-            <div class="no-invoices-icon">⚠️</div>
-            Error loading invoices.<br>
-            Please try again.
-          </div>
-        `;
-      }
+    // ✅ Restore token from localStorage
+    const stored = loadManageToken(walletId);
+    if (stored) {
+      manageToken = stored.token;
+      manageTokenExpiresAt = stored.expires_at;
+      manageBtn.textContent = "✅ Manage Unlocked";
+    } else {
+      manageToken = null;
+      manageTokenExpiresAt = null;
+      manageBtn.textContent = "🔒 Manage (Unlock)";
     }
 
-    window.confirmInvoicePayment = async function (slug) {
-      try {
-        if (!manageToken) {
-          showToast("Tap Manage and enter PIN first", "info");
-          return;
-        }
+    statusWalletId.textContent = walletId;
+    invoiceList.innerHTML =
+      '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
 
-        await callFn("seller-update-status", {
-          slug,
-          manage_token: manageToken,
-          action: "confirm_paid",
-        });
+    const { data: invoices, error } = await window.supabaseClient
+      .from("invoices")
+      .select(
+        "slug, receiver_account, requested_amount_hbar, status, confirmed_by_creator, description, created_at"
+      )
+      .eq("creator_account", walletId)
+      .order("created_at", { ascending: false });
 
-        showToast("Payment confirmed! ✅", "success");
+    if (error) throw error;
 
-        const walletId = getWalletIdFromUrl();
-        if (walletId) await loadStatusPage(walletId);
-      } catch (err) {
-        console.error(err);
-        const msg =
-          err?.message ||
-          err?.error ||
-          "Failed to confirm payment";
-        showToast(String(msg), "error");
-      }
-    };
+    if (!invoices || invoices.length === 0) {
+      invoiceList.innerHTML = `
+        <div class="no-invoices">
+          <div class="no-invoices-icon">📭</div>
+          No invoices found for this wallet.<br>
+          Create your first payment link above!
+        </div>
+      `;
+      return;
+    }
 
-    window.toggleInvoiceStatus = async function (slug, newStatus) {
-      try {
-        if (!manageToken) {
-          showToast("Tap Manage and enter PIN first", "info");
-          return;
-        }
+    invoiceList.innerHTML = "";
 
-        const action = newStatus === "unpaid" ? "mark_unpaid" : "confirm_paid";
+    const unlocked = !!manageToken;
 
-        await callFn("seller-update-status", {
-          slug,
-          manage_token: manageToken,
-          action,
-        });
+    invoices.forEach((inv) => {
+      const card = document.createElement("div");
+      card.className = "invoice-card";
 
-        showToast("Status updated ✅", "success");
+      const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
 
-        const walletId = getWalletIdFromUrl();
-        if (walletId) await loadStatusPage(walletId);
-      } catch (err) {
-        console.error(err);
-        const msg =
-          err?.message ||
-          err?.error ||
-          "Failed to update status";
-        showToast(String(msg), "error");
-      }
-    };
+      let badge = "";
+      let actionBtn = "";
 
-    window.copyInvoiceLink = async function (url) {
-      try {
-        await navigator.clipboard.writeText(url);
-        showToast("Link copied! ✅", "success");
-      } catch (e) {
-        console.error(e);
-        showToast("Copy failed", "error");
-      }
-    };
+      if (inv.confirmed_by_creator) {
+        badge = '<span class="invoice-badge confirmed">Confirmed</span>';
+        actionBtn = `
+          <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
+            ✓ Confirmed (Final)
+          </button>
+        `;
+      } else if (inv.status === "paid") {
+        badge = '<span class="invoice-badge paid">Paid</span>';
 
-    window.shareInvoiceLink = async function (url, amount) {
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: `Pay $${amount} in HBAR`,
-            text: `Send $${amount} worth of HBAR via HashToll:`,
-            url,
-          });
-          showToast("Shared!", "success");
-        } catch (e) {
-          if (e?.name !== "AbortError") {
-            await navigator.clipboard.writeText(url);
-            showToast("Link copied!", "success");
-          }
+        if (unlocked) {
+          actionBtn = `
+            <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary"
+              onclick="confirmInvoicePayment('${inv.slug}')">
+              Confirm Payment
+            </button>
+          `;
+        } else {
+          actionBtn = `
+            <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
+              🔒 Unlock Manage to confirm
+            </button>
+          `;
         }
       } else {
+        badge = '<span class="invoice-badge unpaid">Unpaid</span>';
+        actionBtn = `
+          <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
+            Waiting...
+          </button>
+        `;
+      }
+
+      card.innerHTML = `
+        <div class="invoice-header">
+          <div class="invoice-header-left">
+            <div class="invoice-slug">#${inv.slug}</div>
+            <div class="invoice-amount">$${inv.requested_amount_hbar} HBAR</div>
+          </div>
+          ${badge}
+        </div>
+
+        <div class="invoice-url">${invoiceUrl}</div>
+
+        <div class="invoice-actions">
+          ${actionBtn}
+          <button class="ht-btn ht-btn-action ht-btn-small" onclick="copyInvoiceLink('${invoiceUrl}')">Copy</button>
+          <button class="ht-btn ht-btn-action ht-btn-small" onclick="shareInvoiceLink('${invoiceUrl}', ${Number(
+            inv.requested_amount_hbar
+          )})">Share</button>
+        </div>
+      `;
+
+      if (inv.description && String(inv.description).trim()) {
+        const descDiv = document.createElement("div");
+        descDiv.className = "invoice-description";
+        descDiv.textContent = String(inv.description).trim();
+
+        const urlDiv = card.querySelector(".invoice-url");
+        card.insertBefore(descDiv, urlDiv);
+      }
+
+      invoiceList.appendChild(card);
+    });
+
+    if (statusRealtimeStartedFor !== walletId) {
+      startStatusPageRealtime(walletId);
+      statusRealtimeStartedFor = walletId;
+    }
+
+    // ✅ Setup Manage button
+    manageBtn.onclick = async () => {
+      openPinModal("unlock");
+
+      pinOkBtn.onclick = async () => {
+        const p = pinOnly.value.trim();
+        if (!is4(p)) return showToast("PIN must be 4 digits", "error");
+
+        pinOkBtn.disabled = true;
+        pinOkBtn.innerHTML = '<span class="spinner"></span>Unlocking...';
+
+        try {
+          const r = await callFn("unlock-manage", {
+            creator_account: walletId,
+            pin: p,
+          });
+
+          manageToken = r.manage_token;
+          manageTokenExpiresAt = r.expires_at;
+
+          // ✅ Save to localStorage
+          saveManageToken(walletId, manageToken, manageTokenExpiresAt);
+
+          showToast("Manage unlocked ✅", "success");
+          manageBtn.textContent = "✅ Manage Unlocked";
+          closePinModal();
+
+          await loadStatusPage(walletId);
+        } catch (e) {
+          showToast(String(e?.message || e), "error");
+        } finally {
+          pinOkBtn.disabled = false;
+          pinOkBtn.textContent = "Unlock";
+        }
+      };
+    };
+  } catch (err) {
+    console.error(err);
+    showToast("Failed to load invoices", "error");
+    invoiceList.innerHTML = `
+      <div class="no-invoices">
+        <div class="no-invoices-icon">⚠️</div>
+        Error loading invoices.<br>
+        Please try again.
+      </div>
+    `;
+  }
+}
+
+window.confirmInvoicePayment = async function (slug) {
+  try {
+    // ✅ Validate token before proceeding
+    const walletId = getWalletIdFromUrl();
+    if (!walletId) return;
+    
+    const stored = loadManageToken(walletId);
+    if (!stored) {
+      manageToken = null;
+      manageTokenExpiresAt = null;
+      manageBtn.textContent = "🔒 Manage (Unlock)";
+      showToast("Manage session expired — tap Manage and enter PIN again", "info");
+      return;
+    }
+    
+    // Keep in-memory in sync
+    manageToken = stored.token;
+    manageTokenExpiresAt = stored.expires_at;
+    
+    if (!manageToken) {
+      showToast("Tap Manage and enter PIN first", "info");
+      return;
+    }
+
+    await callFn("seller-update-status", {
+      slug,
+      manage_token: manageToken,
+      action: "confirm_paid",
+    });
+
+    showToast("Payment confirmed! ✅", "success");
+
+    if (walletId) await loadStatusPage(walletId);
+  } catch (err) {
+    console.error(err);
+    const msg =
+      err?.message ||
+      err?.error ||
+      "Failed to confirm payment";
+    showToast(String(msg), "error");
+  }
+};
+
+window.toggleInvoiceStatus = async function (slug, newStatus) {
+  try {
+    // ✅ Validate token before proceeding
+    const walletId = getWalletIdFromUrl();
+    if (!walletId) return;
+    
+    const stored = loadManageToken(walletId);
+    if (!stored) {
+      manageToken = null;
+      manageTokenExpiresAt = null;
+      manageBtn.textContent = "🔒 Manage (Unlock)";
+      showToast("Manage session expired — tap Manage and enter PIN again", "info");
+      return;
+    }
+    
+    // Keep in-memory in sync
+    manageToken = stored.token;
+    manageTokenExpiresAt = stored.expires_at;
+
+    if (!manageToken) {
+      showToast("Tap Manage and enter PIN first", "info");
+      return;
+    }
+
+    const action = newStatus === "unpaid" ? "mark_unpaid" : "confirm_paid";
+
+    await callFn("seller-update-status", {
+      slug,
+      manage_token: manageToken,
+      action,
+    });
+
+    showToast("Status updated ✅", "success");
+
+    if (walletId) await loadStatusPage(walletId);
+  } catch (err) {
+    console.error(err);
+    const msg =
+      err?.message ||
+      err?.error ||
+      "Failed to update status";
+    showToast(String(msg), "error");
+  }
+};
+
+window.copyInvoiceLink = async function (url) {
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast("Link copied! ✅", "success");
+  } catch (e) {
+    console.error(e);
+    showToast("Copy failed", "error");
+  }
+};
+
+window.shareInvoiceLink = async function (url, amount) {
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: `Pay $${amount} in HBAR`,
+        text: `Send $${amount} worth of HBAR via HashToll:`,
+        url,
+      });
+      showToast("Shared!", "success");
+    } catch (e) {
+      if (e?.name !== "AbortError") {
         await navigator.clipboard.writeText(url);
         showToast("Link copied!", "success");
       }
-    };
+    }
+  } else {
+    await navigator.clipboard.writeText(url);
+    showToast("Link copied!", "success");
+  }
+};
 
     async function notifyPaidOnce(slug) {
       try {
