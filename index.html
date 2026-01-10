@@ -977,100 +977,129 @@
     }
 
     @media (max-width: 600px) {
-      body {
-        padding: 10px 0;
-      }
+  body {
+    padding: 0;
+    align-items: flex-start;
+  }
 
-      .ht-card {
-        width: calc(100% - 20px);
-        max-width: 100%;
-        padding: 40px 28px;
-        margin: 10px;
-        border-radius: 20px;
-      }
+  .ht-card {
+    width: calc(100% - 20px);
+    max-width: 100%;
+    padding: 32px 24px 28px 24px;
+    margin: 10px;
+    border-radius: 20px;
+    min-height: auto;
+  }
 
-      .ht-logo-area {
-        margin-bottom: 12px;
-      }
+  .ht-logo-area {
+    margin-bottom: 10px;
+  }
 
-      .ht-title img {
-        max-width: 220px;
-      }
+  .ht-title img {
+    max-width: 200px;
+  }
 
-      .ht-subtitle {
-        font-size: 0.9375rem;
-      }
+  .ht-subtitle {
+    font-size: 0.875rem;
+    margin: 10px 0 0 0;
+  }
 
-      .ht-account-display {
-        padding: 10px 14px;
-        gap: 8px;
-      }
+  .ht-account-display {
+    padding: 10px 14px;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
 
-      .ht-account-display-left {
-        gap: 8px;
-      }
+  .ht-account-display-left {
+    gap: 8px;
+  }
 
-      .ht-account-id {
-        font-size: 0.875rem;
-        line-height: 1.4;
-        word-spacing: 0.15em;
-      }
+  .ht-account-id {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    word-spacing: 0.15em;
+  }
 
-      .ht-disconnect-btn {
-        padding: 5px 10px;
-        font-size: 0.75rem;
-      }
+  .ht-disconnect-btn {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+  }
 
-      .ht-result-amount {
-        font-size: 2.5rem;
-        margin: 24px 0 12px 0;
-      }
+  .ht-result-amount {
+    font-size: 2rem;
+    margin: 16px 0 12px 0;
+  }
 
-      .ht-qr-card {
-        padding: 20px;
-        max-width: 280px;
-      }
+  .ht-result-status-link {
+    margin-bottom: 20px;
+  }
 
-      .ht-result-actions {
-        grid-template-columns: 1fr;
-        gap: 10px;
-      }
+  .ht-qr-card {
+    padding: 16px;
+    max-width: 260px;
+    margin: 0 auto 20px auto;
+  }
 
-      .ht-btn {
-        padding: 14px 18px;
-        font-size: 0.9375rem;
-      }
+  .ht-qr-trust {
+    margin-top: 12px;
+    font-size: 0.75rem;
+  }
 
-      .ht-btn-small {
-        padding: 12px 16px;
-        font-size: 0.875rem;
-      }
+  .ht-result-description {
+    padding: 16px 18px;
+    margin: 16px 0;
+  }
 
-      .invoice-card {
-        padding: 16px;
-      }
+  .ht-result-actions {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin: 20px 0;
+  }
 
-      .invoice-description {
-        font-size: 0.65rem;
-        padding: 6px 8px;
-      }
+  .ht-result-secondary-action {
+    margin-top: 16px;
+    padding-top: 16px;
+  }
 
-      .invoice-actions {
-        grid-template-columns: 1fr;
-      }
+  .ht-powered-by {
+    margin-top: 16px;
+  }
 
-      .invoice-action-primary {
-        grid-column: 1;
-      }
+  .ht-btn {
+    padding: 14px 18px;
+    font-size: 0.9375rem;
+  }
 
-      .toast {
-        max-width: calc(100vw - 32px);
-        right: 16px;
-        top: 16px;
-        font-size: 0.8125rem;
-        padding: 12px 16px;
-      }
-    }
+  .ht-btn-small {
+    padding: 12px 16px;
+    font-size: 0.875rem;
+  }
+
+  .invoice-card {
+    padding: 16px;
+  }
+
+  .invoice-description {
+    font-size: 0.65rem;
+    padding: 6px 8px;
+  }
+
+  .invoice-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .invoice-action-primary {
+    grid-column: 1;
+  }
+
+  .toast {
+    max-width: calc(100vw - 32px);
+    right: 16px;
+    top: 16px;
+    font-size: 0.8125rem;
+    padding: 12px 16px;
+  }
+}
 
     @media (max-width: 400px) {
       .ht-card {
