@@ -1835,7 +1835,7 @@
         canvas.style.borderRadius = '12px';
         containerEl.appendChild(canvas);
 
-        const ctx = canvas.getContext('2d');
+       /* const ctx = canvas.getContext('2d');
         const logo = new Image();
         logo.src = `${window.location.origin}/qr_logo.png?v=2`;
 
@@ -1855,8 +1855,8 @@
           const logoX = (canvas.width - logoSize) / 2;
           const logoY = (canvas.height - logoSize) / 2;
           ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
-          ctx.restore();
-        };
+          ctx.restore(); 
+        }; */
       });
     }
 
