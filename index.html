@@ -1218,7 +1218,7 @@
 
       <div class="ht-result-actions">
         <button class="ht-btn ht-btn-primary ht-btn-small" id="copyBtn">Copy Link</button>
-        <button class="ht-btn ht-btn-action ht-btn-small" id="shareBtn">Share</button>
+        <button class="ht-btn ht-btn-action ht-btn-small" id="dashboardBtn">Dashboard</button>
       </div>
 
       <div class="ht-result-secondary-action">
@@ -1740,7 +1740,7 @@
     const qrContainer = document.getElementById('qrContainer');
     const linkDisplay = document.getElementById('linkDisplay');
     const copyBtn = document.getElementById('copyBtn');
-    const shareBtn = document.getElementById('shareBtn');
+    const dashboardBtn = document.getElementById('dashboardBtn');
     const createAnotherBtn = document.getElementById('createAnotherBtn');
 
     const subtitle = document.getElementById('subtitle');
@@ -1834,29 +1834,6 @@
 
         canvas.style.borderRadius = '12px';
         containerEl.appendChild(canvas);
-
-       /* const ctx = canvas.getContext('2d');
-        const logo = new Image();
-        logo.src = `${window.location.origin}/qr_logo.png?v=2`;
-
-        logo.onload = () => {
-          const logoSize = canvas.width * 0.18;
-          const padding = logoSize * 0.25;
-          const circleRadius = (logoSize + padding * 2) / 2;
-          const centerX = canvas.width / 2;
-          const centerY = canvas.height / 2;
-
-          ctx.save();
-          ctx.fillStyle = '#ffffff';
-          ctx.beginPath();
-          ctx.arc(centerX, centerY, circleRadius, 0, Math.PI * 2);
-          ctx.fill();
-
-          const logoX = (canvas.width - logoSize) / 2;
-          const logoY = (canvas.height - logoSize) / 2;
-          ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
-          ctx.restore(); 
-        }; */
       });
     }
 
@@ -2405,25 +2382,14 @@ window.shareInvoiceLink = async function (url, amount) {
       }
     }
 
-    async function shareCurrentLink() {
-      if (!currentPaymentLink) return;
-
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: `Pay $${currentAmount} in HBAR`,
-            text: `Send $${currentAmount} worth of HBAR via HashToll:`,
-            url: currentPaymentLink
-          });
-          showToast('Shared!', 'success');
-        } catch (e) {
-          if (e?.name !== 'AbortError') {
-            await copyText(currentPaymentLink, 'Link copied!');
-          }
-        }
-      } else {
-        await copyText(currentPaymentLink, 'Link copied!');
+    async function navigateToDashboard() {
+      if (!currentCreatorAccount && !accountId) {
+        showToast('No account connected', 'error');
+        return;
       }
+
+      const targetAccount = currentCreatorAccount || accountId;
+      window.location.href = `/${targetAccount}`;
     }
 
     let realtimeChannel = null;
@@ -2609,6 +2575,7 @@ window.shareInvoiceLink = async function (url, amount) {
         const paymentLink = `${window.location.origin}/invoice/${inv.slug}`;
         currentPaymentLink = paymentLink;
         currentAmount = requestedAmount;
+        currentCreatorAccount = accountId;
 
         document.getElementById('usdAmount').textContent = requestedAmount.toFixed(2);
 
@@ -2630,45 +2597,41 @@ window.shareInvoiceLink = async function (url, amount) {
         startCreatorRealtime(inv.slug);
 
         try {
-  // ✅ Ask the database, not localStorage
-  const r = await callFn("has-creator-pin", { creator_account: accountId });
+          const r = await callFn("has-creator-pin", { creator_account: accountId });
 
-  if (r?.has_pin) {
-    localStorage.setItem(`ht_has_pin_${accountId}`, "1"); // optional cache
-    // ✅ do nothing (already has pin)
-  } else {
-    openPinModal("setup");
+          if (r?.has_pin) {
+            localStorage.setItem(`ht_has_pin_${accountId}`, "1");
+          } else {
+            openPinModal("setup");
 
-    pinOkBtn.onclick = async () => {
-      const a = pinA.value.trim();
-      const b = pinB.value.trim();
-      if (!is4(a) || !is4(b)) return showToast("PIN must be 4 digits", "error");
-      if (a !== b) return showToast("PINs do not match", "error");
+            pinOkBtn.onclick = async () => {
+              const a = pinA.value.trim();
+              const b = pinB.value.trim();
+              if (!is4(a) || !is4(b)) return showToast("PIN must be 4 digits", "error");
+              if (a !== b) return showToast("PINs do not match", "error");
 
-      pinOkBtn.disabled = true;
-      pinOkBtn.innerHTML = '<span class="spinner"></span>Saving...';
+              pinOkBtn.disabled = true;
+              pinOkBtn.innerHTML = '<span class="spinner"></span>Saving...';
 
-      try {
-        const r2 = await callFn("set-creator-pin", { creator_account: accountId, pin: a });
+              try {
+                const r2 = await callFn("set-creator-pin", { creator_account: accountId, pin: a });
 
-        // If another device already set it, you'll still be fine:
-        if (r2?.already_set) showToast("PIN already exists ✅", "info");
-        else showToast("PIN saved ✅", "success");
+                if (r2?.already_set) showToast("PIN already exists ✅", "info");
+                else showToast("PIN saved ✅", "success");
 
-        localStorage.setItem(`ht_has_pin_${accountId}`, "1"); // optional cache
-        closePinModal();
-      } catch (e) {
-        showToast(String(e?.message || e), "error");
-      } finally {
-        pinOkBtn.disabled = false;
-        pinOkBtn.textContent = "Save PIN";
-      }
-    };
-  }
-} catch (e) {
-  // If the check fails, don't force the user into setup — just skip prompting
-  console.warn("has-creator-pin failed:", e);
-}
+                localStorage.setItem(`ht_has_pin_${accountId}`, "1");
+                closePinModal();
+              } catch (e) {
+                showToast(String(e?.message || e), "error");
+              } finally {
+                pinOkBtn.disabled = false;
+                pinOkBtn.textContent = "Save PIN";
+              }
+            };
+          }
+        } catch (e) {
+          console.warn("has-creator-pin failed:", e);
+        }
 
       } catch (err) {
         console.error(err);
@@ -2834,7 +2797,8 @@ window.shareInvoiceLink = async function (url, amount) {
       if (!currentPaymentLink) return;
       await copyText(currentPaymentLink, 'Link copied!');
     });
-    shareBtn.addEventListener('click', shareCurrentLink);
+    
+    dashboardBtn.addEventListener('click', navigateToDashboard);
 
     copyReceiverBtn.addEventListener('click', async () => {
       const acct = payerReceiverAccount.textContent?.trim();
