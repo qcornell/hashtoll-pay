@@ -2601,37 +2601,45 @@ window.shareInvoiceLink = async function (url, amount) {
         startCreatorRealtime(inv.slug);
 
         try {
-          const pin = localStorage.getItem(`ht_has_pin_${accountId}`);
-          if (!pin) {
-            openPinModal("setup");
+  // ✅ Ask the database, not localStorage
+  const r = await callFn("has-creator-pin", { creator_account: accountId });
 
-            pinOkBtn.onclick = async () => {
-              const a = pinA.value.trim();
-              const b = pinB.value.trim();
-              if (!is4(a) || !is4(b)) return showToast("PIN must be 4 digits", "error");
-              if (a !== b) return showToast("PINs do not match", "error");
+  if (r?.has_pin) {
+    localStorage.setItem(`ht_has_pin_${accountId}`, "1"); // optional cache
+    // ✅ do nothing (already has pin)
+  } else {
+    openPinModal("setup");
 
-              pinOkBtn.disabled = true;
-              pinOkBtn.innerHTML = '<span class="spinner"></span>Saving...';
+    pinOkBtn.onclick = async () => {
+      const a = pinA.value.trim();
+      const b = pinB.value.trim();
+      if (!is4(a) || !is4(b)) return showToast("PIN must be 4 digits", "error");
+      if (a !== b) return showToast("PINs do not match", "error");
 
-              try {
-                const r = await callFn("set-creator-pin", { creator_account: accountId, pin: a });
-                if (r?.already_set) {
-                  showToast("PIN already exists for this wallet ✅", "info");
-                } else {
-                  showToast("PIN saved ✅", "success");
-                }
-                localStorage.setItem(`ht_has_pin_${accountId}`, "1");
-                closePinModal();
-              } catch (e) {
-                showToast(String(e.message || e), "error");
-              } finally {
-                pinOkBtn.disabled = false;
-                pinOkBtn.textContent = "Save PIN";
-              }
-            };
-          }
-        } catch {}
+      pinOkBtn.disabled = true;
+      pinOkBtn.innerHTML = '<span class="spinner"></span>Saving...';
+
+      try {
+        const r2 = await callFn("set-creator-pin", { creator_account: accountId, pin: a });
+
+        // If another device already set it, you'll still be fine:
+        if (r2?.already_set) showToast("PIN already exists ✅", "info");
+        else showToast("PIN saved ✅", "success");
+
+        localStorage.setItem(`ht_has_pin_${accountId}`, "1"); // optional cache
+        closePinModal();
+      } catch (e) {
+        showToast(String(e?.message || e), "error");
+      } finally {
+        pinOkBtn.disabled = false;
+        pinOkBtn.textContent = "Save PIN";
+      }
+    };
+  }
+} catch (e) {
+  // If the check fails, don't force the user into setup — just skip prompting
+  console.warn("has-creator-pin failed:", e);
+}
 
       } catch (err) {
         console.error(err);
