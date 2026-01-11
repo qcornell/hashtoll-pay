@@ -2219,7 +2219,7 @@ async function loadStatusPage(walletId) {
     invoiceList.innerHTML =
       '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
 
-    // ✅ Fetch ALL invoices for this wallet
+    // Fetch ALL invoices
     const { data: allInvoices, error } = await window.supabaseClient
       .from("invoices")
       .select(
@@ -2230,33 +2230,22 @@ async function loadStatusPage(walletId) {
 
     if (error) throw error;
 
-    // 🔍 DEBUG: Log all invoices BEFORE filtering
-    console.log("=== ALL INVOICES ===");
-    (allInvoices ?? []).forEach(inv => {
-      const derivedReusable = inv.is_reusable === true || inv.requested_amount_hbar == null;
-      console.log(`Slug: ${inv.slug}, Reusable: ${inv.is_reusable}, Derived: ${derivedReusable}, Amount: ${inv.requested_amount_hbar}, Status: ${inv.status}, Payment Count: ${inv.payment_count}`);
-    });
+    console.log("📦 Raw fetch:", (allInvoices ?? []).length, "invoices");
 
-    // ✅ ROBUST FILTER LOGIC with derived reusable flag
+    // ✅ CRITICAL: Filter reusable invoices with zero payments
     const invoices = (allInvoices ?? []).filter(inv => {
-      // Robust reusable detection:
-      const derivedReusable =
-        inv.is_reusable === true ||
-        inv.requested_amount_hbar == null;
-
-      // Hide reusable invoices until someone has paid at least once
-      if (derivedReusable) {
-        const shouldShow = Number(inv.payment_count || 0) > 0 || Number(inv.total_received_hbar || 0) > 0;
-        console.log(`Reusable ${inv.slug}: payment_count=${inv.payment_count}, total_received=${inv.total_received_hbar} → ${shouldShow ? 'SHOW' : 'HIDE'}`);
-        return shouldShow;
+      // If it's reusable, only show if payment_count > 0
+      if (inv.is_reusable === true) {
+        const hasPayments = Number(inv.payment_count || 0) > 0;
+        console.log(`${inv.slug}: reusable, payments=${inv.payment_count} → ${hasPayments ? 'SHOW' : 'HIDE'}`);
+        return hasPayments;
       }
-
-      return true; // Show all one-time invoices
+      
+      // Show all one-time invoices
+      return true;
     });
 
-    // 🔍 DEBUG: Log filtered invoices
-    console.log("=== FILTERED INVOICES ===");
-    console.log(`Total after filter: ${invoices.length}`);
+    console.log("✅ After filter:", invoices.length, "invoices will display");
 
     if (!invoices || invoices.length === 0) {
       invoiceList.innerHTML = `
@@ -2272,9 +2261,9 @@ async function loadStatusPage(walletId) {
     }
 
     invoiceList.innerHTML = "";
-
     const unlocked = !!manageToken;
 
+    // Render each invoice
     invoices.forEach((inv) => {
       const card = document.createElement("div");
       card.className = "invoice-card";
@@ -2286,17 +2275,14 @@ async function loadStatusPage(walletId) {
       let amountDisplay;
       let statsDisplay = "";
 
-      // ✅ Use derived reusable flag in card rendering
-      const derivedReusable =
-        inv.is_reusable === true ||
-        inv.requested_amount_hbar == null;
-
-      if (derivedReusable) {
+      // Check if reusable
+      if (inv.is_reusable === true) {
+        // Reusable invoice display
         amountDisplay = `${Number(inv.total_received_hbar || 0).toFixed(2)} HBAR collected`;
-        badge = '<span class="invoice-badge reusable">Reusable</span>';
+        badge = '<span class="invoice-badge reusable">Active</span>';
         actionBtn = `
           <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
-            ∞ Unlimited Use
+            ∞ Reusable Link
           </button>
         `;
         
@@ -2314,7 +2300,8 @@ async function loadStatusPage(walletId) {
           </div>
         `;
       } else {
-        amountDisplay = `${Number(inv.requested_amount_hbar).toFixed(2)} HBAR`;
+        // One-time invoice display
+        amountDisplay = `${Number(inv.requested_amount_hbar || 0).toFixed(2)} HBAR`;
         
         if (inv.confirmed_by_creator) {
           badge = '<span class="invoice-badge confirmed">Confirmed</span>';
