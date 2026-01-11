@@ -2229,12 +2229,17 @@
 
     if (error) throw error;
 
-    // ✅ FIX: Hide reusable QRs until they've been used at least once
+    // ✅ FINAL frontend filter (use this verbatim)
     const visibleInvoices = (invoices || []).filter(inv => {
-      if (!inv.is_reusable) return true; // keep all normal invoices
       const count = Number(inv.payment_count || 0);
       const total = Number(inv.total_received_hbar || 0);
-      return count > 0 || total > 0; // only show reusable if it has payments
+
+      // 🚫 Hide unused reusable invoices
+      if (inv.is_reusable && count === 0 && total === 0) {
+        return false;
+      }
+
+      return true;
     });
 
     if (!visibleInvoices || visibleInvoices.length === 0) {
@@ -2262,11 +2267,11 @@
 
       let badge = "";
       let actionBtn = "";
-      let amountDisplay = "";
+      let amountDisplay;
       let statsDisplay = "";
 
       if (inv.is_reusable) {
-        amountDisplay = "Reusable QR";
+        amountDisplay = `${Number(inv.total_received_hbar || 0).toFixed(2)} HBAR collected`;
         badge = '<span class="invoice-badge reusable">Reusable</span>';
         actionBtn = `
           <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
@@ -2274,7 +2279,7 @@
           </button>
         `;
         
-        const totalReceived = inv.total_received_hbar || 0;
+        const totalReceived = Number(inv.total_received_hbar || 0).toFixed(2);
         const paymentCount = inv.payment_count || 0;
         const lastPayment = inv.last_payment_at 
           ? new Date(inv.last_payment_at).toLocaleDateString()
@@ -2288,9 +2293,7 @@
           </div>
         `;
       } else {
-        // ✅ FIX: Prevent $null HBAR
-        const amt = Number(inv.requested_amount_hbar || 0).toFixed(2);
-        amountDisplay = `${amt} HBAR`;
+        amountDisplay = `${Number(inv.requested_amount_hbar).toFixed(2)} HBAR`;
         
         if (inv.confirmed_by_creator) {
           badge = '<span class="invoice-badge confirmed">Confirmed</span>';
@@ -2376,7 +2379,6 @@
     `;
   }
 }
-
     function setupManageButton(walletId) {
       const unlocked = !!manageToken;
 
