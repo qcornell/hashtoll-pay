@@ -2229,18 +2229,17 @@
 
     if (error) throw error;
 
-    // ✅ FINAL frontend filter (use this verbatim)
+    // ✅ FINAL frontend filter - handles PostgreSQL numeric as string
     const visibleInvoices = (invoices || []).filter(inv => {
-      const isReusable = inv.is_reusable === true || inv.is_reusable === 'true';
+      // ✅ Strict boolean check
+      const isReusable = inv.is_reusable === true;
 
-      const count = Number(inv.payment_count ?? 0);
-      const total = Number(inv.total_received_hbar ?? 0);
+      // ✅ Parse numbers safely (handles both null and string "0.00000000")
+      const count = parseInt(inv.payment_count) || 0;
+      const total = parseFloat(inv.total_received_hbar) || 0;
 
-      const safeCount = Number.isFinite(count) ? count : 0;
-      const safeTotal = Number.isFinite(total) ? total : 0;
-
-      // Hide unused reusable invoices (allow tiny float noise)
-      if (isReusable && safeCount === 0 && safeTotal <= 0.00000001) {
+      // 🚫 Hide unused reusable invoices (strict zero check)
+      if (isReusable && count === 0 && total === 0) {
         return false;
       }
 
