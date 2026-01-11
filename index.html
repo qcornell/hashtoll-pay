@@ -2231,11 +2231,16 @@
 
     // ✅ FINAL frontend filter (use this verbatim)
     const visibleInvoices = (invoices || []).filter(inv => {
-      const count = Number(inv.payment_count || 0);
-      const total = Number(inv.total_received_hbar || 0);
+      const isReusable = inv.is_reusable === true || inv.is_reusable === 'true';
 
-      // 🚫 Hide unused reusable invoices
-      if (inv.is_reusable && count === 0 && total === 0) {
+      const count = Number(inv.payment_count ?? 0);
+      const total = Number(inv.total_received_hbar ?? 0);
+
+      const safeCount = Number.isFinite(count) ? count : 0;
+      const safeTotal = Number.isFinite(total) ? total : 0;
+
+      // Hide unused reusable invoices (allow tiny float noise)
+      if (isReusable && safeCount === 0 && safeTotal <= 0.00000001) {
         return false;
       }
 
