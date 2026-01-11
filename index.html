@@ -2232,7 +2232,7 @@ async function loadStatusPage(walletId) {
 
     console.log("📦 Raw fetch:", (allInvoices ?? []).length, "invoices");
 
-    // ✅ CRITICAL: Filter reusable invoices with zero payments
+    // ✅ CRITICAL: Filter reusable invoices with zero payments + broken one-time invoices
     const invoices = (allInvoices ?? []).filter(inv => {
       // If it's reusable, only show if payment_count > 0
       if (inv.is_reusable === true) {
@@ -2241,7 +2241,14 @@ async function loadStatusPage(walletId) {
         return hasPayments;
       }
       
-      // Show all one-time invoices
+      // ✅ NEW: Hide broken/empty one-time invoices
+      const hasAmount = Number(inv.requested_amount_hbar || 0) > 0;
+      if (!hasAmount) {
+        console.log(`${inv.slug}: one-time, amount=${inv.requested_amount_hbar} → HIDE (broken)`);
+        return false;
+      }
+      
+      // Show valid one-time invoices
       return true;
     });
 
@@ -2387,7 +2394,6 @@ async function loadStatusPage(walletId) {
     `;
   }
 }
-
     function setupManageButton(walletId) {
       const unlocked = !!manageToken;
 
