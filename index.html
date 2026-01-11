@@ -248,7 +248,6 @@
       gap: 10px;
       padding: 12px 16px;
       background: var(--ht-input-bg);
-      /* border: 1.5px solid var(--ht-input-border); */
       border-radius: 10px;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -268,7 +267,6 @@
     }
 
     .ht-radio-option input[type="radio"]:checked + .ht-radio-label {
-      /* font-weight: 600; */
       color: var(--ht-navy);
     }
 
@@ -349,10 +347,8 @@
     }
 
     .ht-result-amount {
-      /* font-size: 2.25rem; */
       color: var(--ht-navy);
       margin: 25px 0 16px 0;
-      /* letter-spacing: -0.03em; */
       line-height: 1.1;
     }
 
@@ -601,7 +597,6 @@
       margin-bottom: 4px;
     }
 
-    /* NEW: Reusable invoice stats */
     .invoice-stats {
       font-size: 0.75rem;
       color: var(--ht-text-secondary);
@@ -770,7 +765,6 @@
       transform: translateY(0);
     }
 
-    /* NEW: Payment receipt styles */
     .payment-receipt {
       background: rgba(16, 185, 129, 0.05);
       border: 1.5px solid rgba(16, 185, 129, 0.2);
@@ -1402,7 +1396,6 @@
         <div id="payerDescriptionText"></div>
       </div>
 
-      <!-- NEW: Payment Receipt -->
       <div class="payment-receipt" id="paymentReceipt">
         <div class="payment-receipt-title">✅ Payment Confirmed</div>
         <div class="payment-receipt-row">
@@ -1686,6 +1679,23 @@
 
     window.supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // ✅ HELPER FUNCTIONS FOR ROBUST TYPE CHECKING
+    function asBool(v) {
+      if (v === true) return true;
+      if (v === false) return false;
+      if (typeof v === "number") return v === 1;
+      if (typeof v === "string") {
+        const s = v.trim().toLowerCase();
+        return s === "true" || s === "1" || s === "yes" || s === "on";
+      }
+      return false;
+    }
+
+    function asNum(v) {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    }
+
     // PIN SYSTEM GLOBALS
     let manageToken = null;
     let manageTokenExpiresAt = null;
@@ -1702,7 +1712,6 @@
     const pinOnly = document.getElementById("pinOnly");
     const manageBtn = document.getElementById("manageBtn");
 
-    // NEW: Payment receipt elements
     const paymentReceipt = document.getElementById("paymentReceipt");
     const receiptAmount = document.getElementById("receiptAmount");
     const receiptReceiver = document.getElementById("receiptReceiver");
@@ -1750,7 +1759,6 @@
       return json;
     }
 
-    // MANAGE TOKEN PERSISTENCE
     function saveManageToken(walletId, token, expiresAt) {
       try {
         localStorage.setItem(`ht_manage_${walletId}`, JSON.stringify({
@@ -2202,198 +2210,200 @@
       }
     }
 
-async function loadStatusPage(walletId) {
-  try {
-    enterStatusMode();
+    async function loadStatusPage(walletId) {
+      try {
+        enterStatusMode();
 
-    const stored = loadManageToken(walletId);
-    if (stored) {
-      manageToken = stored.token;
-      manageTokenExpiresAt = stored.expires_at;
-    } else {
-      manageToken = null;
-      manageTokenExpiresAt = null;
-    }
+        const stored = loadManageToken(walletId);
+        if (stored) {
+          manageToken = stored.token;
+          manageTokenExpiresAt = stored.expires_at;
+        } else {
+          manageToken = null;
+          manageTokenExpiresAt = null;
+        }
 
-    statusWalletId.textContent = walletId;
-    invoiceList.innerHTML =
-      '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
+        statusWalletId.textContent = walletId;
+        invoiceList.innerHTML =
+          '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
 
-    // Fetch ALL invoices
-    const { data: allInvoices, error } = await window.supabaseClient
-      .from("invoices")
-      .select(
-        "slug, receiver_account, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
-      )
-      .eq("creator_account", walletId)
-      .order("created_at", { ascending: false });
+        const { data: allInvoices, error } = await window.supabaseClient
+          .from("invoices")
+          .select(
+            "slug, receiver_account, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
+          )
+          .eq("creator_account", walletId)
+          .order("created_at", { ascending: false });
 
-    if (error) throw error;
+        if (error) throw error;
 
-    console.log("📦 Raw fetch:", (allInvoices ?? []).length, "invoices");
+        console.log("📦 Raw fetch:", (allInvoices ?? []).length, "invoices");
 
-    // ✅ CRITICAL: Filter reusable invoices with zero payments + broken one-time invoices
-    const invoices = (allInvoices ?? []).filter(inv => {
-      // If it's reusable, only show if payment_count > 0
-      if (inv.is_reusable === true) {
-        const hasPayments = Number(inv.payment_count || 0) > 0;
-        console.log(`${inv.slug}: reusable, payments=${inv.payment_count} → ${hasPayments ? 'SHOW' : 'HIDE'}`);
-        return hasPayments;
-      }
-      
-      // ✅ NEW: Hide broken/empty one-time invoices
-      const hasAmount = Number(inv.requested_amount_hbar || 0) > 0;
-      if (!hasAmount) {
-        console.log(`${inv.slug}: one-time, amount=${inv.requested_amount_hbar} → HIDE (broken)`);
-        return false;
-      }
-      
-      // Show valid one-time invoices
-      return true;
-    });
+        // ✅ BULLETPROOF FILTER: Handle any type for is_reusable, check both payment_count and total_received_hbar
+        const invoices = (allInvoices ?? []).filter(inv => {
+          const isReusable = asBool(inv.is_reusable);
 
-    console.log("✅ After filter:", invoices.length, "invoices will display");
+          if (isReusable) {
+            const paymentCount = asNum(inv.payment_count);
+            const totalReceived = asNum(inv.total_received_hbar);
 
-    if (!invoices || invoices.length === 0) {
-      invoiceList.innerHTML = `
-        <div class="no-invoices">
-          <div class="no-invoices-icon">📭</div>
-          No invoices found for this wallet.<br>
-          Create your first payment link above!
-        </div>
-      `;
-      
-      setupManageButton(walletId);
-      return;
-    }
+            const hasPayments = paymentCount > 0 || totalReceived > 0;
 
-    invoiceList.innerHTML = "";
-    const unlocked = !!manageToken;
+            console.log(`${inv.slug}: reusable, payment_count=${paymentCount}, total=${totalReceived} → ${hasPayments ? "SHOW" : "HIDE"}`);
+            return hasPayments;
+          }
 
-    // Render each invoice
-    invoices.forEach((inv) => {
-      const card = document.createElement("div");
-      card.className = "invoice-card";
+          const hasAmount = asNum(inv.requested_amount_hbar) > 0;
+          if (!hasAmount) {
+            console.log(`${inv.slug}: one-time, amount=${inv.requested_amount_hbar} → HIDE (broken)`);
+            return false;
+          }
 
-      const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
+          return true;
+        });
 
-      let badge = "";
-      let actionBtn = "";
-      let amountDisplay;
-      let statsDisplay = "";
+        console.log("✅ After filter:", invoices.length, "invoices will display");
 
-      // Check if reusable
-      if (inv.is_reusable === true) {
-        // Reusable invoice display
-        amountDisplay = `${Number(inv.total_received_hbar || 0).toFixed(2)} HBAR collected`;
-        badge = '<span class="invoice-badge reusable">Active</span>';
-        actionBtn = `
-          <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
-            ∞ Reusable Link
-          </button>
-        `;
-        
-        const totalReceived = Number(inv.total_received_hbar || 0).toFixed(2);
-        const paymentCount = inv.payment_count || 0;
-        const lastPayment = inv.last_payment_at 
-          ? new Date(inv.last_payment_at).toLocaleDateString()
-          : 'Never';
-        
-        statsDisplay = `
-          <div class="invoice-stats">
-            <strong>Total:</strong> ${totalReceived} HBAR &nbsp;•&nbsp; 
-            <strong>Payments:</strong> ${paymentCount} &nbsp;•&nbsp; 
-            <strong>Last:</strong> ${lastPayment}
-          </div>
-        `;
-      } else {
-        // One-time invoice display
-        amountDisplay = `${Number(inv.requested_amount_hbar || 0).toFixed(2)} HBAR`;
-        
-        if (inv.confirmed_by_creator) {
-          badge = '<span class="invoice-badge confirmed">Confirmed</span>';
-          actionBtn = `
-            <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
-              ✓ Confirmed (Final)
-            </button>
+        if (!invoices || invoices.length === 0) {
+          invoiceList.innerHTML = `
+            <div class="no-invoices">
+              <div class="no-invoices-icon">📭</div>
+              No invoices found for this wallet.<br>
+              Create your first payment link above!
+            </div>
           `;
-        } else if (inv.status === "paid") {
-          badge = '<span class="invoice-badge paid">Paid</span>';
+          
+          setupManageButton(walletId);
+          return;
+        }
 
-          if (unlocked) {
-            actionBtn = `
-              <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary"
-                onclick="confirmInvoicePayment('${inv.slug}')">
-                Confirm Payment
-              </button>
-            `;
-          } else {
+        invoiceList.innerHTML = "";
+        const unlocked = !!manageToken;
+
+        invoices.forEach((inv) => {
+          const card = document.createElement("div");
+          card.className = "invoice-card";
+
+          const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
+
+          let badge = "";
+          let actionBtn = "";
+          let amountDisplay;
+          let statsDisplay = "";
+
+          // ✅ Use asBool for rendering too
+          const isReusable = asBool(inv.is_reusable);
+
+          if (isReusable) {
+            amountDisplay = `${asNum(inv.total_received_hbar).toFixed(2)} HBAR collected`;
+            badge = '<span class="invoice-badge reusable">Active</span>';
             actionBtn = `
               <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
-                🔒 Unlock Manage to confirm
+                ∞ Reusable Link
               </button>
             `;
+            
+            const totalReceived = asNum(inv.total_received_hbar).toFixed(2);
+            const paymentCount = asNum(inv.payment_count);
+            const lastPayment = inv.last_payment_at 
+              ? new Date(inv.last_payment_at).toLocaleDateString()
+              : 'Never';
+            
+            statsDisplay = `
+              <div class="invoice-stats">
+                <strong>Total:</strong> ${totalReceived} HBAR &nbsp;•&nbsp; 
+                <strong>Payments:</strong> ${paymentCount} &nbsp;•&nbsp; 
+                <strong>Last:</strong> ${lastPayment}
+              </div>
+            `;
+          } else {
+            amountDisplay = `${asNum(inv.requested_amount_hbar).toFixed(2)} HBAR`;
+            
+            if (inv.confirmed_by_creator) {
+              badge = '<span class="invoice-badge confirmed">Confirmed</span>';
+              actionBtn = `
+                <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
+                  ✓ Confirmed (Final)
+                </button>
+              `;
+            } else if (inv.status === "paid") {
+              badge = '<span class="invoice-badge paid">Paid</span>';
+
+              if (unlocked) {
+                actionBtn = `
+                  <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary"
+                    onclick="confirmInvoicePayment('${inv.slug}')">
+                    Confirm Payment
+                  </button>
+                `;
+              } else {
+                actionBtn = `
+                  <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
+                    🔒 Unlock Manage to confirm
+                  </button>
+                `;
+              }
+            } else {
+              badge = '<span class="invoice-badge unpaid">Unpaid</span>';
+              actionBtn = `
+                <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
+                  Waiting...
+                </button>
+              `;
+            }
           }
-        } else {
-          badge = '<span class="invoice-badge unpaid">Unpaid</span>';
-          actionBtn = `
-            <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
-              Waiting...
-            </button>
+
+          card.innerHTML = `
+            <div class="invoice-header">
+              <div class="invoice-header-left">
+                <div class="invoice-slug">#${inv.slug}</div>
+                <div class="invoice-amount">${amountDisplay}</div>
+                ${statsDisplay}
+              </div>
+              ${badge}
+            </div>
+
+            <div class="invoice-url">${invoiceUrl}</div>
+
+            <div class="invoice-actions">
+              ${actionBtn}
+              <button class="ht-btn ht-btn-action ht-btn-small" onclick="copyInvoiceLink('${invoiceUrl}')">Copy</button>
+              <button class="ht-btn ht-btn-action ht-btn-small" onclick="shareInvoiceLink('${invoiceUrl}', ${asNum(inv.requested_amount_hbar)})">Share</button>
+            </div>
           `;
+
+          if (inv.description && String(inv.description).trim()) {
+            const descDiv = document.createElement("div");
+            descDiv.className = "invoice-description";
+            descDiv.textContent = String(inv.description).trim();
+
+            const urlDiv = card.querySelector(".invoice-url");
+            card.insertBefore(descDiv, urlDiv);
+          }
+
+          invoiceList.appendChild(card);
+        });
+
+        if (statusRealtimeStartedFor !== walletId) {
+          startStatusPageRealtime(walletId);
+          statusRealtimeStartedFor = walletId;
         }
-      }
 
-      card.innerHTML = `
-        <div class="invoice-header">
-          <div class="invoice-header-left">
-            <div class="invoice-slug">#${inv.slug}</div>
-            <div class="invoice-amount">${amountDisplay}</div>
-            ${statsDisplay}
+        setupManageButton(walletId);
+
+      } catch (err) {
+        console.error(err);
+        showToast("Failed to load invoices", "error");
+        invoiceList.innerHTML = `
+          <div class="no-invoices">
+            <div class="no-invoices-icon">⚠️</div>
+            Error loading invoices.<br>
+            Please try again.
           </div>
-          ${badge}
-        </div>
-
-        <div class="invoice-url">${invoiceUrl}</div>
-
-        <div class="invoice-actions">
-          ${actionBtn}
-          <button class="ht-btn ht-btn-action ht-btn-small" onclick="copyInvoiceLink('${invoiceUrl}')">Copy</button>
-          <button class="ht-btn ht-btn-action ht-btn-small" onclick="shareInvoiceLink('${invoiceUrl}', ${inv.requested_amount_hbar || 0})">Share</button>
-        </div>
-      `;
-
-      if (inv.description && String(inv.description).trim()) {
-        const descDiv = document.createElement("div");
-        descDiv.className = "invoice-description";
-        descDiv.textContent = String(inv.description).trim();
-
-        const urlDiv = card.querySelector(".invoice-url");
-        card.insertBefore(descDiv, urlDiv);
+        `;
       }
-
-      invoiceList.appendChild(card);
-    });
-
-    if (statusRealtimeStartedFor !== walletId) {
-      startStatusPageRealtime(walletId);
-      statusRealtimeStartedFor = walletId;
     }
 
-    setupManageButton(walletId);
-
-  } catch (err) {
-    console.error(err);
-    showToast("Failed to load invoices", "error");
-    invoiceList.innerHTML = `
-      <div class="no-invoices">
-        <div class="no-invoices-icon">⚠️</div>
-        Error loading invoices.<br>
-        Please try again.
-      </div>
-    `;
-  }
-}
     function setupManageButton(walletId) {
       const unlocked = !!manageToken;
 
@@ -2593,123 +2603,120 @@ async function loadStatusPage(walletId) {
     }
 
     async function payNow() {
-  const originalText = "Pay Now";
-  
-  try {
-    payNowBtn.disabled = true;
-
-    let amountToSend = currentInvoiceData.amount_hbar;
-    
-    if (currentInvoiceData.is_reusable || !currentInvoiceData.requested_amount_hbar) {
-      const payerAmountInput = document.getElementById('payerAmountInput');
-      const enteredAmount = Number(payerAmountInput?.value);
+      const originalText = "Pay Now";
       
-      if (!enteredAmount || enteredAmount <= 0) {
-        throw new Error("Please enter a valid amount");
-      }
-      
-      amountToSend = enteredAmount;
-    }
+      try {
+        payNowBtn.disabled = true;
 
-    payNowBtn.innerHTML = '<span class="spinner"></span>Connect wallet...';
-    const payerAccount = await window.hederaConnect.connect();
-    
-    if (!payerAccount) {
-      throw new Error("Wallet not connected");
-    }
-
-    await new Promise(r => setTimeout(r, 250));
-
-    payNowBtn.innerHTML = '<span class="spinner"></span>Check HashPack to approve...';
-    
-    const result = await window.hederaConnect.sendHbar(
-      currentInvoiceData.receiver_account,
-      amountToSend,
-      `HT:${currentInvoiceData.slug}`
-    );
-
-    // ✅ FIX #1: Proper error handling for notify-paid
-    const tx_id = result?.transactionId || result?.transaction_id || result?.txId;
-
-    const notifyRes = await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-        "apikey": SUPABASE_ANON_KEY
-      },
-      body: JSON.stringify({
-        slug: currentInvoiceData.slug,
-        tx_id,
-        payer_account: window.hederaConnect.accountId || null,
-        amount_hbar: Number(amountToSend),
-        memo: `HT:${currentInvoiceData.slug}`
-      })
-    });
-
-    if (!notifyRes.ok) {
-      const errData = await notifyRes.json().catch(() => ({}));
-      console.error("notify-paid failed:", errData);
-      showToast(`Payment sent, but tracking failed: ${errData?.error || 'Unknown error'}`, "error");
-    }
-
-    payNowBtn.innerHTML = '<span class="spinner"></span>Payment sent successfully!';
-
-    setPayerStatus('✅ Payment sent successfully!', 'paid');
-    showToast('Payment confirmed! ✅', 'success');
-
-    // ✅ Show payment receipt
-    receiptAmount.textContent = `${amountToSend} HBAR`;
-    receiptReceiver.textContent = currentInvoiceData.receiver_account;
-    if (tx_id) {
-      receiptTxLink.href = `https://hashscan.io/mainnet/transaction/${tx_id}`;
-      receiptTxLink.style.display = 'inline-flex';
-    } else {
-      receiptTxLink.style.display = 'none';
-    }
-    paymentReceipt.classList.add('active');
-
-    if (currentInvoiceData.is_reusable) {
-      // ✅ FIX #4: Clean reset for "Pay Again"
-      setTimeout(() => {
-        payNowBtn.disabled = false;
-        payNowBtn.innerHTML = "Pay Again";
-        const payerAmountInput = document.getElementById('payerAmountInput');
-        if (payerAmountInput) {
-          payerAmountInput.value = '';
-          payNowBtn.disabled = true;
+        let amountToSend = currentInvoiceData.amount_hbar;
+        
+        if (currentInvoiceData.is_reusable || !currentInvoiceData.requested_amount_hbar) {
+          const payerAmountInput = document.getElementById('payerAmountInput');
+          const enteredAmount = Number(payerAmountInput?.value);
+          
+          if (!enteredAmount || enteredAmount <= 0) {
+            throw new Error("Please enter a valid amount");
+          }
+          
+          amountToSend = enteredAmount;
         }
-        receiptTxLink.href = "#"; // ✅ Reset receipt link
-        setPayerStatus('Ready for another payment', 'default');
-        paymentReceipt.classList.remove('active');
-      }, 3000);
-    } else {
-      setPayButtonsState({ paid: true, modeText: "✅ Paid" });
-      
-      localStorage.setItem(`ht_paid_${currentInvoiceSlug}`, JSON.stringify({
-        paid: true,
-        at: Date.now()
-      }));
-    }
 
-  } catch (err) {
-    console.error('Payment failed:', err);
-    
-    const msg = String(err?.message || err);
-    
-    if (msg.toLowerCase().includes("reject") || 
-        msg.toLowerCase().includes("denied") || 
-        msg.toLowerCase().includes("closed") ||
-        msg.toLowerCase().includes("modal")) {
-      showToast('Transaction cancelled', 'info');
-    } else {
-      showToast(msg || 'Payment failed', 'error');
-    }
+        payNowBtn.innerHTML = '<span class="spinner"></span>Connect wallet...';
+        const payerAccount = await window.hederaConnect.connect();
+        
+        if (!payerAccount) {
+          throw new Error("Wallet not connected");
+        }
 
-    payNowBtn.disabled = false;
-    payNowBtn.innerHTML = originalText;
-  }
-}
+        await new Promise(r => setTimeout(r, 250));
+
+        payNowBtn.innerHTML = '<span class="spinner"></span>Check HashPack to approve...';
+        
+        const result = await window.hederaConnect.sendHbar(
+          currentInvoiceData.receiver_account,
+          amountToSend,
+          `HT:${currentInvoiceData.slug}`
+        );
+
+        const tx_id = result?.transactionId || result?.transaction_id || result?.txId;
+
+        const notifyRes = await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+            "apikey": SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({
+            slug: currentInvoiceData.slug,
+            tx_id,
+            payer_account: window.hederaConnect.accountId || null,
+            amount_hbar: Number(amountToSend),
+            memo: `HT:${currentInvoiceData.slug}`
+          })
+        });
+
+        if (!notifyRes.ok) {
+          const errData = await notifyRes.json().catch(() => ({}));
+          console.error("notify-paid failed:", errData);
+          showToast(`Payment sent, but tracking failed: ${errData?.error || 'Unknown error'}`, "error");
+        }
+
+        payNowBtn.innerHTML = '<span class="spinner"></span>Payment sent successfully!';
+
+        setPayerStatus('✅ Payment sent successfully!', 'paid');
+        showToast('Payment confirmed! ✅', 'success');
+
+        receiptAmount.textContent = `${amountToSend} HBAR`;
+        receiptReceiver.textContent = currentInvoiceData.receiver_account;
+        if (tx_id) {
+          receiptTxLink.href = `https://hashscan.io/mainnet/transaction/${tx_id}`;
+          receiptTxLink.style.display = 'inline-flex';
+        } else {
+          receiptTxLink.style.display = 'none';
+        }
+        paymentReceipt.classList.add('active');
+
+        if (currentInvoiceData.is_reusable) {
+          setTimeout(() => {
+            payNowBtn.disabled = false;
+            payNowBtn.innerHTML = "Pay Again";
+            const payerAmountInput = document.getElementById('payerAmountInput');
+            if (payerAmountInput) {
+              payerAmountInput.value = '';
+              payNowBtn.disabled = true;
+            }
+            receiptTxLink.href = "#";
+            setPayerStatus('Ready for another payment', 'default');
+            paymentReceipt.classList.remove('active');
+          }, 3000);
+        } else {
+          setPayButtonsState({ paid: true, modeText: "✅ Paid" });
+          
+          localStorage.setItem(`ht_paid_${currentInvoiceSlug}`, JSON.stringify({
+            paid: true,
+            at: Date.now()
+          }));
+        }
+
+      } catch (err) {
+        console.error('Payment failed:', err);
+        
+        const msg = String(err?.message || err);
+        
+        if (msg.toLowerCase().includes("reject") || 
+            msg.toLowerCase().includes("denied") || 
+            msg.toLowerCase().includes("closed") ||
+            msg.toLowerCase().includes("modal")) {
+          showToast('Transaction cancelled', 'info');
+        } else {
+          showToast(msg || 'Payment failed', 'error');
+        }
+
+        payNowBtn.disabled = false;
+        payNowBtn.innerHTML = originalText;
+      }
+    }
 
     async function copyText(text, successMsg = 'Copied!') {
       try {
@@ -2838,7 +2845,6 @@ async function loadStatusPage(walletId) {
         .subscribe();
     }
 
-    // ✅ FIX #4: Listen to invoice_payments INSERT
     function startStatusPageRealtime(walletId) {
       stopRealtime();
 
@@ -2945,11 +2951,11 @@ async function loadStatusPage(walletId) {
 
        const resultAmountLine = document.getElementById('resultAmountLine');
 
-if (isReusableMode) {
-  resultAmountLine.textContent = "Reusable QR • Buyer chooses amount";
-} else {
-  resultAmountLine.textContent = `$${requestedAmount.toFixed(2)} in HBAR`;
-}
+        if (isReusableMode) {
+          resultAmountLine.textContent = "Reusable QR • Buyer chooses amount";
+        } else {
+          resultAmountLine.textContent = `$${requestedAmount.toFixed(2)} in HBAR`;
+        }
 
         if (description) {
           creatorDescriptionText.textContent = description;
