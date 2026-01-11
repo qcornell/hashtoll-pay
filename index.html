@@ -1357,7 +1357,7 @@
     </div>
 
     <div class="ht-result-section" id="resultSection">
-      <div class="ht-result-amount">$<span id="usdAmount">60.00</span> HBAR</div>
+     <div class="ht-result-amount" id="resultAmountLine">$60.00 in HBAR</div>
       
       <div class="ht-result-status-link">
         <a href="#" id="statusPageLink">→ View payment status</a>
@@ -2091,7 +2091,9 @@
     async function loadInvoice(slug) {
       const { data, error } = await window.supabaseClient
         .from("invoices")
-        .select("slug, receiver_account, creator_account, requested_amount_hbar, amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at")
+        .select(
+  "slug, creator_account, receiver_account, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
+)
         .eq("slug", slug)
         .maybeSingle();
 
