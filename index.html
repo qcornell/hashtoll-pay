@@ -2917,11 +2917,13 @@
         currentAmount = requestedAmount;
         currentCreatorAccount = accountId;
 
-        if (isReusableMode) {
-          document.getElementById('usdAmount').textContent = '∞';
-        } else {
-          document.getElementById('usdAmount').textContent = requestedAmount.toFixed(2);
-        }
+       const resultAmountLine = document.getElementById('resultAmountLine');
+
+if (isReusableMode) {
+  resultAmountLine.textContent = "Reusable QR • Buyer chooses amount";
+} else {
+  resultAmountLine.textContent = `$${requestedAmount.toFixed(2)} in HBAR`;
+}
 
         if (description) {
           creatorDescriptionText.textContent = description;
