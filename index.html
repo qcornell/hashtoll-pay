@@ -2202,7 +2202,7 @@
       }
     }
 
- async function loadStatusPage(walletId) {
+async function loadStatusPage(walletId) {
   try {
     enterStatusMode();
 
@@ -2219,17 +2219,26 @@
     invoiceList.innerHTML =
       '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
 
-    // ✅ FIX: Filter at database level using PostgreSQL query
-    const { data: invoices, error } = await window.supabaseClient
+    // ✅ CORRECT FIX: Fetch all invoices, then filter in JavaScript
+    const { data: allInvoices, error } = await window.supabaseClient
       .from("invoices")
       .select(
         "slug, receiver_account, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
       )
       .eq("creator_account", walletId)
-      .or('is_reusable.eq.false,and(is_reusable.eq.true,payment_count.gt.0)') // ✅ Hide unused reusable invoices
       .order("created_at", { ascending: false });
 
     if (error) throw error;
+
+    // ✅ Filter out unused reusable invoices in JavaScript
+    const invoices = (allInvoices || []).filter(inv => {
+      // Show all one-time invoices
+      if (!inv.is_reusable) return true;
+      
+      // For reusable invoices, only show if they have received at least one payment
+      const paymentCount = parseInt(inv.payment_count) || 0;
+      return paymentCount > 0;
+    });
 
     if (!invoices || invoices.length === 0) {
       invoiceList.innerHTML = `
