@@ -2219,7 +2219,7 @@ async function loadStatusPage(walletId) {
     invoiceList.innerHTML =
       '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
 
-    // ✅ CORRECT FIX: Fetch all invoices, then filter in JavaScript
+    // ✅ Fetch ALL invoices for this wallet
     const { data: allInvoices, error } = await window.supabaseClient
       .from("invoices")
       .select(
@@ -2230,15 +2230,10 @@ async function loadStatusPage(walletId) {
 
     if (error) throw error;
 
-    // ✅ Filter out unused reusable invoices in JavaScript
-    const invoices = (allInvoices || []).filter(inv => {
-      // Show all one-time invoices
-      if (!inv.is_reusable) return true;
-      
-      // For reusable invoices, only show if they have received at least one payment
-      const paymentCount = parseInt(inv.payment_count) || 0;
-      return paymentCount > 0;
-    });
+    // ✅ Filter in JavaScript: hide unused reusable invoices
+    const invoices = (allInvoices ?? []).filter(inv =>
+      !inv.is_reusable || (inv.is_reusable && (inv.payment_count ?? 0) > 0)
+    );
 
     if (!invoices || invoices.length === 0) {
       invoiceList.innerHTML = `
