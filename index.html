@@ -2202,7 +2202,7 @@
       }
     }
 
-  async function loadStatusPage(walletId) {
+ async function loadStatusPage(walletId) {
   try {
     enterStatusMode();
 
@@ -2219,34 +2219,19 @@
     invoiceList.innerHTML =
       '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
 
+    // ✅ FIX: Filter at database level using PostgreSQL query
     const { data: invoices, error } = await window.supabaseClient
       .from("invoices")
       .select(
         "slug, receiver_account, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
       )
       .eq("creator_account", walletId)
+      .or('is_reusable.eq.false,and(is_reusable.eq.true,payment_count.gt.0)') // ✅ Hide unused reusable invoices
       .order("created_at", { ascending: false });
 
     if (error) throw error;
 
-    // ✅ FINAL frontend filter - handles PostgreSQL numeric as string
-    const visibleInvoices = (invoices || []).filter(inv => {
-      // ✅ Strict boolean check
-      const isReusable = inv.is_reusable === true;
-
-      // ✅ Parse numbers safely (handles both null and string "0.00000000")
-      const count = parseInt(inv.payment_count) || 0;
-      const total = parseFloat(inv.total_received_hbar) || 0;
-
-      // 🚫 Hide unused reusable invoices (strict zero check)
-      if (isReusable && count === 0 && total === 0) {
-        return false;
-      }
-
-      return true;
-    });
-
-    if (!visibleInvoices || visibleInvoices.length === 0) {
+    if (!invoices || invoices.length === 0) {
       invoiceList.innerHTML = `
         <div class="no-invoices">
           <div class="no-invoices-icon">📭</div>
@@ -2263,7 +2248,7 @@
 
     const unlocked = !!manageToken;
 
-    visibleInvoices.forEach((inv) => {
+    invoices.forEach((inv) => {
       const card = document.createElement("div");
       card.className = "invoice-card";
 
