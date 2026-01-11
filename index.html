@@ -2230,16 +2230,25 @@ async function loadStatusPage(walletId) {
 
     if (error) throw error;
 
-    // ✅ NEW FILTER: Hide unpaid reusable invoices
+    // 🔍 DEBUG: Log all invoices BEFORE filtering
+    console.log("=== ALL INVOICES ===");
+    (allInvoices ?? []).forEach(inv => {
+      console.log(`Slug: ${inv.slug}, Reusable: ${inv.is_reusable}, Status: ${inv.status}, Payment Count: ${inv.payment_count}`);
+    });
+
+    // ✅ Filter logic
     const invoices = (allInvoices ?? []).filter(inv => {
-      // For reusable invoices: only show if status is 'paid'
       if (inv.is_reusable) {
-        return inv.status === 'paid';
+        const show = inv.status === 'paid';
+        console.log(`Reusable ${inv.slug}: status='${inv.status}' → ${show ? 'SHOW' : 'HIDE'}`);
+        return show;
       }
-      
-      // For one-time invoices: show all
       return true;
     });
+
+    // 🔍 DEBUG: Log filtered invoices
+    console.log("=== FILTERED INVOICES ===");
+    console.log(`Total after filter: ${invoices.length}`);
 
     if (!invoices || invoices.length === 0) {
       invoiceList.innerHTML = `
