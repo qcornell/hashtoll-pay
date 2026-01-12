@@ -2240,27 +2240,23 @@
         console.log("📦 Raw fetch:", (allInvoices ?? []).length, "invoices");
 
         // ✅ BULLETPROOF FILTER: Handle any type for is_reusable, check both payment_count and total_received_hbar
-        const invoices = (allInvoices ?? []).filter(inv => {
-          const isReusable = asBool(inv.is_reusable);
+        // ✅ SHOW RULE:
+// - Show ALL one-time invoices
+// - Only show reusable invoices AFTER a payment has been made (status === "paid")
+const invoices = (allInvoices ?? []).filter(inv => {
+  const isReusable = asBool(inv.is_reusable);
 
-          if (isReusable) {
-            const paymentCount = asNum(inv.payment_count);
-            const totalReceived = asNum(inv.total_received_hbar);
+  if (isReusable) {
+    const show = String(inv.status || "").toLowerCase() === "paid";
+    console.log(`${inv.slug}: reusable, status=${inv.status} → ${show ? "SHOW" : "HIDE"}`);
+    return show;
+  }
 
-            const hasPayments = paymentCount > 0 || totalReceived > 0;
+  // one-time: always show
+  console.log(`${inv.slug}: one-time → SHOW`);
+  return true;
+});
 
-            console.log(`${inv.slug}: reusable, payment_count=${paymentCount}, total=${totalReceived} → ${hasPayments ? "SHOW" : "HIDE"}`);
-            return hasPayments;
-          }
-
-          const hasAmount = asNum(inv.requested_amount_hbar) > 0;
-          if (!hasAmount) {
-            console.log(`${inv.slug}: one-time, amount=${inv.requested_amount_hbar} → HIDE (broken)`);
-            return false;
-          }
-
-          return true;
-        });
 
         console.log("✅ After filter:", invoices.length, "invoices will display");
 
