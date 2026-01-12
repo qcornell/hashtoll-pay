@@ -1385,11 +1385,7 @@
         <button class="payer-copy-btn" id="copyReceiverBtn" title="Copy receiver account">⧉</button>
       </div>
 
-      <div id="payerAmountContainer">
-        <div class="ht-usd-worth">
-          Send $<span id="payerUsdAmount">0</span> in HBAR
-        </div>
-      </div>
+      <div id="payerAmountContainer"></div>
 
       <div class="ht-description" id="payerDescription">
         <span class="ht-description-label">Payment For</span>
@@ -1694,6 +1690,15 @@
     function asNum(v) {
       const n = Number(v);
       return Number.isFinite(n) ? n : 0;
+    }
+
+    // ✅ GPT HELPERS
+    function isAmountMissing(v) {
+      return !Number(v) || Number(v) <= 0;
+    }
+
+    function isReusableInvoice(inv) {
+      return asBool(inv?.is_reusable) || isAmountMissing(inv?.requested_amount_hbar);
     }
 
     // PIN SYSTEM GLOBALS
@@ -2100,8 +2105,8 @@
       const { data, error } = await window.supabaseClient
         .from("invoices")
         .select(
-  "slug, creator_account, receiver_account, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
-)
+          "slug, creator_account, receiver_account, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
+        )
         .eq("slug", slug)
         .maybeSingle();
 
@@ -2111,6 +2116,7 @@
       return data;
     }
 
+    // ✅ UPDATED loadInvoiceAndRenderPayer
     async function loadInvoiceAndRenderPayer(slug) {
       currentInvoiceSlug = slug;
 
@@ -2135,40 +2141,53 @@
 
         payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
 
-        if (inv.is_reusable || !inv.requested_amount_hbar) {
-          payerAmountContainer.innerHTML = `
-            <div class="ht-input-group" style="text-align: left;">
-              <label class="ht-label">Enter Amount (HBAR)</label>
-              <div class="ht-input-wrapper">
-                <span class="ht-input-prefix">ℏ</span>
-                <input type="number" class="ht-input" id="payerAmountInput" 
-                       placeholder="Enter amount" step="0.01" min="0.01">
-              </div>
+        // ✅ DETERMINE IF REUSABLE
+        const reusable = isReusableInvoice(inv);
+
+        // Hide old "I Paid" UX
+        iPaidBtn.style.display = 'none';
+        const helper = payerSection.querySelector('.ht-helper-text');
+        if (helper) helper.style.display = 'none';
+
+        // Clear and render input field
+        payerAmountContainer.innerHTML = `
+          <div class="ht-input-group" style="text-align: left;">
+            <label class="ht-label">Enter Amount (HBAR)</label>
+            <div class="ht-input-wrapper">
+              <span class="ht-input-prefix">ℏ</span>
+              <input
+                type="number"
+                class="ht-input"
+                id="payerAmountInput"
+                placeholder="Enter amount"
+                step="0.01"
+                min="0.01"
+                inputmode="decimal"
+              >
             </div>
-          `;
-          
-          const payerAmountInput = document.getElementById('payerAmountInput');
-          payerAmountInput.addEventListener('input', () => {
-            const amount = Number(payerAmountInput.value);
-            payNowBtn.disabled = !amount || amount <= 0;
-          });
-          
-          currentAmount = null;
-          payNowBtn.disabled = true;
-          
-          iPaidBtn.style.display = 'none';
-          
-        } else {
-          currentAmount = inv.requested_amount_hbar;
-          payerAmountContainer.innerHTML = `
-            <div class="ht-usd-worth">
-              Send $<span id="payerUsdAmount">${inv.requested_amount_hbar}</span> in HBAR
+            <div class="ht-helper-text" style="text-align:left; margin-top:10px;">
+              Type an amount, then tap <strong>Pay Now</strong>.
             </div>
-          `;
-          
+          </div>
+        `;
+
+        const payerAmountInput = document.getElementById('payerAmountInput');
+
+        // Enable button when user types
+        payNowBtn.disabled = true;
+        payerAmountInput.addEventListener('input', () => {
+          const amount = Number(payerAmountInput.value);
+          payNowBtn.disabled = !(amount > 0);
+        });
+
+        // ✅ CRITICAL: Prefill for one-time invoices
+        if (!reusable && !isAmountMissing(inv.requested_amount_hbar)) {
+          payerAmountInput.value = String(Number(inv.requested_amount_hbar));
           payNowBtn.disabled = false;
-          iPaidBtn.style.display = 'block';
         }
+
+        currentAmount = null;
+        setPayerStatus('Enter an amount to continue', 'default');
 
         if (inv.description && inv.description.trim()) {
           payerDescriptionText.textContent = inv.description;
@@ -2181,12 +2200,12 @@
           modeText: isPaid ? "✅ Paid" : null 
         });
 
-        if (isPaid && !inv.is_reusable) {
+        if (isPaid && !reusable) {
           setPayerStatus('✅ PAID — Receiver notified!', 'paid');
         }
 
         const saved = localStorage.getItem(`ht_paid_${slug}`);
-        if (saved && !inv.is_reusable) {
+        if (saved && !reusable) {
           try {
             const j = JSON.parse(saved);
             if (j?.paid) {
@@ -2196,10 +2215,7 @@
           } catch {}
         }
 
-        if (inv.is_reusable || !inv.requested_amount_hbar) {
-          payerStatus.textContent = 'Enter amount and pay';
-          payerStatus.classList.remove('payer-status-hidden');
-        } else {
+        if (!reusable) {
           startPayerRealtime(slug);
         }
 
@@ -2304,7 +2320,6 @@
         const status = String(inv.status || "").toLowerCase().trim();
         const isPaid = status === "paid";
         
-        // 🔍 Debug log for reusable invoices
         if (!isPaid) {
           console.log("🚫 Filtering out unpaid reusable:", {
             slug: inv.slug,
@@ -2316,7 +2331,6 @@
         return isPaid;
       }
 
-      // ❌ If we can't determine the type, exclude it (safety)
       console.warn("⚠️ Unknown invoice type:", {
         slug: inv.slug,
         is_reusable: inv.is_reusable,
@@ -2348,7 +2362,6 @@
       return;
     }
 
-    // 🛡️ SAFETY: Clear list and verify before rendering
     invoiceList.innerHTML = "";
 
     console.log("📋 ABOUT TO RENDER", {
@@ -2462,7 +2475,6 @@
       invoiceList.appendChild(card);
     });
 
-    // 🔍 DEBUG: Count actual DOM elements after render
     setTimeout(() => {
       const cards = document.querySelectorAll('.invoice-card');
       const slugs = Array.from(cards).map(card => {
@@ -2474,9 +2486,7 @@
         cardsInDOM: cards.length,
         invoicesInArray: invoices.length,
         mismatch: cards.length !== invoices.length,
-        
         duplicateSlugs: slugs.filter((s, i) => slugs.indexOf(s) !== i),
-        
         allSlugs: slugs
       });
     }, 100);
@@ -2700,36 +2710,30 @@
       }
     }
 
+    // ✅ UPDATED payNow() FUNCTION
     async function payNow() {
       const originalText = "Pay Now";
-      
+
       try {
         payNowBtn.disabled = true;
 
-        let amountToSend = currentInvoiceData.amount_hbar;
-        
-        if (currentInvoiceData.is_reusable || !currentInvoiceData.requested_amount_hbar) {
-          const payerAmountInput = document.getElementById('payerAmountInput');
-          const enteredAmount = Number(payerAmountInput?.value);
-          
-          if (!enteredAmount || enteredAmount <= 0) {
-            throw new Error("Please enter a valid amount");
-          }
-          
-          amountToSend = enteredAmount;
+        // ✅ ALWAYS read from input field
+        const payerAmountInput = document.getElementById('payerAmountInput');
+        const amountToSend = Number(payerAmountInput?.value);
+
+        if (!amountToSend || amountToSend <= 0) {
+          throw new Error("Please enter a valid amount");
         }
 
         payNowBtn.innerHTML = '<span class="spinner"></span>Connect wallet...';
         const payerAccount = await window.hederaConnect.connect();
-        
-        if (!payerAccount) {
-          throw new Error("Wallet not connected");
-        }
+
+        if (!payerAccount) throw new Error("Wallet not connected");
 
         await new Promise(r => setTimeout(r, 250));
 
         payNowBtn.innerHTML = '<span class="spinner"></span>Check HashPack to approve...';
-        
+
         const result = await window.hederaConnect.sendHbar(
           currentInvoiceData.receiver_account,
           amountToSend,
@@ -2738,6 +2742,7 @@
 
         const tx_id = result?.transactionId || result?.transaction_id || result?.txId;
 
+        // Notify backend
         const notifyRes = await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
           method: "POST",
           headers: {
@@ -2760,11 +2765,10 @@
           showToast(`Payment sent, but tracking failed: ${errData?.error || 'Unknown error'}`, "error");
         }
 
-        payNowBtn.innerHTML = '<span class="spinner"></span>Payment sent successfully!';
-
         setPayerStatus('✅ Payment sent successfully!', 'paid');
-        showToast('Payment confirmed! ✅', 'success');
+        showToast('Payment sent ✅', 'success');
 
+        // Update receipt
         receiptAmount.textContent = `${amountToSend} HBAR`;
         receiptReceiver.textContent = currentInvoiceData.receiver_account;
         if (tx_id) {
@@ -2775,23 +2779,21 @@
         }
         paymentReceipt.classList.add('active');
 
-        if (currentInvoiceData.is_reusable) {
+        // ✅ Reusable: Allow pay again
+        const isReusable = isReusableInvoice(currentInvoiceData);
+        if (isReusable) {
           setTimeout(() => {
-            payNowBtn.disabled = false;
-            payNowBtn.innerHTML = "Pay Again";
-            const payerAmountInput = document.getElementById('payerAmountInput');
-            if (payerAmountInput) {
-              payerAmountInput.value = '';
-              payNowBtn.disabled = true;
-            }
-            receiptTxLink.href = "#";
-            setPayerStatus('Ready for another payment', 'default');
+            payNowBtn.innerHTML = "Pay Now";
+            const input = document.getElementById('payerAmountInput');
+            if (input) input.value = "";
+            payNowBtn.disabled = true;
             paymentReceipt.classList.remove('active');
-          }, 3000);
+            setPayerStatus('Enter an amount to continue', 'default');
+          }, 2500);
         } else {
+          // One-time: Lock buttons
           setPayButtonsState({ paid: true, modeText: "✅ Paid" });
-          
-          localStorage.setItem(`ht_paid_${currentInvoiceSlug}`, JSON.stringify({
+          localStorage.setItem(`ht_paid_${currentInvoiceData.slug}`, JSON.stringify({
             paid: true,
             at: Date.now()
           }));
@@ -2799,13 +2801,14 @@
 
       } catch (err) {
         console.error('Payment failed:', err);
-        
         const msg = String(err?.message || err);
-        
-        if (msg.toLowerCase().includes("reject") || 
-            msg.toLowerCase().includes("denied") || 
-            msg.toLowerCase().includes("closed") ||
-            msg.toLowerCase().includes("modal")) {
+
+        if (
+          msg.toLowerCase().includes("reject") ||
+          msg.toLowerCase().includes("denied") ||
+          msg.toLowerCase().includes("closed") ||
+          msg.toLowerCase().includes("modal")
+        ) {
           showToast('Transaction cancelled', 'info');
         } else {
           showToast(msg || 'Payment failed', 'error');
