@@ -2211,7 +2211,7 @@
     }
 
   async function loadStatusPage(walletId) {
-  const DEBUG_TAG = "🔥 loadStatusPage v2";
+  const DEBUG_TAG = "🔥 loadStatusPage v3";
   console.log(DEBUG_TAG, "START", { walletId, now: new Date().toISOString(), SUPABASE_URL });
 
   try {
@@ -2290,33 +2290,50 @@
       ...(paidReusableInvoices || [])
     ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-    // ✅ HARD SAFETY FILTER (even if data is weird, never render reusable unless paid)
     const beforeSafety = invoices.length;
+
+    // 🛡️ AGGRESSIVE SAFETY FILTER - Remove ALL unpaid reusable invoices
     invoices = invoices.filter((inv) => {
-      const isReusable = asBool(inv.is_reusable);
-      if (!isReusable) return true;
-      return String(inv.status || "").toLowerCase() === "paid";
+      // ✅ Always keep one-time invoices (any status)
+      if (inv.is_reusable === false || inv.is_reusable === "false") {
+        return true;
+      }
+
+      // ✅ For reusable invoices, ONLY keep if status is exactly "paid"
+      if (inv.is_reusable === true || inv.is_reusable === "true") {
+        const status = String(inv.status || "").toLowerCase().trim();
+        const isPaid = status === "paid";
+        
+        // 🔍 Debug log for reusable invoices
+        if (!isPaid) {
+          console.log("🚫 Filtering out unpaid reusable:", {
+            slug: inv.slug,
+            status: inv.status,
+            is_reusable: inv.is_reusable
+          });
+        }
+        
+        return isPaid;
+      }
+
+      // ❌ If we can't determine the type, exclude it (safety)
+      console.warn("⚠️ Unknown invoice type:", {
+        slug: inv.slug,
+        is_reusable: inv.is_reusable,
+        type: typeof inv.is_reusable
+      });
+      return false;
     });
 
-    console.log(DEBUG_TAG, "combine+sort counts", {
-      oneTime: oneTimeInvoices?.length || 0,
-      paidReusable: paidReusableInvoices?.length || 0,
-      combined: beforeSafety,
-      afterSafetyFilter: invoices.length
+    console.log(DEBUG_TAG, "Safety filter results", {
+      beforeFilter: beforeSafety,
+      afterFilter: invoices.length,
+      removed: beforeSafety - invoices.length,
+      breakdown: {
+        reusable: invoices.filter(i => i.is_reusable === true || i.is_reusable === "true").length,
+        oneTime: invoices.filter(i => i.is_reusable === false || i.is_reusable === "false").length
+      }
     });
-
-    // 🔍 If anything got removed, show what it was
-    if (beforeSafety !== invoices.length) {
-      console.warn(
-        DEBUG_TAG,
-        "REMOVED BY SAFETY FILTER",
-        ([
-          ...(oneTimeInvoices || []),
-          ...(paidReusableInvoices || [])
-        ]).filter((inv) => asBool(inv.is_reusable) && String(inv.status || "").toLowerCase() !== "paid")
-         .map((x) => ({ slug: x.slug, status: x.status, is_reusable: x.is_reusable }))
-      );
-    }
 
     if (!invoices || invoices.length === 0) {
       invoiceList.innerHTML = `
@@ -2331,7 +2348,15 @@
       return;
     }
 
+    // 🛡️ SAFETY: Clear list and verify before rendering
     invoiceList.innerHTML = "";
+
+    console.log("📋 ABOUT TO RENDER", {
+      invoiceCount: invoices.length,
+      listEmpty: invoiceList.children.length === 0,
+      slugs: invoices.map(i => i.slug)
+    });
+
     const unlocked = !!manageToken;
 
     invoices.forEach((inv) => {
@@ -2345,15 +2370,7 @@
       let amountDisplay;
       let statsDisplay = "";
 
-      const isReusable = asBool(inv.is_reusable);
-
-      // ✅ Extra log per item (temporarily)
-      console.log(DEBUG_TAG, "render invoice", {
-        slug: inv.slug,
-        status: inv.status,
-        is_reusable: inv.is_reusable,
-        isReusableParsed: isReusable
-      });
+      const isReusable = inv.is_reusable === true || inv.is_reusable === "true";
 
       if (isReusable) {
         amountDisplay = `${asNum(inv.total_received_hbar).toFixed(2)} HBAR collected`;
@@ -2444,6 +2461,25 @@
 
       invoiceList.appendChild(card);
     });
+
+    // 🔍 DEBUG: Count actual DOM elements after render
+    setTimeout(() => {
+      const cards = document.querySelectorAll('.invoice-card');
+      const slugs = Array.from(cards).map(card => {
+        const slugEl = card.querySelector('.invoice-slug');
+        return slugEl?.textContent?.replace('#', '').trim();
+      });
+
+      console.log("🎨 DOM CHECK", {
+        cardsInDOM: cards.length,
+        invoicesInArray: invoices.length,
+        mismatch: cards.length !== invoices.length,
+        
+        duplicateSlugs: slugs.filter((s, i) => slugs.indexOf(s) !== i),
+        
+        allSlugs: slugs
+      });
+    }, 100);
 
     if (statusRealtimeStartedFor !== walletId) {
       startStatusPageRealtime(walletId);
