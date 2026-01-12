@@ -2210,7 +2210,10 @@
       }
     }
 
-   async function loadStatusPage(walletId) {
+  async function loadStatusPage(walletId) {
+  const DEBUG_TAG = "🔥 loadStatusPage v2";
+  console.log(DEBUG_TAG, "START", { walletId, now: new Date().toISOString(), SUPABASE_URL });
+
   try {
     enterStatusMode();
 
@@ -2223,11 +2226,17 @@
       manageTokenExpiresAt = null;
     }
 
+    console.log(DEBUG_TAG, "manageToken?", {
+      hasToken: !!manageToken,
+      expiresAt: manageTokenExpiresAt
+    });
+
     statusWalletId.textContent = walletId;
     invoiceList.innerHTML =
       '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
 
-    // ✅ Query 1: Get ALL one-time invoices (regardless of status)
+    // ✅ Query 1: ALL one-time invoices (any status)
+    console.log(DEBUG_TAG, "Q1: one-time invoices");
     const { data: oneTimeInvoices, error: error1 } = await window.supabaseClient
       .from("invoices")
       .select(
@@ -2239,7 +2248,19 @@
 
     if (error1) throw error1;
 
-    // ✅ Query 2: Get ONLY paid reusable invoices
+    console.log(
+      DEBUG_TAG,
+      "Q1 results",
+      (oneTimeInvoices || []).map((x) => ({
+        slug: x.slug,
+        status: x.status,
+        is_reusable: x.is_reusable,
+        created_at: x.created_at
+      }))
+    );
+
+    // ✅ Query 2: ONLY paid reusable invoices
+    console.log(DEBUG_TAG, "Q2: paid reusable invoices");
     const { data: paidReusableInvoices, error: error2 } = await window.supabaseClient
       .from("invoices")
       .select(
@@ -2252,15 +2273,50 @@
 
     if (error2) throw error2;
 
-    // ✅ Combine both arrays
-    const invoices = [
+    console.log(
+      DEBUG_TAG,
+      "Q2 results",
+      (paidReusableInvoices || []).map((x) => ({
+        slug: x.slug,
+        status: x.status,
+        is_reusable: x.is_reusable,
+        created_at: x.created_at
+      }))
+    );
+
+    // ✅ Combine
+    let invoices = [
       ...(oneTimeInvoices || []),
       ...(paidReusableInvoices || [])
     ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-    console.log("📦 One-time invoices:", oneTimeInvoices?.length || 0);
-    console.log("📦 Paid reusable invoices:", paidReusableInvoices?.length || 0);
-    console.log("✅ Total to display:", invoices.length);
+    // ✅ HARD SAFETY FILTER (even if data is weird, never render reusable unless paid)
+    const beforeSafety = invoices.length;
+    invoices = invoices.filter((inv) => {
+      const isReusable = asBool(inv.is_reusable);
+      if (!isReusable) return true;
+      return String(inv.status || "").toLowerCase() === "paid";
+    });
+
+    console.log(DEBUG_TAG, "combine+sort counts", {
+      oneTime: oneTimeInvoices?.length || 0,
+      paidReusable: paidReusableInvoices?.length || 0,
+      combined: beforeSafety,
+      afterSafetyFilter: invoices.length
+    });
+
+    // 🔍 If anything got removed, show what it was
+    if (beforeSafety !== invoices.length) {
+      console.warn(
+        DEBUG_TAG,
+        "REMOVED BY SAFETY FILTER",
+        ([
+          ...(oneTimeInvoices || []),
+          ...(paidReusableInvoices || [])
+        ]).filter((inv) => asBool(inv.is_reusable) && String(inv.status || "").toLowerCase() !== "paid")
+         .map((x) => ({ slug: x.slug, status: x.status, is_reusable: x.is_reusable }))
+      );
+    }
 
     if (!invoices || invoices.length === 0) {
       invoiceList.innerHTML = `
@@ -2270,12 +2326,11 @@
           Create your first payment link above!
         </div>
       `;
-      
       setupManageButton(walletId);
+      console.log(DEBUG_TAG, "END (no invoices)");
       return;
     }
 
-    // ✅ Rest of your rendering code stays the same...
     invoiceList.innerHTML = "";
     const unlocked = !!manageToken;
 
@@ -2292,6 +2347,14 @@
 
       const isReusable = asBool(inv.is_reusable);
 
+      // ✅ Extra log per item (temporarily)
+      console.log(DEBUG_TAG, "render invoice", {
+        slug: inv.slug,
+        status: inv.status,
+        is_reusable: inv.is_reusable,
+        isReusableParsed: isReusable
+      });
+
       if (isReusable) {
         amountDisplay = `${asNum(inv.total_received_hbar).toFixed(2)} HBAR collected`;
         badge = '<span class="invoice-badge reusable">Active</span>';
@@ -2300,23 +2363,23 @@
             ∞ Reusable Link
           </button>
         `;
-        
+
         const totalReceived = asNum(inv.total_received_hbar).toFixed(2);
         const paymentCount = asNum(inv.payment_count);
-        const lastPayment = inv.last_payment_at 
+        const lastPayment = inv.last_payment_at
           ? new Date(inv.last_payment_at).toLocaleDateString()
           : 'Never';
-        
+
         statsDisplay = `
           <div class="invoice-stats">
-            <strong>Total:</strong> ${totalReceived} HBAR &nbsp;•&nbsp; 
-            <strong>Payments:</strong> ${paymentCount} &nbsp;•&nbsp; 
+            <strong>Total:</strong> ${totalReceived} HBAR &nbsp;•&nbsp;
+            <strong>Payments:</strong> ${paymentCount} &nbsp;•&nbsp;
             <strong>Last:</strong> ${lastPayment}
           </div>
         `;
       } else {
         amountDisplay = `${asNum(inv.requested_amount_hbar).toFixed(2)} HBAR`;
-        
+
         if (inv.confirmed_by_creator) {
           badge = '<span class="invoice-badge confirmed">Confirmed</span>';
           actionBtn = `
@@ -2324,7 +2387,7 @@
               ✓ Confirmed (Final)
             </button>
           `;
-        } else if (inv.status === "paid") {
+        } else if (String(inv.status || "").toLowerCase() === "paid") {
           badge = '<span class="invoice-badge paid">Paid</span>';
 
           if (unlocked) {
@@ -2388,9 +2451,10 @@
     }
 
     setupManageButton(walletId);
+    console.log(DEBUG_TAG, "END OK");
 
   } catch (err) {
-    console.error(err);
+    console.error("🔥 loadStatusPage ERROR", err);
     showToast("Failed to load invoices", "error");
     invoiceList.innerHTML = `
       <div class="no-invoices">
