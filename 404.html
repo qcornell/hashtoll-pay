@@ -1692,7 +1692,7 @@
 
     window.supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // USD to HBAR Price Converter
+    // ✅ USD to HBAR Price Converter
     let cachedHbarPrice = null;
     let priceLastFetched = 0;
     const PRICE_CACHE_DURATION = 30000; // 30 seconds
@@ -1728,7 +1728,7 @@
 
     function usdToHbar(usdAmount) {
       if (!cachedHbarPrice || cachedHbarPrice <= 0) return null;
-      return Number((Number(usdAmount) / cachedHbarPrice).toFixed(4));
+      return Number((Number(usdAmount) / cachedHbarPrice).toFixed(8));
     }
 
     function asBool(v) {
@@ -2599,6 +2599,7 @@
       }
     };
 
+    // ✅ UPDATED: payNow function
     async function payNow(amountHbar) {
       const originalText = "Pay Now";
 
@@ -2626,6 +2627,7 @@
 
         const tx_id = result?.transactionId || result?.transaction_id || result?.txId;
 
+        // ✅ UPDATED: Send amount_hbar to notify-paid
         const notifyRes = await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
           method: "POST",
           headers: {
@@ -2637,7 +2639,7 @@
             slug: currentInvoiceData.slug,
             tx_id,
             payer_account: window.hederaConnect.accountId || null,
-            amount_hbar: Number(amountHbar),
+            amount_hbar: Number(amountHbar), // ✅ Send HBAR instead of USD
             memo: `HT:${currentInvoiceData.slug}`
           })
         });
