@@ -2026,6 +2026,221 @@
       });
     });
 
+    // =============================
+// ✅ Reusable Payments Viewer
+// =============================
+
+// Create a simple modal once
+(function initPaymentsModal() {
+  if (document.getElementById("paymentsModal")) return;
+
+  const overlay = document.createElement("div");
+  overlay.id = "paymentsModal";
+  overlay.style.cssText = `
+    display:none; position:fixed; inset:0; z-index:3000;
+    background:rgba(0,0,0,0.45); padding:16px;
+    align-items:center; justify-content:center;
+  `;
+
+  overlay.innerHTML = `
+    <div style="
+      width:100%; max-width:640px; background:#fff; border-radius:16px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.25); overflow:hidden;
+      border:1px solid rgba(0,0,0,0.10);
+    ">
+      <div style="
+        display:flex; align-items:center; justify-content:space-between;
+        padding:14px 16px; border-bottom:1px solid rgba(0,0,0,0.08);
+        background:rgba(47,67,110,0.04);
+      ">
+        <div>
+          <div id="paymentsModalTitle" style="font-weight:800; font-size:1rem; color:#0F172A;">Payments</div>
+          <div id="paymentsModalSub" style="font-size:0.85rem; color:#64748B; margin-top:2px;">Loading...</div>
+        </div>
+
+        <button id="paymentsModalClose" style="
+          width:36px; height:36px; border-radius:10px; border:1px solid rgba(0,0,0,0.10);
+          background:#fff; cursor:pointer; font-size:18px; line-height:1;
+        " title="Close">×</button>
+      </div>
+
+      <div id="paymentsModalBody" style="padding:14px 16px; max-height:70vh; overflow:auto;">
+        <div style="color:#64748B; font-size:0.95rem;">Loading...</div>
+      </div>
+
+      <div style="
+        padding:12px 16px; border-top:1px solid rgba(0,0,0,0.08);
+        display:flex; justify-content:flex-end; gap:10px; background:#fff;
+      ">
+        <button id="paymentsModalCopyAll" style="
+          padding:10px 12px; border-radius:10px; border:1px solid rgba(0,0,0,0.10);
+          background:rgba(0,0,0,0.04); cursor:pointer; font-weight:700;
+        ">Copy JSON</button>
+        <button id="paymentsModalDone" style="
+          padding:10px 14px; border-radius:10px; border:none;
+          background:linear-gradient(180deg, #4A5F8E, #2F436E);
+          color:#fff; cursor:pointer; font-weight:800;
+        ">Done</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const close = () => (overlay.style.display = "none");
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+
+  overlay.querySelector("#paymentsModalClose").addEventListener("click", close);
+  overlay.querySelector("#paymentsModalDone").addEventListener("click", close);
+
+  overlay.querySelector("#paymentsModalCopyAll").addEventListener("click", async () => {
+    try {
+      const raw = overlay.dataset.rawJson || "{}";
+      await navigator.clipboard.writeText(raw);
+      showToast("Copied payments JSON ✅", "success");
+    } catch (e) {
+      showToast("Copy failed", "error");
+    }
+  });
+})();
+
+function openPaymentsModal({ title, sub, bodyHtml, rawJson }) {
+  const overlay = document.getElementById("paymentsModal");
+  overlay.style.display = "flex";
+  overlay.querySelector("#paymentsModalTitle").textContent = title || "Payments";
+  overlay.querySelector("#paymentsModalSub").textContent = sub || "";
+  overlay.querySelector("#paymentsModalBody").innerHTML = bodyHtml || "";
+  overlay.dataset.rawJson = rawJson || "{}";
+}
+
+function shortStr(s, keepStart = 10, keepEnd = 8) {
+  s = String(s || "");
+  if (s.length <= keepStart + keepEnd + 3) return s;
+  return `${s.slice(0, keepStart)}…${s.slice(-keepEnd)}`;
+}
+
+function fmtDate(iso) {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleString();
+  } catch {
+    return String(iso);
+  }
+}
+
+async function fetchReusablePayments(slug, limit = 50) {
+  const url =
+    `${SUPABASE_URL}/functions/v1/notify-paid` +
+    `?action=payments&slug=${encodeURIComponent(slug)}&limit=${encodeURIComponent(limit)}`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      "apikey": SUPABASE_ANON_KEY
+    }
+  });
+
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.error || "Failed to load payments");
+  return json;
+}
+
+// ✅ THIS is what your button is calling:
+window.viewReusablePayments = async function (slug) {
+  try {
+    if (!slug) return showToast("Missing invoice slug", "error");
+
+    showToast("Loading payments…", "info");
+
+    const data = await fetchReusablePayments(slug, 100);
+    const payments = data?.payments || [];
+    const inv = data?.invoice || null;
+
+    const total = inv?.total_received_hbar != null ? Number(inv.total_received_hbar).toFixed(2) : null;
+    const count = inv?.payment_count != null ? Number(inv.payment_count) : payments.length;
+
+    if (!payments.length) {
+      openPaymentsModal({
+        title: `#${slug} • Payments`,
+        sub: `No payments yet`,
+        bodyHtml: `
+          <div style="padding:18px; border:1px dashed rgba(0,0,0,0.15); border-radius:12px; color:#64748B;">
+            No payments recorded for this invoice yet.
+          </div>
+        `,
+        rawJson: JSON.stringify(data, null, 2)
+      });
+      return;
+    }
+
+    const rows = payments.map((p) => {
+      const hbar = (p.amount_hbar != null) ? `${Number(p.amount_hbar).toFixed(8).replace(/0+$/,"").replace(/\.$/,"")} HBAR` : "—";
+      const usd = (p.amount_usd != null) ? `$${Number(p.amount_usd).toFixed(2)}` : "—";
+      const payer = p.payer_account || "—";
+      const when = fmtDate(p.paid_at || p.created_at);
+      const tx = p.tx_id || "—";
+      const memo = p.memo || "";
+
+      const hashscan = tx && tx !== "—"
+        ? `https://hashscan.io/mainnet/transaction/${encodeURIComponent(tx)}`
+        : null;
+
+      return `
+        <div style="
+          border:1px solid rgba(0,0,0,0.08);
+          border-radius:12px;
+          padding:12px 12px;
+          margin-bottom:10px;
+          background:#fff;
+        ">
+          <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <div style="font-weight:900; color:#0F172A;">${hbar} <span style="font-weight:700; color:#64748B;">(${usd})</span></div>
+            <div style="color:#64748B; font-size:0.85rem; font-weight:700;">${when}</div>
+          </div>
+
+          <div style="margin-top:8px; font-family: SF Mono, Monaco, 'Courier New', monospace; font-size:0.85rem; color:#334155;">
+            <div><strong>Payer:</strong> ${payer}</div>
+            <div><strong>TX:</strong> ${shortStr(tx)}</div>
+            ${memo ? `<div><strong>Memo:</strong> ${memo}</div>` : ""}
+          </div>
+
+          <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+            <button style="
+              padding:8px 10px; border-radius:10px; border:1px solid rgba(0,0,0,0.10);
+              background:rgba(0,0,0,0.04); cursor:pointer; font-weight:800;
+            " onclick="navigator.clipboard.writeText('${String(tx).replace(/'/g,"\\'")}'); showToast('TX copied ✅','success')">
+              Copy TX
+            </button>
+
+            ${hashscan ? `
+              <a href="${hashscan}" target="_blank" rel="noopener noreferrer" style="
+                padding:8px 10px; border-radius:10px; text-decoration:none;
+                background:linear-gradient(180deg, #4A5F8E, #2F436E);
+                color:#fff; font-weight:900;
+              ">Open HashScan →</a>
+            ` : ""}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    openPaymentsModal({
+      title: `#${slug} • Payments`,
+      sub: `${count} payment(s)${total ? ` • ${total} HBAR total` : ""}`,
+      bodyHtml: rows,
+      rawJson: JSON.stringify(data, null, 2)
+    });
+
+  } catch (err) {
+    console.error("viewReusablePayments ERROR:", err);
+    showToast(String(err?.message || err || "Failed to load payments"), "error");
+  }
+};
+
+
     function enterHomeMode() {
       if (isWalletConnected && accountId) {
         accountDisplay.classList.add('active');
