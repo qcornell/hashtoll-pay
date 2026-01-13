@@ -236,6 +236,47 @@
       letter-spacing: -0.01em;
     }
 
+    .ht-payment-type-toggle {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ht-radio-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--ht-input-bg);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .ht-radio-option:hover {
+      background: #ffffff;
+      border-color: var(--ht-navy-light);
+    }
+
+    .ht-radio-option input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      cursor: pointer;
+      accent-color: var(--ht-navy);
+    }
+
+    .ht-radio-option input[type="radio"]:checked + .ht-radio-label {
+      color: var(--ht-navy);
+    }
+
+    .ht-radio-label {
+      font-size: 0.9375rem;
+      color: var(--ht-text-primary);
+      cursor: pointer;
+      user-select: none;
+    }
+
     .ht-input-wrapper {
       position: relative;
       display: flex;
@@ -272,6 +313,13 @@
       padding: 0 16px;
     }
 
+    .ht-input.disabled {
+      background: #E2E8F0;
+      color: var(--ht-text-muted);
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
     .ht-input::-webkit-outer-spin-button,
     .ht-input::-webkit-inner-spin-button {
       -webkit-appearance: none;
@@ -299,10 +347,8 @@
     }
 
     .ht-result-amount {
-      font-size: 2.25rem;
       color: var(--ht-navy);
       margin: 25px 0 16px 0;
-      letter-spacing: -0.03em;
       line-height: 1.1;
     }
 
@@ -551,6 +597,18 @@
       margin-bottom: 4px;
     }
 
+    .invoice-stats {
+      font-size: 0.75rem;
+      color: var(--ht-text-secondary);
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    .invoice-stats strong {
+      color: var(--ht-text-primary);
+      font-weight: 600;
+    }
+
     .invoice-url {
       font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
       font-size: 0.7rem;
@@ -638,6 +696,17 @@
       font-weight: 700;
     }
 
+    .invoice-badge.reusable {
+      background: rgba(168, 85, 247, 0.1);
+      border: 1.5px solid rgba(168, 85, 247, 0.3);
+      color: #7c3aed;
+    }
+
+    .invoice-badge.reusable::before {
+      content: '∞';
+      font-size: 1em;
+    }
+
     .no-invoices {
       text-align: center;
       padding: 60px 20px;
@@ -694,6 +763,68 @@
 
     .payer-copy-btn:active {
       transform: translateY(0);
+    }
+
+    .payment-receipt {
+      background: rgba(16, 185, 129, 0.05);
+      border: 1.5px solid rgba(16, 185, 129, 0.2);
+      border-radius: 12px;
+      padding: 16px;
+      margin: 20px 0;
+      text-align: left;
+      display: none;
+    }
+
+    .payment-receipt.active {
+      display: block;
+    }
+
+    .payment-receipt-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--ht-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+
+    .payment-receipt-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 0.875rem;
+    }
+
+    .payment-receipt-label {
+      color: var(--ht-text-secondary);
+      font-weight: 500;
+    }
+
+    .payment-receipt-value {
+      color: var(--ht-text-primary);
+      font-weight: 700;
+      font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+    }
+
+    .payment-receipt-tx {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .payment-receipt-tx a {
+      color: var(--ht-check-green);
+      text-decoration: none;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .payment-receipt-tx a:hover {
+      text-decoration: underline;
     }
 
     @keyframes fadeInUp {
@@ -897,6 +1028,14 @@
       line-height: 1.4;
     }
 
+    .ht-helper-text.reusable-info {
+      margin-top: 8px;
+      margin-bottom: 0;
+      color: var(--ht-text-secondary);
+      font-size: 0.8125rem;
+      line-height: 1.4;
+    }
+
     .toast {
       position: fixed;
       top: 24px;
@@ -976,145 +1115,6 @@
       height: 50px;
     }
 
-    @media (max-width: 600px) {
-  body {
-    padding: 0;
-    align-items: flex-start;
-  }
-
-  .ht-card {
-    width: calc(100% - 20px);
-    max-width: 100%;
-    padding: 32px 24px 28px 24px;
-    margin: 10px;
-    border-radius: 20px;
-    min-height: auto;
-  }
-
-  .ht-logo-area {
-    margin-bottom: 10px;
-  }
-
-  .ht-title img {
-    max-width: 200px;
-  }
-
-  .ht-subtitle {
-    font-size: 0.875rem;
-    margin: 10px 0 0 0;
-  }
-
-  .ht-account-display {
-    padding: 10px 14px;
-    gap: 8px;
-    margin-bottom: 20px;
-  }
-
-  .ht-account-display-left {
-    gap: 8px;
-  }
-
-  .ht-account-id {
-    font-size: 0.875rem;
-    line-height: 1.4;
-    word-spacing: 0.15em;
-  }
-
-  .ht-disconnect-btn {
-    padding: 5px 10px;
-    font-size: 0.75rem;
-  }
-
-  .ht-result-amount {
-    font-size: 2rem;
-    margin: 16px 0 12px 0;
-  }
-
-  .ht-result-status-link {
-    margin-bottom: 20px;
-  }
-
-  .ht-qr-card {
-    padding: 16px;
-    max-width: 260px;
-    margin: 0 auto 20px auto;
-  }
-
-  .ht-qr-trust {
-    margin-top: 12px;
-    font-size: 0.75rem;
-  }
-
-  .ht-result-description {
-    padding: 16px 18px;
-    margin: 16px 0;
-  }
-
-  .ht-result-actions {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    margin: 20px 0;
-  }
-
-  .ht-result-secondary-action {
-    margin-top: 16px;
-    padding-top: 16px;
-  }
-
-  .ht-powered-by {
-    margin-top: 16px;
-  }
-
-  .ht-btn {
-    padding: 14px 18px;
-    font-size: 0.9375rem;
-  }
-
-  .ht-btn-small {
-    padding: 12px 16px;
-    font-size: 0.875rem;
-  }
-
-  .invoice-card {
-    padding: 16px;
-  }
-
-  .invoice-description {
-    font-size: 0.65rem;
-    padding: 6px 8px;
-  }
-
-  .invoice-actions {
-    grid-template-columns: 1fr;
-  }
-
-  .invoice-action-primary {
-    grid-column: 1;
-  }
-
-  .toast {
-    max-width: calc(100vw - 32px);
-    right: 16px;
-    top: 16px;
-    font-size: 0.8125rem;
-    padding: 12px 16px;
-  }
-}
-
-    @media (max-width: 400px) {
-      .ht-card {
-        padding: 32px 20px;
-      }
-
-      .ht-title img {
-        max-width: 180px;
-      }
-
-      .ht-result-amount {
-        font-size: 2rem;
-      }
-    }
-
     .ht-description {
       background: rgba(0, 0, 0, 0.02);
       border: 1px solid rgba(0, 0, 0, 0.06);
@@ -1146,6 +1146,145 @@
       font-weight: 500;
       line-height: 1.5;
     }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 0;
+        align-items: flex-start;
+      }
+
+      .ht-card {
+        width: calc(100% - 20px);
+        max-width: 100%;
+        padding: 32px 24px 28px 24px;
+        margin: 10px;
+        border-radius: 20px;
+        min-height: auto;
+      }
+
+      .ht-logo-area {
+        margin-bottom: 10px;
+      }
+
+      .ht-title img {
+        max-width: 200px;
+      }
+
+      .ht-subtitle {
+        font-size: 0.875rem;
+        margin: 10px 0 0 0;
+      }
+
+      .ht-account-display {
+        padding: 10px 14px;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+
+      .ht-account-display-left {
+        gap: 8px;
+      }
+
+      .ht-account-id {
+        font-size: 0.875rem;
+        line-height: 1.4;
+        word-spacing: 0.15em;
+      }
+
+      .ht-disconnect-btn {
+        padding: 5px 10px;
+        font-size: 0.75rem;
+      }
+
+      .ht-result-amount {
+        font-size: 2rem;
+        margin: 16px 0 12px 0;
+      }
+
+      .ht-result-status-link {
+        margin-bottom: 20px;
+      }
+
+      .ht-qr-card {
+        padding: 16px;
+        max-width: 260px;
+        margin: 0 auto 20px auto;
+      }
+
+      .ht-qr-trust {
+        margin-top: 12px;
+        font-size: 0.75rem;
+      }
+
+      .ht-result-description {
+        padding: 16px 18px;
+        margin: 16px 0;
+      }
+
+      .ht-result-actions {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin: 20px 0;
+      }
+
+      .ht-result-secondary-action {
+        margin-top: 16px;
+        padding-top: 16px;
+      }
+
+      .ht-powered-by {
+        margin-top: 16px;
+      }
+
+      .ht-btn {
+        padding: 14px 18px;
+        font-size: 0.9375rem;
+      }
+
+      .ht-btn-small {
+        padding: 12px 16px;
+        font-size: 0.875rem;
+      }
+
+      .invoice-card {
+        padding: 16px;
+      }
+
+      .invoice-description {
+        font-size: 0.65rem;
+        padding: 6px 8px;
+      }
+
+      .invoice-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .invoice-action-primary {
+        grid-column: 1;
+      }
+
+      .toast {
+        max-width: calc(100vw - 32px);
+        right: 16px;
+        top: 16px;
+        font-size: 0.8125rem;
+        padding: 12px 16px;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .ht-card {
+        padding: 32px 20px;
+      }
+
+      .ht-title img {
+        max-width: 180px;
+      }
+
+      .ht-result-amount {
+        font-size: 2rem;
+      }
+    }
   </style>
 </head>
 
@@ -1169,6 +1308,20 @@
     </div>
 
     <div class="ht-form-section" id="formSection">
+      <div class="ht-input-group">
+        <label class="ht-label">Payment Type</label>
+        <div class="ht-payment-type-toggle">
+          <label class="ht-radio-option">
+            <input type="radio" name="paymentType" value="onetime" checked>
+            <span class="ht-radio-label">One-time payment</span>
+          </label>
+          <label class="ht-radio-option">
+            <input type="radio" name="paymentType" value="reusable">
+            <span class="ht-radio-label">Multiple payments</span>
+          </label>
+        </div>
+      </div>
+
       <div class="ht-input-group">
         <label class="ht-label">USD Amount</label>
         <div class="ht-input-wrapper">
@@ -1198,7 +1351,7 @@
     </div>
 
     <div class="ht-result-section" id="resultSection">
-      <div class="ht-result-amount">$<span id="usdAmount">60.00</span> HBAR</div>
+     <div class="ht-result-amount" id="resultAmountLine">$60.00 in HBAR</div>
       
       <div class="ht-result-status-link">
         <a href="#" id="statusPageLink">→ View payment status</a>
@@ -1217,8 +1370,8 @@
       </div>
 
       <div class="ht-result-actions">
-        <button class="ht-btn ht-btn-primary ht-btn-small" id="copyBtn">Copy Link</button>
-        <button class="ht-btn ht-btn-action ht-btn-small" id="shareBtn">Share</button>
+        <button class="ht-btn ht-btn-primary ht-btn-small" id="copyBtn">Share Link</button>
+        <button class="ht-btn ht-btn-action ht-btn-small" id="dashboardBtn">Dashboard</button>
       </div>
 
       <div class="ht-result-secondary-action">
@@ -1232,13 +1385,28 @@
         <button class="payer-copy-btn" id="copyReceiverBtn" title="Copy receiver account">⧉</button>
       </div>
 
-      <div class="ht-usd-worth">
-        Send $<span id="payerUsdAmount">0</span> in HBAR
-      </div>
+      <div id="payerAmountContainer"></div>
 
       <div class="ht-description" id="payerDescription">
         <span class="ht-description-label">Payment For</span>
         <div id="payerDescriptionText"></div>
+      </div>
+
+      <div class="payment-receipt" id="paymentReceipt">
+        <div class="payment-receipt-title">✅ Payment Confirmed</div>
+        <div class="payment-receipt-row">
+          <span class="payment-receipt-label">Amount Sent:</span>
+          <span class="payment-receipt-value" id="receiptAmount">0 HBAR</span>
+        </div>
+        <div class="payment-receipt-row">
+          <span class="payment-receipt-label">To Account:</span>
+          <span class="payment-receipt-value" id="receiptReceiver">0.0.0</span>
+        </div>
+        <div class="payment-receipt-tx">
+          <a href="#" id="receiptTxLink" target="_blank" rel="noopener noreferrer">
+            View on HashScan →
+          </a>
+        </div>
       </div>
 
       <button class="ht-btn ht-btn-primary ht-btn-pay" id="payNowBtn">Pay Now</button>
@@ -1274,7 +1442,7 @@
     </div>
   </div>
 
-  <!-- ✅ PIN MODAL -->
+  <!-- PIN MODAL -->
   <div id="pinModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:2000; align-items:center; justify-content:center; padding:16px;">
     <div style="width:100%; max-width:420px; background:#fff; border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,0.25); padding:20px;">
       <div style="font-weight:800; font-size:1.1rem; margin-bottom:6px;" id="pinModalTitle">Set your 4-digit PIN</div>
@@ -1303,7 +1471,7 @@
 
   <div id="toast-container"></div>
 
-  <!-- ✅ MODULE SCRIPT - WalletConnect Logic -->
+  <!-- MODULE SCRIPT - WalletConnect Logic -->
   <script type="module">
   import {
     LedgerId,
@@ -1500,14 +1668,40 @@
   })();
 </script>
 
-  <!-- ✅ MAIN SCRIPT - App Logic -->
+  <!-- MAIN SCRIPT - App Logic -->
   <script>
     const SUPABASE_URL = 'https://pvtoczsnwamailsjjnfn.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2dG9jenNud2FtYWlsc2pqbmZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NjE1MTksImV4cCI6MjA4MzEzNzUxOX0.3mDZ3RUo7aHi25r1X1axYj0EppgXFKEY7xGvqdhDSbM';
 
     window.supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ✅ PIN SYSTEM GLOBALS
+    // ✅ HELPER FUNCTIONS FOR ROBUST TYPE CHECKING
+    function asBool(v) {
+      if (v === true) return true;
+      if (v === false) return false;
+      if (typeof v === "number") return v === 1;
+      if (typeof v === "string") {
+        const s = v.trim().toLowerCase();
+        return s === "true" || s === "1" || s === "yes" || s === "on";
+      }
+      return false;
+    }
+
+    function asNum(v) {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    // ✅ GPT HELPERS
+    function isAmountMissing(v) {
+      return !Number(v) || Number(v) <= 0;
+    }
+
+    function isReusableInvoice(inv) {
+      return asBool(inv?.is_reusable) || isAmountMissing(inv?.requested_amount_hbar);
+    }
+
+    // PIN SYSTEM GLOBALS
     let manageToken = null;
     let manageTokenExpiresAt = null;
 
@@ -1522,6 +1716,11 @@
     const pinB = document.getElementById("pinB");
     const pinOnly = document.getElementById("pinOnly");
     const manageBtn = document.getElementById("manageBtn");
+
+    const paymentReceipt = document.getElementById("paymentReceipt");
+    const receiptAmount = document.getElementById("receiptAmount");
+    const receiptReceiver = document.getElementById("receiptReceiver");
+    const receiptTxLink = document.getElementById("receiptTxLink");
 
     function openPinModal(mode) {
       pinA.value = ""; pinB.value = ""; pinOnly.value = "";
@@ -1565,10 +1764,6 @@
       return json;
     }
 
-    // ============================================================
-    // ✅ MANAGE TOKEN PERSISTENCE
-    // ============================================================
-
     function saveManageToken(walletId, token, expiresAt) {
       try {
         localStorage.setItem(`ht_manage_${walletId}`, JSON.stringify({
@@ -1587,7 +1782,6 @@
 
         const { token, expires_at } = JSON.parse(stored);
         
-        // Check if expired
         if (new Date(expires_at) <= new Date()) {
           clearManageToken(walletId);
           return null;
@@ -1613,7 +1807,7 @@
       return !!stored;
     }
 
-    // ============================================================
+    let isReusableMode = false;
 
     let currentInvoiceData = null;
     let statusRealtimeStartedFor = null;
@@ -1740,7 +1934,7 @@
     const qrContainer = document.getElementById('qrContainer');
     const linkDisplay = document.getElementById('linkDisplay');
     const copyBtn = document.getElementById('copyBtn');
-    const shareBtn = document.getElementById('shareBtn');
+    const dashboardBtn = document.getElementById('dashboardBtn');
     const createAnotherBtn = document.getElementById('createAnotherBtn');
 
     const subtitle = document.getElementById('subtitle');
@@ -1760,6 +1954,42 @@
     const createNewFromStatus = document.getElementById('createNewFromStatus');
 
     const statusPageLink = document.getElementById('statusPageLink');
+
+    const paymentTypeRadios = document.querySelectorAll('input[name="paymentType"]');
+
+    paymentTypeRadios.forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        isReusableMode = e.target.value === 'reusable';
+        
+        if (isReusableMode) {
+          input.disabled = true;
+          input.value = '';
+          input.placeholder = 'Buyer enters amount';
+          input.classList.add('disabled');
+          
+          let helperText = document.querySelector('.reusable-info');
+          if (!helperText) {
+            helperText = document.createElement('div');
+            helperText.className = 'ht-helper-text reusable-info';
+            helperText.textContent = 'Best for tips, donations, events, and public QR codes';
+            input.parentElement.parentElement.appendChild(helperText);
+          }
+          
+          if (isWalletConnected) {
+            generateBtn.disabled = false;
+          }
+        } else {
+          input.disabled = false;
+          input.placeholder = 'Enter Amount';
+          input.classList.remove('disabled');
+          
+          const helperText = document.querySelector('.reusable-info');
+          if (helperText) helperText.remove();
+          
+          updateGenerateButton();
+        }
+      });
+    });
 
     function enterHomeMode() {
       if (isWalletConnected && accountId) {
@@ -1834,29 +2064,6 @@
 
         canvas.style.borderRadius = '12px';
         containerEl.appendChild(canvas);
-
-        const ctx = canvas.getContext('2d');
-        const logo = new Image();
-        logo.src = `${window.location.origin}/qr_logo.png?v=2`;
-
-        logo.onload = () => {
-          const logoSize = canvas.width * 0.18;
-          const padding = logoSize * 0.25;
-          const circleRadius = (logoSize + padding * 2) / 2;
-          const centerX = canvas.width / 2;
-          const centerY = canvas.height / 2;
-
-          ctx.save();
-          ctx.fillStyle = '#ffffff';
-          ctx.beginPath();
-          ctx.arc(centerX, centerY, circleRadius, 0, Math.PI * 2);
-          ctx.fill();
-
-          const logoX = (canvas.width - logoSize) / 2;
-          const logoY = (canvas.height - logoSize) / 2;
-          ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
-          ctx.restore();
-        };
       });
     }
 
@@ -1897,7 +2104,9 @@
     async function loadInvoice(slug) {
       const { data, error } = await window.supabaseClient
         .from("invoices")
-        .select("slug, receiver_account, creator_account, requested_amount_hbar, amount_hbar, status, confirmed_by_creator, description, created_at")
+        .select(
+          "slug, creator_account, receiver_account, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
+        )
         .eq("slug", slug)
         .maybeSingle();
 
@@ -1907,6 +2116,7 @@
       return data;
     }
 
+    // ✅ UPDATED loadInvoiceAndRenderPayer
     async function loadInvoiceAndRenderPayer(slug) {
       currentInvoiceSlug = slug;
 
@@ -1914,9 +2124,11 @@
         enterInvoiceMode();
 
         payerReceiverAccount.textContent = 'Loading...';
-        payerUsdAmount.textContent = '...';
+        const payerAmountContainer = document.getElementById('payerAmountContainer');
+        payerAmountContainer.innerHTML = '<div class="ht-usd-worth">Loading...</div>';
         payerDescription.classList.remove('active');
         payerStatus.classList.add('payer-status-hidden');
+        paymentReceipt.classList.remove('active');
 
         const inv = await loadInvoice(slug);
         currentInvoiceData = inv;
@@ -1924,12 +2136,58 @@
 
         const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
         currentPaymentLink = invoiceUrl;
-        currentAmount = inv.requested_amount_hbar;
 
         subtitle.innerHTML = `<a href="/${inv.creator_account}" style="color: var(--ht-navy); text-decoration: none;">→ Check Payment Status</a>`;
 
         payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
-        payerUsdAmount.textContent = inv.requested_amount_hbar;
+
+        // ✅ DETERMINE IF REUSABLE
+        const reusable = isReusableInvoice(inv);
+
+        // Hide old "I Paid" UX
+        iPaidBtn.style.display = 'none';
+        const helper = payerSection.querySelector('.ht-helper-text');
+        if (helper) helper.style.display = 'none';
+
+        // Clear and render input field
+        payerAmountContainer.innerHTML = `
+          <div class="ht-input-group" style="text-align: left;">
+            <label class="ht-label">Enter Amount (HBAR)</label>
+            <div class="ht-input-wrapper">
+              <span class="ht-input-prefix">ℏ</span>
+              <input
+                type="number"
+                class="ht-input"
+                id="payerAmountInput"
+                placeholder="Enter amount"
+                step="0.01"
+                min="0.01"
+                inputmode="decimal"
+              >
+            </div>
+            <div class="ht-helper-text" style="text-align:left; margin-top:10px;">
+              Type an amount, then tap <strong>Pay Now</strong>.
+            </div>
+          </div>
+        `;
+
+        const payerAmountInput = document.getElementById('payerAmountInput');
+
+        // Enable button when user types
+        payNowBtn.disabled = true;
+        payerAmountInput.addEventListener('input', () => {
+          const amount = Number(payerAmountInput.value);
+          payNowBtn.disabled = !(amount > 0);
+        });
+
+        // ✅ CRITICAL: Prefill for one-time invoices
+        if (!reusable && !isAmountMissing(inv.requested_amount_hbar)) {
+          payerAmountInput.value = String(Number(inv.requested_amount_hbar));
+          payNowBtn.disabled = false;
+        }
+
+        currentAmount = null;
+        setPayerStatus('Enter an amount to continue', 'default');
 
         if (inv.description && inv.description.trim()) {
           payerDescriptionText.textContent = inv.description;
@@ -1942,12 +2200,12 @@
           modeText: isPaid ? "✅ Paid" : null 
         });
 
-        if (isPaid) {
+        if (isPaid && !reusable) {
           setPayerStatus('✅ PAID — Receiver notified!', 'paid');
         }
 
         const saved = localStorage.getItem(`ht_paid_${slug}`);
-        if (saved) {
+        if (saved && !reusable) {
           try {
             const j = JSON.parse(saved);
             if (j?.paid) {
@@ -1957,7 +2215,9 @@
           } catch {}
         }
 
-        startPayerRealtime(slug);
+        if (!reusable) {
+          startPayerRealtime(slug);
+        }
 
       } catch (err) {
         console.error(err);
@@ -1966,155 +2226,296 @@
       }
     }
 
-    async function loadStatusPage(walletId) {
-      try {
-        enterStatusMode();
+  async function loadStatusPage(walletId) {
+  const DEBUG_TAG = "🔥 loadStatusPage v3";
+  console.log(DEBUG_TAG, "START", { walletId, now: new Date().toISOString(), SUPABASE_URL });
 
-        // ✅ Restore token from localStorage
-        const stored = loadManageToken(walletId);
-        if (stored) {
-          manageToken = stored.token;
-          manageTokenExpiresAt = stored.expires_at;
-        } else {
-          manageToken = null;
-          manageTokenExpiresAt = null;
-        }
+  try {
+    enterStatusMode();
 
-        statusWalletId.textContent = walletId;
-        invoiceList.innerHTML =
-          '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
-
-        const { data: invoices, error } = await window.supabaseClient
-          .from("invoices")
-          .select(
-            "slug, receiver_account, requested_amount_hbar, status, confirmed_by_creator, description, created_at"
-          )
-          .eq("creator_account", walletId)
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-
-        if (!invoices || invoices.length === 0) {
-          invoiceList.innerHTML = `
-            <div class="no-invoices">
-              <div class="no-invoices-icon">📭</div>
-              No invoices found for this wallet.<br>
-              Create your first payment link above!
-            </div>
-          `;
-          
-          // ✅ Setup button even when no invoices
-          setupManageButton(walletId);
-          return;
-        }
-
-        invoiceList.innerHTML = "";
-
-        const unlocked = !!manageToken;
-
-        // ✅ Render invoices with ALWAYS VISIBLE badges
-        invoices.forEach((inv) => {
-          const card = document.createElement("div");
-          card.className = "invoice-card";
-
-          const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
-
-          let badge = "";
-          let actionBtn = "";
-
-          // ✅ ALWAYS show status badge
-          if (inv.confirmed_by_creator) {
-            badge = '<span class="invoice-badge confirmed">Confirmed</span>';
-            actionBtn = `
-              <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
-                ✓ Confirmed (Final)
-              </button>
-            `;
-          } else if (inv.status === "paid") {
-            badge = '<span class="invoice-badge paid">Paid</span>';
-
-            if (unlocked) {
-              actionBtn = `
-                <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary"
-                  onclick="confirmInvoicePayment('${inv.slug}')">
-                  Confirm Payment
-                </button>
-              `;
-            } else {
-              actionBtn = `
-                <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
-                  🔒 Unlock Manage to confirm
-                </button>
-              `;
-            }
-          } else {
-            badge = '<span class="invoice-badge unpaid">Unpaid</span>';
-            actionBtn = `
-              <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
-                Waiting...
-              </button>
-            `;
-          }
-
-          card.innerHTML = `
-            <div class="invoice-header">
-              <div class="invoice-header-left">
-                <div class="invoice-slug">#${inv.slug}</div>
-                <div class="invoice-amount">$${inv.requested_amount_hbar} HBAR</div>
-              </div>
-              ${badge}
-            </div>
-
-            <div class="invoice-url">${invoiceUrl}</div>
-
-            <div class="invoice-actions">
-              ${actionBtn}
-              <button class="ht-btn ht-btn-action ht-btn-small" onclick="copyInvoiceLink('${invoiceUrl}')">Copy</button>
-              <button class="ht-btn ht-btn-action ht-btn-small" onclick="shareInvoiceLink('${invoiceUrl}', ${Number(
-                inv.requested_amount_hbar
-              )})">Share</button>
-            </div>
-          `;
-
-          if (inv.description && String(inv.description).trim()) {
-            const descDiv = document.createElement("div");
-            descDiv.className = "invoice-description";
-            descDiv.textContent = String(inv.description).trim();
-
-            const urlDiv = card.querySelector(".invoice-url");
-            card.insertBefore(descDiv, urlDiv);
-          }
-
-          invoiceList.appendChild(card);
-        });
-
-        if (statusRealtimeStartedFor !== walletId) {
-          startStatusPageRealtime(walletId);
-          statusRealtimeStartedFor = walletId;
-        }
-
-        // ✅ Setup Manage button
-        setupManageButton(walletId);
-
-      } catch (err) {
-        console.error(err);
-        showToast("Failed to load invoices", "error");
-        invoiceList.innerHTML = `
-          <div class="no-invoices">
-            <div class="no-invoices-icon">⚠️</div>
-            Error loading invoices.<br>
-            Please try again.
-          </div>
-        `;
-      }
+    const stored = loadManageToken(walletId);
+    if (stored) {
+      manageToken = stored.token;
+      manageTokenExpiresAt = stored.expires_at;
+    } else {
+      manageToken = null;
+      manageTokenExpiresAt = null;
     }
 
-    // ✅ NEW FUNCTION: Setup Manage Button Toggle
+    console.log(DEBUG_TAG, "manageToken?", {
+      hasToken: !!manageToken,
+      expiresAt: manageTokenExpiresAt
+    });
+
+    statusWalletId.textContent = walletId;
+    invoiceList.innerHTML =
+      '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
+
+    // ✅ Query 1: ALL one-time invoices (any status)
+    console.log(DEBUG_TAG, "Q1: one-time invoices");
+    const { data: oneTimeInvoices, error: error1 } = await window.supabaseClient
+      .from("invoices")
+      .select(
+        "slug, receiver_account, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
+      )
+      .eq("creator_account", walletId)
+      .eq("is_reusable", false)
+      .order("created_at", { ascending: false });
+
+    if (error1) throw error1;
+
+    console.log(
+      DEBUG_TAG,
+      "Q1 results",
+      (oneTimeInvoices || []).map((x) => ({
+        slug: x.slug,
+        status: x.status,
+        is_reusable: x.is_reusable,
+        created_at: x.created_at
+      }))
+    );
+
+    // ✅ Query 2: ONLY paid reusable invoices
+    console.log(DEBUG_TAG, "Q2: paid reusable invoices");
+    const { data: paidReusableInvoices, error: error2 } = await window.supabaseClient
+      .from("invoices")
+      .select(
+        "slug, receiver_account, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
+      )
+      .eq("creator_account", walletId)
+      .eq("is_reusable", true)
+      .eq("status", "paid")
+      .order("created_at", { ascending: false });
+
+    if (error2) throw error2;
+
+    console.log(
+      DEBUG_TAG,
+      "Q2 results",
+      (paidReusableInvoices || []).map((x) => ({
+        slug: x.slug,
+        status: x.status,
+        is_reusable: x.is_reusable,
+        created_at: x.created_at
+      }))
+    );
+
+    // ✅ Combine
+    let invoices = [
+      ...(oneTimeInvoices || []),
+      ...(paidReusableInvoices || [])
+    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    const beforeSafety = invoices.length;
+
+    // 🛡️ AGGRESSIVE SAFETY FILTER - Remove ALL unpaid reusable invoices
+    invoices = invoices.filter((inv) => {
+      // ✅ Always keep one-time invoices (any status)
+      if (inv.is_reusable === false || inv.is_reusable === "false") {
+        return true;
+      }
+
+      // ✅ For reusable invoices, ONLY keep if status is exactly "paid"
+      if (inv.is_reusable === true || inv.is_reusable === "true") {
+        const status = String(inv.status || "").toLowerCase().trim();
+        const isPaid = status === "paid";
+        
+        if (!isPaid) {
+          console.log("🚫 Filtering out unpaid reusable:", {
+            slug: inv.slug,
+            status: inv.status,
+            is_reusable: inv.is_reusable
+          });
+        }
+        
+        return isPaid;
+      }
+
+      console.warn("⚠️ Unknown invoice type:", {
+        slug: inv.slug,
+        is_reusable: inv.is_reusable,
+        type: typeof inv.is_reusable
+      });
+      return false;
+    });
+
+    console.log(DEBUG_TAG, "Safety filter results", {
+      beforeFilter: beforeSafety,
+      afterFilter: invoices.length,
+      removed: beforeSafety - invoices.length,
+      breakdown: {
+        reusable: invoices.filter(i => i.is_reusable === true || i.is_reusable === "true").length,
+        oneTime: invoices.filter(i => i.is_reusable === false || i.is_reusable === "false").length
+      }
+    });
+
+    if (!invoices || invoices.length === 0) {
+      invoiceList.innerHTML = `
+        <div class="no-invoices">
+          <div class="no-invoices-icon">📭</div>
+          No invoices found for this wallet.<br>
+          Create your first payment link above!
+        </div>
+      `;
+      setupManageButton(walletId);
+      console.log(DEBUG_TAG, "END (no invoices)");
+      return;
+    }
+
+    invoiceList.innerHTML = "";
+
+    console.log("📋 ABOUT TO RENDER", {
+      invoiceCount: invoices.length,
+      listEmpty: invoiceList.children.length === 0,
+      slugs: invoices.map(i => i.slug)
+    });
+
+    const unlocked = !!manageToken;
+
+    invoices.forEach((inv) => {
+      const card = document.createElement("div");
+      card.className = "invoice-card";
+
+      const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
+
+      let badge = "";
+      let actionBtn = "";
+      let amountDisplay;
+      let statsDisplay = "";
+
+      const isReusable = inv.is_reusable === true || inv.is_reusable === "true";
+
+      if (isReusable) {
+        amountDisplay = `${asNum(inv.total_received_hbar).toFixed(2)} HBAR collected`;
+        badge = '<span class="invoice-badge reusable">Active</span>';
+        actionBtn = `
+          <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
+            ∞ Reusable Link
+          </button>
+        `;
+
+        const totalReceived = asNum(inv.total_received_hbar).toFixed(2);
+        const paymentCount = asNum(inv.payment_count);
+        const lastPayment = inv.last_payment_at
+          ? new Date(inv.last_payment_at).toLocaleDateString()
+          : 'Never';
+
+        statsDisplay = `
+          <div class="invoice-stats">
+            <strong>Total:</strong> ${totalReceived} HBAR &nbsp;•&nbsp;
+            <strong>Payments:</strong> ${paymentCount} &nbsp;•&nbsp;
+            <strong>Last:</strong> ${lastPayment}
+          </div>
+        `;
+      } else {
+        amountDisplay = `${asNum(inv.requested_amount_hbar).toFixed(2)} HBAR`;
+
+        if (inv.confirmed_by_creator) {
+          badge = '<span class="invoice-badge confirmed">Confirmed</span>';
+          actionBtn = `
+            <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
+              ✓ Confirmed (Final)
+            </button>
+          `;
+        } else if (String(inv.status || "").toLowerCase() === "paid") {
+          badge = '<span class="invoice-badge paid">Paid</span>';
+
+          if (unlocked) {
+            actionBtn = `
+              <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary"
+                onclick="confirmInvoicePayment('${inv.slug}')">
+                Confirm Payment
+              </button>
+            `;
+          } else {
+            actionBtn = `
+              <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
+                🔒 Unlock Manage to confirm
+              </button>
+            `;
+          }
+        } else {
+          badge = '<span class="invoice-badge unpaid">Unpaid</span>';
+          actionBtn = `
+            <button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>
+              Waiting...
+            </button>
+          `;
+        }
+      }
+
+      card.innerHTML = `
+        <div class="invoice-header">
+          <div class="invoice-header-left">
+            <div class="invoice-slug">#${inv.slug}</div>
+            <div class="invoice-amount">${amountDisplay}</div>
+            ${statsDisplay}
+          </div>
+          ${badge}
+        </div>
+
+        <div class="invoice-url">${invoiceUrl}</div>
+
+        <div class="invoice-actions">
+          ${actionBtn}
+          <button class="ht-btn ht-btn-action ht-btn-small" onclick="copyInvoiceLink('${invoiceUrl}')">Copy</button>
+          <button class="ht-btn ht-btn-action ht-btn-small" onclick="shareInvoiceLink('${invoiceUrl}', ${asNum(inv.requested_amount_hbar)})">Share</button>
+        </div>
+      `;
+
+      if (inv.description && String(inv.description).trim()) {
+        const descDiv = document.createElement("div");
+        descDiv.className = "invoice-description";
+        descDiv.textContent = String(inv.description).trim();
+
+        const urlDiv = card.querySelector(".invoice-url");
+        card.insertBefore(descDiv, urlDiv);
+      }
+
+      invoiceList.appendChild(card);
+    });
+
+    setTimeout(() => {
+      const cards = document.querySelectorAll('.invoice-card');
+      const slugs = Array.from(cards).map(card => {
+        const slugEl = card.querySelector('.invoice-slug');
+        return slugEl?.textContent?.replace('#', '').trim();
+      });
+
+      console.log("🎨 DOM CHECK", {
+        cardsInDOM: cards.length,
+        invoicesInArray: invoices.length,
+        mismatch: cards.length !== invoices.length,
+        duplicateSlugs: slugs.filter((s, i) => slugs.indexOf(s) !== i),
+        allSlugs: slugs
+      });
+    }, 100);
+
+    if (statusRealtimeStartedFor !== walletId) {
+      startStatusPageRealtime(walletId);
+      statusRealtimeStartedFor = walletId;
+    }
+
+    setupManageButton(walletId);
+    console.log(DEBUG_TAG, "END OK");
+
+  } catch (err) {
+    console.error("🔥 loadStatusPage ERROR", err);
+    showToast("Failed to load invoices", "error");
+    invoiceList.innerHTML = `
+      <div class="no-invoices">
+        <div class="no-invoices-icon">⚠️</div>
+        Error loading invoices.<br>
+        Please try again.
+      </div>
+    `;
+  }
+}
+
     function setupManageButton(walletId) {
       const unlocked = !!manageToken;
 
       if (unlocked) {
-        // ✅ Show "Lock" button
         manageBtn.textContent = "🔓 Lock Manage";
         manageBtn.onclick = () => {
           clearManageToken(walletId);
@@ -2124,7 +2525,6 @@
           loadStatusPage(walletId);
         };
       } else {
-        // ✅ Show "Unlock" button
         manageBtn.textContent = "🔒 Unlock Manage";
         manageBtn.onclick = () => {
           openPinModal("unlock");
@@ -2145,7 +2545,6 @@
               manageToken = r.manage_token;
               manageTokenExpiresAt = r.expires_at;
 
-              // ✅ Save to localStorage
               saveManageToken(walletId, manageToken, manageTokenExpiresAt);
 
               showToast("Manage unlocked ✅", "success");
@@ -2163,124 +2562,120 @@
       }
     }
 
-window.confirmInvoicePayment = async function (slug) {
-  try {
-    // ✅ Validate token before proceeding
-    const walletId = getWalletIdFromUrl();
-    if (!walletId) return;
-    
-    const stored = loadManageToken(walletId);
-    if (!stored) {
-      manageToken = null;
-      manageTokenExpiresAt = null;
-      showToast("Manage session expired — tap Manage and enter PIN again", "info");
-      await loadStatusPage(walletId);
-      return;
-    }
-    
-    // Keep in-memory in sync
-    manageToken = stored.token;
-    manageTokenExpiresAt = stored.expires_at;
-    
-    if (!manageToken) {
-      showToast("Tap Manage and enter PIN first", "info");
-      return;
-    }
+    window.confirmInvoicePayment = async function (slug) {
+      try {
+        const walletId = getWalletIdFromUrl();
+        if (!walletId) return;
+        
+        const stored = loadManageToken(walletId);
+        if (!stored) {
+          manageToken = null;
+          manageTokenExpiresAt = null;
+          showToast("Manage session expired — tap Manage and enter PIN again", "info");
+          await loadStatusPage(walletId);
+          return;
+        }
+        
+        manageToken = stored.token;
+        manageTokenExpiresAt = stored.expires_at;
+        
+        if (!manageToken) {
+          showToast("Tap Manage and enter PIN first", "info");
+          return;
+        }
 
-    await callFn("seller-update-status", {
-      slug,
-      manage_token: manageToken,
-      action: "confirm_paid",
-    });
+        await callFn("seller-update-status", {
+          slug,
+          manage_token: manageToken,
+          action: "confirm_paid",
+        });
 
-    showToast("Payment confirmed! ✅", "success");
+        showToast("Payment confirmed! ✅", "success");
 
-    if (walletId) await loadStatusPage(walletId);
-  } catch (err) {
-    console.error(err);
-    const msg =
-      err?.message ||
-      err?.error ||
-      "Failed to confirm payment";
-    showToast(String(msg), "error");
-  }
-};
+        if (walletId) await loadStatusPage(walletId);
+      } catch (err) {
+        console.error(err);
+        const msg =
+          err?.message ||
+          err?.error ||
+          "Failed to confirm payment";
+        showToast(String(msg), "error");
+      }
+    };
 
-window.toggleInvoiceStatus = async function (slug, newStatus) {
-  try {
-    // ✅ Validate token before proceeding
-    const walletId = getWalletIdFromUrl();
-    if (!walletId) return;
-    
-    const stored = loadManageToken(walletId);
-    if (!stored) {
-      manageToken = null;
-      manageTokenExpiresAt = null;
-      showToast("Manage session expired — tap Manage and enter PIN again", "info");
-      await loadStatusPage(walletId);
-      return;
-    }
-    
-    // Keep in-memory in sync
-    manageToken = stored.token;
-    manageTokenExpiresAt = stored.expires_at;
+    window.toggleInvoiceStatus = async function (slug, newStatus) {
+      try {
+        const walletId = getWalletIdFromUrl();
+        if (!walletId) return;
+        
+        const stored = loadManageToken(walletId);
+        if (!stored) {
+          manageToken = null;
+          manageTokenExpiresAt = null;
+          showToast("Manage session expired — tap Manage and enter PIN again", "info");
+          await loadStatusPage(walletId);
+          return;
+        }
+        
+        manageToken = stored.token;
+        manageTokenExpiresAt = stored.expires_at;
 
-    if (!manageToken) {
-      showToast("Tap Manage and enter PIN first", "info");
-      return;
-    }
+        if (!manageToken) {
+          showToast("Tap Manage and enter PIN first", "info");
+          return;
+        }
 
-    const action = newStatus === "unpaid" ? "mark_unpaid" : "confirm_paid";
+        const action = newStatus === "unpaid" ? "mark_unpaid" : "confirm_paid";
 
-    await callFn("seller-update-status", {
-      slug,
-      manage_token: manageToken,
-      action,
-    });
+        await callFn("seller-update-status", {
+          slug,
+          manage_token: manageToken,
+          action,
+        });
 
-    showToast("Status updated ✅", "success");
+        showToast("Status updated ✅", "success");
 
-    if (walletId) await loadStatusPage(walletId);
-  } catch (err) {
-    console.error(err);
-    const msg =
-      err?.message ||
-      err?.error ||
-      "Failed to update status";
-    showToast(String(msg), "error");
-  }
-};
+        if (walletId) await loadStatusPage(walletId);
+      } catch (err) {
+        console.error(err);
+        const msg =
+          err?.message ||
+          err?.error ||
+          "Failed to update status";
+        showToast(String(msg), "error");
+      }
+    };
 
-window.copyInvoiceLink = async function (url) {
-  try {
-    await navigator.clipboard.writeText(url);
-    showToast("Link copied! ✅", "success");
-  } catch (e) {
-    console.error(e);
-    showToast("Copy failed", "error");
-  }
-};
+    window.copyInvoiceLink = async function (url) {
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast("Link copied! ✅", "success");
+      } catch (e) {
+        console.error(e);
+        showToast("Copy failed", "error");
+      }
+    };
 
-window.shareInvoiceLink = async function (url, amount) {
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: `Pay $${amount} in HBAR`,
-        text: `Send $${amount} worth of HBAR via HashToll:`,
-        url,
-      });
-      showToast("Shared!", "success");
-    } catch (e) {
-      if (e?.name !== "AbortError") {
+    window.shareInvoiceLink = async function (url, amount) {
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: amount ? `Pay $${amount} in HBAR` : 'Pay with HBAR',
+            text: amount ? `Send $${amount} worth of HBAR via HashToll:` : 'Send HBAR via HashToll:',
+            url,
+          });
+          showToast("Shared!", "success");
+        } catch (e) {
+          if (e?.name !== "AbortError") {
+            await navigator.clipboard.writeText(url);
+            showToast("Link copied!", "success");
+          }
+        }
+      } else {
         await navigator.clipboard.writeText(url);
         showToast("Link copied!", "success");
       }
-    }
-  } else {
-    await navigator.clipboard.writeText(url);
-    showToast("Link copied!", "success");
-  }
-};
+    };
 
     async function notifyPaidOnce(slug) {
       try {
@@ -2315,76 +2710,105 @@ window.shareInvoiceLink = async function (url, amount) {
       }
     }
 
+    // ✅ UPDATED payNow() FUNCTION
     async function payNow() {
       const originalText = "Pay Now";
-      
+
       try {
         payNowBtn.disabled = true;
 
+        // ✅ ALWAYS read from input field
+        const payerAmountInput = document.getElementById('payerAmountInput');
+        const amountToSend = Number(payerAmountInput?.value);
+
+        if (!amountToSend || amountToSend <= 0) {
+          throw new Error("Please enter a valid amount");
+        }
+
         payNowBtn.innerHTML = '<span class="spinner"></span>Connect wallet...';
         const payerAccount = await window.hederaConnect.connect();
-        
-        if (!payerAccount) {
-          throw new Error("Wallet not connected");
-        }
+
+        if (!payerAccount) throw new Error("Wallet not connected");
 
         await new Promise(r => setTimeout(r, 250));
 
         payNowBtn.innerHTML = '<span class="spinner"></span>Check HashPack to approve...';
-        
+
         const result = await window.hederaConnect.sendHbar(
           currentInvoiceData.receiver_account,
-          currentInvoiceData.amount_hbar,
+          amountToSend,
           `HT:${currentInvoiceData.slug}`
         );
 
-        payNowBtn.innerHTML = '<span class="spinner"></span>Verifying payment...';
+        const tx_id = result?.transactionId || result?.transaction_id || result?.txId;
 
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
-          method: 'POST',
+        // Notify backend
+        const notifyRes = await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
             "apikey": SUPABASE_ANON_KEY
           },
           body: JSON.stringify({
-            slug: currentInvoiceSlug,
-            tx_id: result.transactionId,
-            payer_account: payerAccount,
+            slug: currentInvoiceData.slug,
+            tx_id,
+            payer_account: window.hederaConnect.accountId || null,
+            amount_hbar: Number(amountToSend),
             memo: `HT:${currentInvoiceData.slug}`
           })
         });
 
-        const json = await res.json().catch(() => ({}));
-
-        if (!res.ok) {
-          console.error("notify-paid failed:", json);
-          setPayerStatus('⚠️ Payment sent, but verification failed — tap "I Paid"', 'warn');
-          showToast(json?.error || "Verification failed — use I Paid button", "error");
-          
-          payNowBtn.disabled = false;
-          payNowBtn.innerHTML = originalText;
-          return;
+        if (!notifyRes.ok) {
+          const errData = await notifyRes.json().catch(() => ({}));
+          console.error("notify-paid failed:", errData);
+          showToast(`Payment sent, but tracking failed: ${errData?.error || 'Unknown error'}`, "error");
         }
 
-        setPayerStatus('✅ PAID — Receiver notified!', 'paid');
-        setPayButtonsState({ paid: true, modeText: "✅ Paid" });
-        showToast('Payment confirmed! ✅', 'success');
+        setPayerStatus('✅ Payment sent successfully!', 'paid');
+        showToast('Payment sent ✅', 'success');
 
-        localStorage.setItem(`ht_paid_${currentInvoiceSlug}`, JSON.stringify({
-          paid: true,
-          at: Date.now()
-        }));
+        // Update receipt
+        receiptAmount.textContent = `${amountToSend} HBAR`;
+        receiptReceiver.textContent = currentInvoiceData.receiver_account;
+        if (tx_id) {
+          receiptTxLink.href = `https://hashscan.io/mainnet/transaction/${tx_id}`;
+          receiptTxLink.style.display = 'inline-flex';
+        } else {
+          receiptTxLink.style.display = 'none';
+        }
+        paymentReceipt.classList.add('active');
+
+        // ✅ Reusable: Allow pay again
+        const isReusable = isReusableInvoice(currentInvoiceData);
+        if (isReusable) {
+          setTimeout(() => {
+            payNowBtn.innerHTML = "Pay Now";
+            const input = document.getElementById('payerAmountInput');
+            if (input) input.value = "";
+            payNowBtn.disabled = true;
+            paymentReceipt.classList.remove('active');
+            setPayerStatus('Enter an amount to continue', 'default');
+          }, 2500);
+        } else {
+          // One-time: Lock buttons
+          setPayButtonsState({ paid: true, modeText: "✅ Paid" });
+          localStorage.setItem(`ht_paid_${currentInvoiceData.slug}`, JSON.stringify({
+            paid: true,
+            at: Date.now()
+          }));
+        }
 
       } catch (err) {
         console.error('Payment failed:', err);
-        
         const msg = String(err?.message || err);
-        
-        if (msg.toLowerCase().includes("reject") || 
-            msg.toLowerCase().includes("denied") || 
-            msg.toLowerCase().includes("closed") ||
-            msg.toLowerCase().includes("modal")) {
+
+        if (
+          msg.toLowerCase().includes("reject") ||
+          msg.toLowerCase().includes("denied") ||
+          msg.toLowerCase().includes("closed") ||
+          msg.toLowerCase().includes("modal")
+        ) {
           showToast('Transaction cancelled', 'info');
         } else {
           showToast(msg || 'Payment failed', 'error');
@@ -2405,25 +2829,14 @@ window.shareInvoiceLink = async function (url, amount) {
       }
     }
 
-    async function shareCurrentLink() {
-      if (!currentPaymentLink) return;
-
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: `Pay $${currentAmount} in HBAR`,
-            text: `Send $${currentAmount} worth of HBAR via HashToll:`,
-            url: currentPaymentLink
-          });
-          showToast('Shared!', 'success');
-        } catch (e) {
-          if (e?.name !== 'AbortError') {
-            await copyText(currentPaymentLink, 'Link copied!');
-          }
-        }
-      } else {
-        await copyText(currentPaymentLink, 'Link copied!');
+    async function navigateToDashboard() {
+      if (!currentCreatorAccount && !accountId) {
+        showToast('No account connected', 'error');
+        return;
       }
+
+      const targetAccount = currentCreatorAccount || accountId;
+      window.location.href = `/${targetAccount}`;
     }
 
     let realtimeChannel = null;
@@ -2553,12 +2966,24 @@ window.shareInvoiceLink = async function (url, amount) {
             await loadStatusPage(walletId);
           }
         )
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "invoice_payments"
+          },
+          async () => {
+            console.log("Status page invoice_payments INSERT detected");
+            await loadStatusPage(walletId);
+          }
+        )
         .subscribe((status) => {
           console.log("Status realtime subscription:", status);
         });
     }
 
-    async function createInvoiceViaEdge({ receiver_account, requested_amount_hbar, amount_hbar, description }) {
+    async function createInvoiceViaEdge({ receiver_account, requested_amount_hbar, amount_hbar, description, is_reusable }) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/create-invoice`, {
         method: "POST",
         headers: {
@@ -2568,9 +2993,10 @@ window.shareInvoiceLink = async function (url, amount) {
         },
         body: JSON.stringify({
           receiver_account,
-          requested_amount_hbar,
-          amount_hbar,
-          description: description || null
+          requested_amount_hbar: is_reusable ? null : requested_amount_hbar,
+          amount_hbar: is_reusable ? null : amount_hbar,
+          description: description || null,
+          is_reusable: is_reusable || false
         })
       });
 
@@ -2580,10 +3006,10 @@ window.shareInvoiceLink = async function (url, amount) {
     }
 
     async function generatePaymentLink() {
-      const requestedAmount = Number(input.value);
+      const requestedAmount = isReusableMode ? null : Number(input.value);
       const description = descriptionInput.value.trim();
 
-      if (!requestedAmount || requestedAmount <= 0) {
+      if (!isReusableMode && (!requestedAmount || requestedAmount <= 0)) {
         showToast("Please enter a valid amount", "error");
         return;
       }
@@ -2597,20 +3023,40 @@ window.shareInvoiceLink = async function (url, amount) {
         generateBtn.innerHTML = '<span class="spinner"></span>Generating...';
         generateBtn.disabled = true;
 
-        const { requested_amount_hbar, amount_hbar } = makeUniquePayAmount(requestedAmount);
-
-        const inv = await createInvoiceViaEdge({
-          receiver_account: accountId,
-          requested_amount_hbar,
-          amount_hbar,
-          description: description || null
-        });
+        let inv;
+        
+        if (isReusableMode) {
+          inv = await createInvoiceViaEdge({
+            receiver_account: accountId,
+            requested_amount_hbar: null,
+            amount_hbar: null,
+            description: description || null,
+            is_reusable: true
+          });
+        } else {
+          const { requested_amount_hbar, amount_hbar } = makeUniquePayAmount(requestedAmount);
+          
+          inv = await createInvoiceViaEdge({
+            receiver_account: accountId,
+            requested_amount_hbar,
+            amount_hbar,
+            description: description || null,
+            is_reusable: false
+          });
+        }
 
         const paymentLink = `${window.location.origin}/invoice/${inv.slug}`;
         currentPaymentLink = paymentLink;
         currentAmount = requestedAmount;
+        currentCreatorAccount = accountId;
 
-        document.getElementById('usdAmount').textContent = requestedAmount.toFixed(2);
+       const resultAmountLine = document.getElementById('resultAmountLine');
+
+        if (isReusableMode) {
+          resultAmountLine.textContent = "Reusable QR • Buyer chooses amount";
+        } else {
+          resultAmountLine.textContent = `$${requestedAmount.toFixed(2)} in HBAR`;
+        }
 
         if (description) {
           creatorDescriptionText.textContent = description;
@@ -2625,50 +3071,48 @@ window.shareInvoiceLink = async function (url, amount) {
 
         await renderQrInto(qrContainer, paymentLink);
 
-        showToast("Invoice created! 🎉", "success");
+        showToast(isReusableMode ? "Reusable QR created! 🎉" : "Invoice created! 🎉", "success");
 
-        startCreatorRealtime(inv.slug);
+        if (!isReusableMode) {
+          startCreatorRealtime(inv.slug);
+        }
 
         try {
-  // ✅ Ask the database, not localStorage
-  const r = await callFn("has-creator-pin", { creator_account: accountId });
+          const r = await callFn("has-creator-pin", { creator_account: accountId });
 
-  if (r?.has_pin) {
-    localStorage.setItem(`ht_has_pin_${accountId}`, "1"); // optional cache
-    // ✅ do nothing (already has pin)
-  } else {
-    openPinModal("setup");
+          if (r?.has_pin) {
+            localStorage.setItem(`ht_has_pin_${accountId}`, "1");
+          } else {
+            openPinModal("setup");
 
-    pinOkBtn.onclick = async () => {
-      const a = pinA.value.trim();
-      const b = pinB.value.trim();
-      if (!is4(a) || !is4(b)) return showToast("PIN must be 4 digits", "error");
-      if (a !== b) return showToast("PINs do not match", "error");
+            pinOkBtn.onclick = async () => {
+              const a = pinA.value.trim();
+              const b = pinB.value.trim();
+              if (!is4(a) || !is4(b)) return showToast("PIN must be 4 digits", "error");
+              if (a !== b) return showToast("PINs do not match", "error");
 
-      pinOkBtn.disabled = true;
-      pinOkBtn.innerHTML = '<span class="spinner"></span>Saving...';
+              pinOkBtn.disabled = true;
+              pinOkBtn.innerHTML = '<span class="spinner"></span>Saving...';
 
-      try {
-        const r2 = await callFn("set-creator-pin", { creator_account: accountId, pin: a });
+              try {
+                const r2 = await callFn("set-creator-pin", { creator_account: accountId, pin: a });
 
-        // If another device already set it, you'll still be fine:
-        if (r2?.already_set) showToast("PIN already exists ✅", "info");
-        else showToast("PIN saved ✅", "success");
+                if (r2?.already_set) showToast("PIN already exists ✅", "info");
+                else showToast("PIN saved ✅", "success");
 
-        localStorage.setItem(`ht_has_pin_${accountId}`, "1"); // optional cache
-        closePinModal();
-      } catch (e) {
-        showToast(String(e?.message || e), "error");
-      } finally {
-        pinOkBtn.disabled = false;
-        pinOkBtn.textContent = "Save PIN";
-      }
-    };
-  }
-} catch (e) {
-  // If the check fails, don't force the user into setup — just skip prompting
-  console.warn("has-creator-pin failed:", e);
-}
+                localStorage.setItem(`ht_has_pin_${accountId}`, "1");
+                closePinModal();
+              } catch (e) {
+                showToast(String(e?.message || e), "error");
+              } finally {
+                pinOkBtn.disabled = false;
+                pinOkBtn.textContent = "Save PIN";
+              }
+            };
+          }
+        } catch (e) {
+          console.warn("has-creator-pin failed:", e);
+        }
 
       } catch (err) {
         console.error(err);
@@ -2701,14 +3145,27 @@ window.shareInvoiceLink = async function (url, amount) {
       currentPaymentLink = null;
       currentAmount = null;
       creatorDescription.classList.remove('active');
+      
+      document.querySelector('input[name="paymentType"][value="onetime"]').checked = true;
+      isReusableMode = false;
+      input.disabled = false;
+      input.classList.remove('disabled');
+      input.placeholder = 'Enter Amount';
+      const helperText = document.querySelector('.reusable-info');
+      if (helperText) helperText.remove();
+      
       showFormView();
     }
 
     function updateGenerateButton() {
-      if (isWalletConnected && input.value && Number(input.value) > 0) {
-        generateBtn.disabled = false;
+      if (isReusableMode) {
+        generateBtn.disabled = !isWalletConnected;
       } else {
-        generateBtn.disabled = true;
+        if (isWalletConnected && input.value && Number(input.value) > 0) {
+          generateBtn.disabled = false;
+        } else {
+          generateBtn.disabled = true;
+        }
       }
     }
 
@@ -2757,7 +3214,6 @@ window.shareInvoiceLink = async function (url, amount) {
       const oldAccountId = accountId;
       accountId = null;
 
-      // ✅ CLEAR MANAGE TOKEN
       if (oldAccountId) {
         clearManageToken(oldAccountId);
       }
@@ -2792,6 +3248,7 @@ window.shareInvoiceLink = async function (url, amount) {
 
     function typePlaceholder() {
       if (document.activeElement === input) return;
+      if (input.disabled) return;
 
       if (isTyping) {
         if (charIndex < placeholderText.length) {
@@ -2817,7 +3274,7 @@ window.shareInvoiceLink = async function (url, amount) {
     }
 
     setTimeout(typePlaceholder, 500);
-    input.addEventListener('focus', () => { if (!input.value) input.placeholder = 'Enter Amount'; });
+    input.addEventListener('focus', () => { if (!input.value && !input.disabled) input.placeholder = 'Enter Amount'; });
 
     connectBtn.addEventListener('click', connectWallet);
     generateBtn.addEventListener('click', generatePaymentLink);
@@ -2834,7 +3291,8 @@ window.shareInvoiceLink = async function (url, amount) {
       if (!currentPaymentLink) return;
       await copyText(currentPaymentLink, 'Link copied!');
     });
-    shareBtn.addEventListener('click', shareCurrentLink);
+    
+    dashboardBtn.addEventListener('click', navigateToDashboard);
 
     copyReceiverBtn.addEventListener('click', async () => {
       const acct = payerReceiverAccount.textContent?.trim();
