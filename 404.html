@@ -336,7 +336,6 @@
       color: var(--ht-text-muted);
     }
 
-    /* ✅ NEW: Exchange rate display */
     .exchange-rate-info {
       margin-top: 8px;
       font-size: 0.8125rem;
@@ -1693,7 +1692,7 @@
 
     window.supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ✅ USD to HBAR Price Converter
+    // USD to HBAR Price Converter
     let cachedHbarPrice = null;
     let priceLastFetched = 0;
     const PRICE_CACHE_DURATION = 30000; // 30 seconds
@@ -1732,7 +1731,6 @@
       return Number((Number(usdAmount) / cachedHbarPrice).toFixed(4));
     }
 
-    // ✅ HELPER FUNCTIONS FOR ROBUST TYPE CHECKING
     function asBool(v) {
       if (v === true) return true;
       if (v === false) return false;
@@ -1858,11 +1856,6 @@
       }
     }
 
-    function isManageUnlocked(walletId) {
-      const stored = loadManageToken(walletId);
-      return !!stored;
-    }
-
     let isReusableMode = false;
 
     let currentInvoiceData = null;
@@ -1898,18 +1891,6 @@
 
     function tinybarsToHbar(tb) {
       return (Number(tb) / 100000000).toFixed(7);
-    }
-
-    function makeUniquePayAmount(requestedHbar) {
-      const baseTb = hbarToTinybars(requestedHbar);
-      const tagTb = Math.floor(50 + Math.random() * 4950);
-      const payTb = baseTb + tagTb;
-
-      return {
-        requested_amount_hbar: Number(requestedHbar),
-        amount_hbar: Number(tinybarsToHbar(payTb)),
-        amount_tinybars: payTb
-      };
     }
 
     function getInvoiceSlugFromUrl() {
@@ -1988,7 +1969,6 @@
     const formSection = document.getElementById('formSection');
     const resultSection = document.getElementById('resultSection');
     const qrContainer = document.getElementById('qrContainer');
-    const linkDisplay = document.getElementById('linkDisplay');
     const copyBtn = document.getElementById('copyBtn');
     const dashboardBtn = document.getElementById('dashboardBtn');
     const createAnotherBtn = document.getElementById('createAnotherBtn');
@@ -1999,7 +1979,6 @@
     const payerSection = document.getElementById('payerSection');
     const payerReceiverAccount = document.getElementById('payerReceiverAccount');
     const copyReceiverBtn = document.getElementById('copyReceiverBtn');
-    const payerUsdAmount = document.getElementById('payerUsdAmount');
     const payNowBtn = document.getElementById('payNowBtn');
     const iPaidBtn = document.getElementById('iPaidBtn');
     const payerStatus = document.getElementById('payerStatus');
@@ -2161,7 +2140,7 @@
       const { data, error } = await window.supabaseClient
         .from("invoices")
         .select(
-          "slug, creator_account, receiver_account, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
+          "slug, creator_account, receiver_account, requested_amount_usd, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
         )
         .eq("slug", slug)
         .maybeSingle();
@@ -2172,7 +2151,7 @@
       return data;
     }
 
-    // ✅ UPDATED loadInvoiceAndRenderPayer WITH USD → HBAR CONVERTER
+    // ✅ UPDATED: loadInvoiceAndRenderPayer
     async function loadInvoiceAndRenderPayer(slug) {
       currentInvoiceSlug = slug;
 
@@ -2203,10 +2182,8 @@
         const helper = payerSection.querySelector('.ht-helper-text');
         if (helper) helper.style.display = 'none';
 
-        // ✅ FETCH HBAR PRICE
         const hbarPrice = await fetchHbarPrice();
 
-        // ✅ RENDER USD INPUT WITH LIVE CONVERSION
         payerAmountContainer.innerHTML = `
           <div class="ht-input-group" style="text-align: left;">
             <label class="ht-label">Enter Amount (USD)</label>
@@ -2225,7 +2202,7 @@
             <div class="exchange-rate-info ${hbarPrice ? '' : 'error'}" id="exchangeRateInfo">
               ${hbarPrice 
                 ? `1 HBAR ≈ $${hbarPrice.toFixed(4)} USD` 
-                : '⚠️ Price unavailable — enter HBAR directly below'
+                : '⚠️ Price unavailable'
               }
             </div>
           </div>
@@ -2237,14 +2214,12 @@
 
         payNowBtn.disabled = true;
 
-        // ✅ AUTO-UPDATE EXCHANGE RATE EVERY 30s
         const priceUpdateInterval = setInterval(async () => {
           const newPrice = await fetchHbarPrice();
           if (newPrice && hbarPrice !== newPrice) {
             exchangeRateInfo.classList.remove('error');
             exchangeRateInfo.textContent = `1 HBAR ≈ $${newPrice.toFixed(4)} USD`;
             
-            // Re-calculate if user has entered USD amount
             const usdVal = Number(payerUsdInput.value);
             if (usdVal > 0) {
               calculatedHbar = usdToHbar(usdVal);
@@ -2255,10 +2230,8 @@
           }
         }, 30000);
 
-        // Clean up interval when leaving page
         window.addEventListener('beforeunload', () => clearInterval(priceUpdateInterval));
 
-        // ✅ USD INPUT LISTENER
         payerUsdInput.addEventListener('input', () => {
           const usdAmount = Number(payerUsdInput.value);
           
@@ -2281,29 +2254,24 @@
           } else {
             payNowBtn.disabled = true;
             exchangeRateInfo.classList.add('error');
-            exchangeRateInfo.textContent = '⚠️ Price unavailable — try again in a moment';
+            exchangeRateInfo.textContent = '⚠️ Price unavailable';
           }
         });
 
-        // ✅ PREFILL FOR ONE-TIME INVOICES
-        if (!reusable && !isAmountMissing(inv.requested_amount_hbar)) {
-          const hbarAmount = Number(inv.requested_amount_hbar);
+        // ✅ PREFILL USD FOR ONE-TIME INVOICES
+        if (!reusable && inv.requested_amount_usd) {
+          const usdAmount = Number(inv.requested_amount_usd);
+          payerUsdInput.value = usdAmount.toFixed(2);
           
-          if (hbarPrice) {
-            const usdEquivalent = (hbarAmount * hbarPrice).toFixed(2);
-            payerUsdInput.value = usdEquivalent;
-            calculatedHbar = hbarAmount;
+          calculatedHbar = usdToHbar(usdAmount);
+          
+          if (calculatedHbar && hbarPrice) {
+            payNowBtn.disabled = false;
             exchangeRateInfo.classList.remove('error');
-            exchangeRateInfo.textContent = `≈ ${hbarAmount.toFixed(4)} HBAR (1 HBAR = $${hbarPrice.toFixed(4)})`;
-            payNowBtn.disabled = false;
-          } else {
-            // Fallback: Show HBAR amount directly
-            calculatedHbar = hbarAmount;
-            payNowBtn.disabled = false;
+            exchangeRateInfo.textContent = `≈ ${calculatedHbar.toFixed(4)} HBAR (1 HBAR = $${hbarPrice.toFixed(4)})`;
           }
         }
 
-        // ✅ STORE HBAR AMOUNT FOR PAYMENT
         payNowBtn.onclick = async () => {
           if (!calculatedHbar) {
             showToast('Please enter a valid amount', 'error');
@@ -2323,7 +2291,6 @@
 
         const isPaid = inv.status === 'paid';
         
-        // ✅ DON'T LOCK REUSABLE INVOICES
         if (!reusable) {
           setPayButtonsState({ 
             paid: isPaid, 
@@ -2355,6 +2322,7 @@
       }
     }
 
+    // ✅ UPDATED: loadStatusPage
     async function loadStatusPage(walletId) {
       try {
         enterStatusMode();
@@ -2373,7 +2341,7 @@
 
         const { data: oneTimeInvoices, error: error1 } = await window.supabaseClient
           .from("invoices")
-          .select("slug, receiver_account, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at")
+          .select("slug, receiver_account, requested_amount_usd, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at")
           .eq("creator_account", walletId)
           .eq("is_reusable", false)
           .order("created_at", { ascending: false });
@@ -2382,7 +2350,7 @@
 
         const { data: paidReusableInvoices, error: error2 } = await window.supabaseClient
           .from("invoices")
-          .select("slug, receiver_account, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at")
+          .select("slug, receiver_account, requested_amount_usd, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at")
           .eq("creator_account", walletId)
           .eq("is_reusable", true)
           .eq("status", "paid")
@@ -2439,7 +2407,12 @@
               </div>
             `;
           } else {
-            amountDisplay = `${asNum(inv.requested_amount_hbar).toFixed(2)} HBAR`;
+            // ✅ SHOW USD AMOUNT
+            const usdAmount = inv.requested_amount_usd 
+              ? `$${asNum(inv.requested_amount_usd).toFixed(2)}`
+              : `${asNum(inv.requested_amount_hbar).toFixed(2)} HBAR`;
+            
+            amountDisplay = usdAmount;
 
             if (inv.confirmed_by_creator) {
               badge = '<span class="invoice-badge confirmed">Confirmed</span>';
@@ -2471,7 +2444,7 @@
             <div class="invoice-actions">
               ${actionBtn}
               <button class="ht-btn ht-btn-action ht-btn-small" onclick="copyInvoiceLink('${invoiceUrl}')">Copy</button>
-              <button class="ht-btn ht-btn-action ht-btn-small" onclick="shareInvoiceLink('${invoiceUrl}', ${asNum(inv.requested_amount_hbar)})">Share</button>
+              <button class="ht-btn ht-btn-action ht-btn-small" onclick="shareInvoiceLink('${invoiceUrl}', ${inv.requested_amount_usd || inv.requested_amount_hbar || 0})">Share</button>
             </div>
           `;
 
@@ -2609,8 +2582,8 @@
       if (navigator.share) {
         try {
           await navigator.share({
-            title: amount ? `Pay $${amount} in HBAR` : 'Pay with HBAR',
-            text: amount ? `Send $${amount} worth of HBAR via HashToll:` : 'Send HBAR via HashToll:',
+            title: amount ? `Pay $${amount}` : 'Pay with HBAR',
+            text: amount ? `Send $${amount} via HashToll:` : 'Send payment via HashToll:',
             url,
           });
           showToast("Shared!", "success");
@@ -2626,7 +2599,6 @@
       }
     };
 
-    // ✅ UPDATED payNow() - ACCEPTS HBAR AMOUNT DIRECTLY
     async function payNow(amountHbar) {
       const originalText = "Pay Now";
 
@@ -2688,7 +2660,6 @@
         }
         paymentReceipt.classList.add('active');
 
-        // ✅ REUSABLE: RESET AFTER 2.5s
         const isReusable = isReusableInvoice(currentInvoiceData);
         if (isReusable) {
           setTimeout(() => {
@@ -2700,7 +2671,6 @@
             setPayerStatus('Enter an amount to continue', 'default');
           }, 2500);
         } else {
-          // ONE-TIME: LOCK
           setPayButtonsState({ paid: true, modeText: "✅ Paid" });
           localStorage.setItem(`ht_paid_${currentInvoiceData.slug}`, JSON.stringify({
             paid: true,
@@ -2892,7 +2862,8 @@
         });
     }
 
-    async function createInvoiceViaEdge({ receiver_account, requested_amount_hbar, amount_hbar, description, is_reusable }) {
+    // ✅ UPDATED: createInvoiceViaEdge
+    async function createInvoiceViaEdge({ receiver_account, requested_amount_usd, description, is_reusable }) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/create-invoice`, {
         method: "POST",
         headers: {
@@ -2902,8 +2873,7 @@
         },
         body: JSON.stringify({
           receiver_account,
-          requested_amount_hbar: is_reusable ? null : requested_amount_hbar,
-          amount_hbar: is_reusable ? null : amount_hbar,
+          requested_amount_usd: is_reusable ? null : requested_amount_usd,
           description: description || null,
           is_reusable: is_reusable || false
         })
@@ -2914,11 +2884,12 @@
       return json;
     }
 
+    // ✅ UPDATED: generatePaymentLink
     async function generatePaymentLink() {
-      const requestedAmount = isReusableMode ? null : Number(input.value);
+      const requestedAmountUsd = isReusableMode ? null : Number(input.value);
       const description = descriptionInput.value.trim();
 
-      if (!isReusableMode && (!requestedAmount || requestedAmount <= 0)) {
+      if (!isReusableMode && (!requestedAmountUsd || requestedAmountUsd <= 0)) {
         showToast("Please enter a valid amount", "error");
         return;
       }
@@ -2937,18 +2908,14 @@
         if (isReusableMode) {
           inv = await createInvoiceViaEdge({
             receiver_account: accountId,
-            requested_amount_hbar: null,
-            amount_hbar: null,
+            requested_amount_usd: null,
             description: description || null,
             is_reusable: true
           });
         } else {
-          const { requested_amount_hbar, amount_hbar } = makeUniquePayAmount(requestedAmount);
-          
           inv = await createInvoiceViaEdge({
             receiver_account: accountId,
-            requested_amount_hbar,
-            amount_hbar,
+            requested_amount_usd: requestedAmountUsd,
             description: description || null,
             is_reusable: false
           });
@@ -2956,7 +2923,7 @@
 
         const paymentLink = `${window.location.origin}/invoice/${inv.slug}`;
         currentPaymentLink = paymentLink;
-        currentAmount = requestedAmount;
+        currentAmount = requestedAmountUsd;
         currentCreatorAccount = accountId;
 
         const resultAmountLine = document.getElementById('resultAmountLine');
@@ -2964,7 +2931,7 @@
         if (isReusableMode) {
           resultAmountLine.textContent = "Reusable QR • Buyer chooses amount";
         } else {
-          resultAmountLine.textContent = `$${requestedAmount.toFixed(2)} in HBAR`;
+          resultAmountLine.textContent = `$${requestedAmountUsd.toFixed(2)} in HBAR`;
         }
 
         if (description) {
@@ -2975,9 +2942,7 @@
         }
 
         enterCreatorResultMode();
-
         statusPageLink.href = `/${accountId}`;
-
         await renderQrInto(qrContainer, paymentLink);
 
         showToast(isReusableMode ? "Reusable QR created! 🎉" : "Invoice created! 🎉", "success");
