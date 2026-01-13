@@ -2323,162 +2323,178 @@
     }
 
     // ✅ UPDATED: loadStatusPage
-    async function loadStatusPage(walletId) {
-      try {
-        enterStatusMode();
+   async function loadStatusPage(walletId) {
+  try {
+    enterStatusMode();
 
-        const stored = loadManageToken(walletId);
-        if (stored) {
-          manageToken = stored.token;
-          manageTokenExpiresAt = stored.expires_at;
-        } else {
-          manageToken = null;
-          manageTokenExpiresAt = null;
-        }
+    const stored = loadManageToken(walletId);
+    if (stored) {
+      manageToken = stored.token;
+      manageTokenExpiresAt = stored.expires_at;
+    } else {
+      manageToken = null;
+      manageTokenExpiresAt = null;
+    }
 
-        statusWalletId.textContent = walletId;
-        invoiceList.innerHTML = '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
+    statusWalletId.textContent = walletId;
+    invoiceList.innerHTML =
+      '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
 
-        const { data: oneTimeInvoices, error: error1 } = await window.supabaseClient
-          .from("invoices")
-          .select("slug, receiver_account, requested_amount_usd, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at")
-          .eq("creator_account", walletId)
-          .eq("is_reusable", false)
-          .order("created_at", { ascending: false });
+    // 1) One-time invoices
+    const { data: oneTimeInvoices, error: error1 } = await window.supabaseClient
+      .from("invoices")
+      .select(
+        "slug, receiver_account, requested_amount_usd, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
+      )
+      .eq("creator_account", walletId)
+      .eq("is_reusable", false)
+      .order("created_at", { ascending: false });
 
-        if (error1) throw error1;
+    if (error1) throw error1;
 
-        const { data: reusableInvoices, error: error2 } = await window.supabaseClient
-  .from("invoices")
-  .select("slug, receiver_account, requested_amount_usd, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at")
-  .eq("creator_account", walletId)
-  .eq("is_reusable", true)
-  .order("created_at", { ascending: false });
+    // 2) Reusable invoices (FIX: define reusableInvoices and use it below)
+    const { data: reusableInvoices, error: error2 } = await window.supabaseClient
+      .from("invoices")
+      .select(
+        "slug, receiver_account, requested_amount_usd, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
+      )
+      .eq("creator_account", walletId)
+      .eq("is_reusable", true)
+      .order("created_at", { ascending: false });
 
+    if (error2) throw error2;
 
-        if (error2) throw error2;
+    // ✅ FIX: merge uses reusableInvoices (NOT paidReusableInvoices)
+    let invoices = [
+      ...(oneTimeInvoices || []),
+      ...(reusableInvoices || [])
+    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-        let invoices = [
-          ...(oneTimeInvoices || []),
-          ...(paidReusableInvoices || [])
-        ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    if (!invoices || invoices.length === 0) {
+      invoiceList.innerHTML = `
+        <div class="no-invoices">
+          <div class="no-invoices-icon">📭</div>
+          No invoices found for this wallet.<br>
+          Create your first payment link above!
+        </div>
+      `;
+      setupManageButton(walletId);
+      return;
+    }
 
-        if (!invoices || invoices.length === 0) {
-          invoiceList.innerHTML = `
-            <div class="no-invoices">
-              <div class="no-invoices-icon">📭</div>
-              No invoices found for this wallet.<br>
-              Create your first payment link above!
-            </div>
-          `;
-          setupManageButton(walletId);
-          return;
-        }
+    invoiceList.innerHTML = "";
+    const unlocked = !!manageToken;
 
-        invoiceList.innerHTML = "";
-        const unlocked = !!manageToken;
+    invoices.forEach((inv) => {
+      const card = document.createElement("div");
+      card.className = "invoice-card";
 
-        invoices.forEach((inv) => {
-          const card = document.createElement("div");
-          card.className = "invoice-card";
+      const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
+      let badge = "";
+      let actionBtn = "";
+      let amountDisplay;
+      let statsDisplay = "";
 
-          const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
-          let badge = "";
-          let actionBtn = "";
-          let amountDisplay;
-          let statsDisplay = "";
+      const isReusable = asBool(inv.is_reusable);
 
-          const isReusable = asBool(inv.is_reusable);
+      if (isReusable) {
+        amountDisplay = `${asNum(inv.total_received_hbar).toFixed(2)} HBAR collected`;
+        badge = '<span class="invoice-badge reusable">Active</span>';
 
-          if (isReusable) {
-            amountDisplay = `${asNum(inv.total_received_hbar).toFixed(2)} HBAR collected`;
-            badge = '<span class="invoice-badge reusable">Active</span>';
-            actionBtn = `<button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>∞ Reusable Link</button>`;
+        // ✅ FIX: button opens the payments list for that reusable QR
+        actionBtn = `
+          <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary"
+                  onclick="viewReusablePayments('${inv.slug}')">
+            📜 View Payments
+          </button>
+        `;
 
-            const totalReceived = asNum(inv.total_received_hbar).toFixed(2);
-            const paymentCount = asNum(inv.payment_count);
-            const lastPayment = inv.last_payment_at ? new Date(inv.last_payment_at).toLocaleDateString() : 'Never';
+        const totalReceived = asNum(inv.total_received_hbar).toFixed(2);
+        const paymentCount = asNum(inv.payment_count);
+        const lastPayment = inv.last_payment_at
+          ? new Date(inv.last_payment_at).toLocaleDateString()
+          : "Never";
 
-            statsDisplay = `
-              <div class="invoice-stats">
-                <strong>Total:</strong> ${totalReceived} HBAR &nbsp;•&nbsp;
-                <strong>Payments:</strong> ${paymentCount} &nbsp;•&nbsp;
-                <strong>Last:</strong> ${lastPayment}
-              </div>
-            `;
-          } else {
-            // ✅ SHOW USD AMOUNT
-            const usdAmount = inv.requested_amount_usd 
-              ? `$${asNum(inv.requested_amount_usd).toFixed(2)}`
-              : `${asNum(inv.requested_amount_hbar).toFixed(2)} HBAR`;
-            
-            amountDisplay = usdAmount;
-
-            if (inv.confirmed_by_creator) {
-              badge = '<span class="invoice-badge confirmed">Confirmed</span>';
-              actionBtn = `<button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>✓ Confirmed (Final)</button>`;
-            } else if (String(inv.status || "").toLowerCase() === "paid") {
-              badge = '<span class="invoice-badge paid">Paid</span>';
-
-              if (unlocked) {
-                actionBtn = `<button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary" onclick="confirmInvoicePayment('${inv.slug}')">Confirm Payment</button>`;
-              } else {
-                actionBtn = `<button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>🔒 Unlock Manage to confirm</button>`;
-              }
-            } else {
-              badge = '<span class="invoice-badge unpaid">Unpaid</span>';
-              actionBtn = `<button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>Waiting...</button>`;
-            }
-          }
-
-          card.innerHTML = `
-            <div class="invoice-header">
-              <div class="invoice-header-left">
-                <div class="invoice-slug">#${inv.slug}</div>
-                <div class="invoice-amount">${amountDisplay}</div>
-                ${statsDisplay}
-              </div>
-              ${badge}
-            </div>
-            <div class="invoice-url">${invoiceUrl}</div>
-            <div class="invoice-actions">
-              ${actionBtn}
-              <button class="ht-btn ht-btn-action ht-btn-small" onclick="copyInvoiceLink('${invoiceUrl}')">Copy</button>
-              <button class="ht-btn ht-btn-action ht-btn-small" onclick="shareInvoiceLink('${invoiceUrl}', ${inv.requested_amount_usd || inv.requested_amount_hbar || 0})">Share</button>
-            </div>
-          `;
-
-          if (inv.description && String(inv.description).trim()) {
-            const descDiv = document.createElement("div");
-            descDiv.className = "invoice-description";
-            descDiv.textContent = String(inv.description).trim();
-
-            const urlDiv = card.querySelector(".invoice-url");
-            card.insertBefore(descDiv, urlDiv);
-          }
-
-          invoiceList.appendChild(card);
-        });
-
-        if (statusRealtimeStartedFor !== walletId) {
-          startStatusPageRealtime(walletId);
-          statusRealtimeStartedFor = walletId;
-        }
-
-        setupManageButton(walletId);
-
-      } catch (err) {
-        console.error("loadStatusPage ERROR", err);
-        showToast("Failed to load invoices", "error");
-        invoiceList.innerHTML = `
-          <div class="no-invoices">
-            <div class="no-invoices-icon">⚠️</div>
-            Error loading invoices.<br>
-            Please try again.
+        statsDisplay = `
+          <div class="invoice-stats">
+            <strong>Total:</strong> ${totalReceived} HBAR &nbsp;•&nbsp;
+            <strong>Payments:</strong> ${paymentCount} &nbsp;•&nbsp;
+            <strong>Last:</strong> ${lastPayment}
           </div>
         `;
+      } else {
+        const usdAmount = inv.requested_amount_usd
+          ? `$${asNum(inv.requested_amount_usd).toFixed(2)}`
+          : `${asNum(inv.requested_amount_hbar).toFixed(2)} HBAR`;
+
+        amountDisplay = usdAmount;
+
+        if (inv.confirmed_by_creator) {
+          badge = '<span class="invoice-badge confirmed">Confirmed</span>';
+          actionBtn = `<button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>✓ Confirmed (Final)</button>`;
+        } else if (String(inv.status || "").toLowerCase() === "paid") {
+          badge = '<span class="invoice-badge paid">Paid</span>';
+
+          if (unlocked) {
+            actionBtn = `<button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary" onclick="confirmInvoicePayment('${inv.slug}')">Confirm Payment</button>`;
+          } else {
+            actionBtn = `<button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>🔒 Unlock Manage to confirm</button>`;
+          }
+        } else {
+          badge = '<span class="invoice-badge unpaid">Unpaid</span>';
+          actionBtn = `<button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>Waiting...</button>`;
+        }
       }
+
+      card.innerHTML = `
+        <div class="invoice-header">
+          <div class="invoice-header-left">
+            <div class="invoice-slug">#${inv.slug}</div>
+            <div class="invoice-amount">${amountDisplay}</div>
+            ${statsDisplay}
+          </div>
+          ${badge}
+        </div>
+
+        <div class="invoice-url">${invoiceUrl}</div>
+
+        <div class="invoice-actions">
+          ${actionBtn}
+          <button class="ht-btn ht-btn-action ht-btn-small" onclick="copyInvoiceLink('${invoiceUrl}')">Copy</button>
+          <button class="ht-btn ht-btn-action ht-btn-small" onclick="shareInvoiceLink('${invoiceUrl}', ${inv.requested_amount_usd || inv.requested_amount_hbar || 0})">Share</button>
+        </div>
+      `;
+
+      if (inv.description && String(inv.description).trim()) {
+        const descDiv = document.createElement("div");
+        descDiv.className = "invoice-description";
+        descDiv.textContent = String(inv.description).trim();
+
+        const urlDiv = card.querySelector(".invoice-url");
+        card.insertBefore(descDiv, urlDiv);
+      }
+
+      invoiceList.appendChild(card);
+    });
+
+    if (statusRealtimeStartedFor !== walletId) {
+      startStatusPageRealtime(walletId);
+      statusRealtimeStartedFor = walletId;
     }
+
+    setupManageButton(walletId);
+  } catch (err) {
+    console.error("loadStatusPage ERROR", err);
+    showToast("Failed to load invoices", "error");
+    invoiceList.innerHTML = `
+      <div class="no-invoices">
+        <div class="no-invoices-icon">⚠️</div>
+        Error loading invoices.<br>
+        Please try again.
+      </div>
+    `;
+  }
+}
 
     function setupManageButton(walletId) {
       const unlocked = !!manageToken;
