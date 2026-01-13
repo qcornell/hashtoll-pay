@@ -1,1 +1,3469 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HashToll Pay - Hedera Payment Links</title>
+  <link rel="icon" type="image/png" href="/favicon.png" />
+
+  <!-- Open Graph / Social Media Meta Tags -->
+  <meta property="og:title" content="HashToll Pay - Instant Hedera Payment" />
+  <meta property="og:description" content="Send me HBAR instantly with this payment link. Powered by Hedera." />
+  <meta property="og:image" content="https://pay.hashtoll.com/og-image.png" />
+  <meta property="og:url" content="https://pay.hashtoll.com" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="HashToll Pay - Instant Hedera Payment" />
+  <meta name="twitter:description" content="Send me HBAR instantly with this payment link. Powered by Hedera." />
+  <meta name="twitter:image" content="https://pay.hashtoll.com/og-image.png" />
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    /* --- CSS VARIABLES --- */
+    :root {
+      --ht-card-width: 520px;
+      --ht-navy: #2F436E;
+      --ht-navy-dark: #1F2937;
+      --ht-navy-light: #4A5F8E;
+      --ht-connected-bg: #F1F5F9;
+      --ht-connected-border: #E2E8F0;
+      --ht-connected-text: #1F3A5F;
+      --ht-check-green: #10B981;
+      --ht-check-bg: #D1FAE5;
+      --ht-logo-max-width: 280px;
+      --ht-input-bg: #F8FAFC;
+      --ht-input-border: #CBD5E1;
+      --ht-text-primary: #0F172A;
+      --ht-text-secondary: #64748B;
+      --ht-text-muted: #94A3B8;
+      --ht-radius: 12px;
+      --ht-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      min-height: 100dvh;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      
+      background: 
+        linear-gradient(135deg, rgba(232, 234, 246, 0.50) 0%, rgba(245, 247, 250, 0.60) 50%, rgba(227, 242, 253, 0.50) 100%),
+        url('/home_bg2.png') center center / cover no-repeat fixed;
+      
+      color: var(--ht-text-primary);
+      overflow-x: hidden;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    @supports (-webkit-touch-callout: none) {
+      body {
+        min-height: -webkit-fill-available;
+      }
+    }
+
+    body.use-vh-fallback {
+      min-height: calc(var(--vh, 1vh) * 100);
+    }
+
+    body.keyboard-open {
+      align-items: flex-start !important;
+      padding-top: 16px;
+    }
+
+    body.walletconnect-open {
+      overflow: hidden !important;
+      touch-action: none;
+    }
+
+    .ht-card {
+      width: 100%;
+      max-width: var(--ht-card-width);
+      position: relative;
+      padding: 56px 48px;
+      box-sizing: border-box;
+      background: #ffffff;
+      border-radius: 24px;
+      box-shadow: var(--ht-shadow);
+      text-align: center;
+      z-index: 10;
+      transition: all 0.4s ease;
+      margin: 20px;
+    }
+
+    .ht-logo-area {
+      margin-bottom: 16px;
+    }
+
+    .ht-title {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+    }
+
+    .ht-title img {
+      display: block;
+      width: min(var(--ht-logo-max-width), 100%);
+      max-width: 100%;
+      height: auto;
+      object-fit: contain;
+    }
+
+    .ht-subtitle {
+      margin: 14px 0 0 0;
+      color: #94a3b8;
+      font-size: 1rem;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+    }
+
+    .ht-subsubtitle {
+      margin: 6px 0 0 0;
+      color: var(--ht-text-secondary);
+      font-size: 0.875rem;
+      font-weight: 400;
+      display: none;
+    }
+
+    .ht-subsubtitle.active {
+      display: block;
+    }
+
+    .ht-account-display {
+      display: none;
+      background: var(--ht-connected-bg);
+      border: 1px solid var(--ht-connected-border);
+      border-radius: var(--ht-radius);
+      padding: 12px 16px;
+      margin-bottom: 28px;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.3s ease;
+      gap: 12px;
+    }
+
+    .ht-account-display.active {
+      display: flex; 
+    }
+
+    .ht-account-display-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .ht-check-icon {
+      width: 18px;
+      height: 18px;
+      background: var(--ht-check-bg);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 12px;
+      color: var(--ht-check-green);
+      font-weight: 700;
+    }
+
+    .ht-account-id {
+      font-size: 0.9375rem;
+      color: var(--ht-connected-text);
+      font-weight: 500;
+      flex: 1;
+      word-break: break-word;
+      letter-spacing: -0.01em;
+      line-height: 1.3;
+    }
+
+    .ht-disconnect-btn {
+      background: #FFFFFF;
+      border: 1px solid var(--ht-connected-border);
+      color: var(--ht-text-secondary);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      padding: 6px 14px;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+
+    .ht-disconnect-btn:hover {
+      background: var(--ht-connected-bg);
+      color: var(--ht-connected-text);
+      border-color: #CBD5E1;
+    }
+
+    .ht-disconnect-btn:active {
+      transform: scale(0.98);
+    }
+
+    .ht-form-section {
+      transition: all 0.4s ease;
+    }
+
+    .ht-form-section.hidden {
+      opacity: 0;
+      transform: translateY(-20px);
+      pointer-events: none;
+      position: absolute;
+      width: calc(100% - 96px);
+    }
+
+    .ht-input-group {
+      text-align: left;
+      margin-bottom: 24px;
+    }
+
+    .ht-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--ht-text-primary);
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .ht-payment-type-toggle {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ht-radio-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--ht-input-bg);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .ht-radio-option:hover {
+      background: #ffffff;
+      border-color: var(--ht-navy-light);
+    }
+
+    .ht-radio-option input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      cursor: pointer;
+      accent-color: var(--ht-navy);
+    }
+
+    .ht-radio-option input[type="radio"]:checked + .ht-radio-label {
+      color: var(--ht-navy);
+    }
+
+    .ht-radio-label {
+      font-size: 0.9375rem;
+      color: var(--ht-text-primary);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .ht-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .ht-input-prefix {
+      position: absolute;
+      left: 18px;
+      font-size: 1.25rem;
+      font-weight: 500;
+      color: var(--ht-text-secondary);
+      pointer-events: none;
+    }
+
+    .ht-input {
+      width: 100%;
+      height: 48px;
+      box-sizing: border-box;
+      background: var(--ht-input-bg);
+      border: 1px solid var(--ht-input-border);
+      border-radius: var(--ht-radius);
+      padding: 0 16px 0 42px;
+      font-size: 0.9375rem;
+      color: var(--ht-text-primary);
+      font-weight: 400;
+      outline: none;
+      transition: 0.2s ease;
+      -moz-appearance: textfield;
+      letter-spacing: -0.01em;
+    }
+
+    .ht-input.no-prefix {
+      padding: 0 16px;
+    }
+
+    .ht-input.disabled {
+      background: #E2E8F0;
+      color: var(--ht-text-muted);
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .ht-input::-webkit-outer-spin-button,
+    .ht-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .ht-input:focus {
+      background: #ffffff;
+      border-color: var(--ht-navy);
+      box-shadow: 0 0 0 3px rgba(47, 67, 110, 0.1);
+    }
+
+    .ht-input::placeholder {
+      color: var(--ht-text-muted);
+    }
+
+    .exchange-rate-info {
+      margin-top: 8px;
+      font-size: 0.8125rem;
+      color: var(--ht-text-secondary);
+      text-align: left;
+      font-weight: 500;
+    }
+
+    .exchange-rate-info.loading {
+      color: var(--ht-text-muted);
+      font-style: italic;
+    }
+
+    .exchange-rate-info.error {
+      color: #ef4444;
+    }
+
+    .ht-result-section {
+      display: none;
+      transition: all 0.4s ease;
+    }
+
+    .ht-result-section.active {
+      display: block;
+      animation: fadeInUp 0.5s ease;
+    }
+
+    .ht-result-amount {
+      color: var(--ht-navy);
+      margin: 25px 0 16px 0;
+      line-height: 1.1;
+    }
+
+    .ht-result-status-link {
+      margin-bottom: 36px;
+    }
+
+    .ht-result-status-link a {
+      color: var(--ht-navy);
+      text-decoration: none;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      letter-spacing: -0.01em;
+    }
+
+    .ht-result-status-link a:hover {
+      color: var(--ht-navy-light);
+      text-decoration: underline;
+    }
+
+    .ht-qr-card {
+      background: #FFFFFF;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 0 auto 24px auto;
+      max-width: 200px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    }
+
+    .ht-qr-container {
+      border-radius: 12px;
+      overflow: hidden;
+      display: inline-block;
+      max-width: 100%;
+    }
+
+    .ht-qr-container canvas {
+      border-radius: 12px;
+      display: block;
+      max-width: 100%;
+      height: auto !important;
+    }
+
+    .ht-qr-trust {
+      margin-top: 20px;
+      font-size: 0.8125rem;
+      color: var(--ht-text-muted);
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+
+    .ht-qr-trust strong {
+      color: var(--ht-text-secondary);
+      font-weight: 600;
+    }
+
+    .ht-result-description {
+      background: rgba(0, 0, 0, 0.02);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: var(--ht-radius);
+      padding: 20px 24px;
+      margin: 24px 0;
+      text-align: center;
+      display: none;
+    }
+
+    .ht-result-description.active {
+      display: block;
+    }
+
+    .ht-result-description-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--ht-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .ht-result-description-text {
+      font-size: 1.0625rem;
+      color: var(--ht-text-primary);
+      font-weight: 500;
+      line-height: 1.5;
+      letter-spacing: -0.01em;
+    }
+
+    .ht-result-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 24px 0;
+    }
+
+    .ht-result-secondary-action {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .ht-result-secondary-action a {
+      color: var(--ht-text-secondary);
+      text-decoration: none;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      letter-spacing: -0.01em;
+    }
+
+    .ht-result-secondary-action a:hover {
+      color: var(--ht-navy);
+      text-decoration: underline;
+    }
+
+    .ht-payer-section {
+      display: none;
+      animation: fadeInUp 0.4s ease;
+    }
+
+    .ht-payer-section.active {
+      display: block;
+    }
+
+    .ht-status-section {
+      display: none;
+      animation: fadeInUp 0.4s ease;
+    }
+
+    .ht-status-section.active {
+      display: block;
+    }
+
+    .status-header {
+      background: linear-gradient(135deg, rgba(56, 181, 196, 0.06) 0%, rgba(38, 177, 129, 0.06) 100%);
+      border: 1.5px solid rgba(56, 181, 196, 0.15);
+      border-radius: var(--ht-radius);
+      padding: 20px;
+      margin-bottom: 24px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .status-header-left {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .status-header-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--ht-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .status-wallet-id {
+      font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+      font-size: 1.1rem;
+      color: var(--ht-check-green);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      word-break: break-all;
+    }
+
+    .status-disconnect-btn {
+      background: rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      color: var(--ht-text-secondary);
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      font-size: 1.3rem;
+      font-weight: 300;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .status-disconnect-btn:hover {
+      background: rgba(0, 0, 0, 0.08);
+      border-color: rgba(0, 0, 0, 0.12);
+      color: var(--ht-text-primary);
+      transform: scale(1.05);
+    }
+
+    .status-disconnect-btn:active {
+      transform: scale(0.95);
+    }
+
+    .invoice-card {
+      background: #ffffff;
+      border: 1.5px solid rgba(0, 0, 0, 0.06);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+      text-align: left;
+    }
+
+    .invoice-card:hover {
+      border-color: rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .invoice-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      gap: 12px;
+    }
+
+    .invoice-header-left {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .invoice-slug {
+      font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+      font-size: 0.8rem;
+      color: var(--ht-text-secondary);
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      margin-bottom: 8px;
+    }
+
+    .invoice-amount {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--ht-text-primary);
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+
+    .invoice-stats {
+      font-size: 0.75rem;
+      color: var(--ht-text-secondary);
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    .invoice-stats strong {
+      color: var(--ht-text-primary);
+      font-weight: 600;
+    }
+
+    .invoice-url {
+      font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+      font-size: 0.7rem;
+      color: var(--ht-text-secondary);
+      word-break: break-all;
+      line-height: 1.4;
+      margin-top: 12px;
+      margin-bottom: 16px;
+    }
+
+    .invoice-description {
+      font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+      font-size: 0.7rem;
+      color: var(--ht-text-secondary);
+      background: rgba(0, 0, 0, 0.02);
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin: 8px 0 12px 0;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .invoice-description::before {
+      content: 'Description • ';
+      font-weight: 700;
+      color: var(--ht-text-primary);
+      text-transform: uppercase;
+      font-size: 0.65rem;
+      letter-spacing: 0.05em;
+    }
+
+    .invoice-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .invoice-action-primary {
+      grid-column: 1 / -1;
+    }
+
+    .invoice-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .invoice-badge.unpaid {
+      background: #e2e8f0;
+      color: #94a3b8;
+    }
+
+    .invoice-badge.unpaid::before {
+      content: '○';
+      font-size: 0.9em;
+    }
+
+    .invoice-badge.paid {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1.5px solid rgba(59, 130, 246, 0.3);
+      color: #2563eb;
+    }
+
+    .invoice-badge.paid::before {
+      content: '●';
+      font-size: 0.9em;
+    }
+
+    .invoice-badge.confirmed {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1.5px solid rgba(16, 185, 129, 0.3);
+      color: #059669;
+    }
+
+    .invoice-badge.confirmed::before {
+      content: '✓';
+      font-weight: 700;
+    }
+
+    .invoice-badge.reusable {
+      background: rgba(168, 85, 247, 0.1);
+      border: 1.5px solid rgba(168, 85, 247, 0.3);
+      color: #7c3aed;
+    }
+
+    .invoice-badge.reusable::before {
+      content: '∞';
+      font-size: 1em;
+    }
+
+    .no-invoices {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--ht-text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .no-invoices-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+
+    .payer-account-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .payer-account-id {
+      font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+      font-size: 0.98rem;
+      color: var(--ht-text-primary);
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      text-align: center;
+    }
+
+    .payer-copy-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 1.5px solid rgba(0, 0, 0, 0.08);
+      background: rgba(0, 0, 0, 0.04);
+      color: var(--ht-text-secondary);
+      cursor: pointer;
+      transition: all 0.18s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    .payer-copy-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(0, 0, 0, 0.12);
+      background: rgba(0, 0, 0, 0.06);
+    }
+
+    .payer-copy-btn:active {
+      transform: translateY(0);
+    }
+
+    .payment-receipt {
+      background: rgba(16, 185, 129, 0.05);
+      border: 1.5px solid rgba(16, 185, 129, 0.2);
+      border-radius: 12px;
+      padding: 16px;
+      margin: 20px 0;
+      text-align: left;
+      display: none;
+    }
+
+    .payment-receipt.active {
+      display: block;
+    }
+
+    .payment-receipt-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--ht-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+
+    .payment-receipt-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 0.875rem;
+    }
+
+    .payment-receipt-label {
+      color: var(--ht-text-secondary);
+      font-weight: 500;
+    }
+
+    .payment-receipt-value {
+      color: var(--ht-text-primary);
+      font-weight: 700;
+      font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+    }
+
+    .payment-receipt-tx {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .payment-receipt-tx a {
+      color: var(--ht-check-green);
+      text-decoration: none;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .payment-receipt-tx a:hover {
+      text-decoration: underline;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .ht-usd-worth {
+      font-size: 1.1rem;
+      color: var(--ht-text-primary);
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+
+    .ht-status {
+      border-radius: var(--ht-radius);
+      font-size: 0.9rem; 
+      color: var(--ht-text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .ht-status a {
+      color: var(--ht-navy);
+      text-decoration: none;
+      font-weight: 700;
+      transition: all 0.2s ease;
+    }
+
+    .ht-status a:hover {
+      color: var(--ht-navy-light);
+      text-decoration: underline;
+    }
+
+    .ht-status.payer-status-hidden {
+      display: none;
+    }
+
+    .ht-status.paid {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1.5px solid rgba(16, 185, 129, 0.2);
+      color: #2f436e;
+      padding: 12px;
+      border-radius: 12px;
+    }
+
+    .ht-status.warn {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1.5px solid rgba(245, 158, 11, 0.2);
+      color: #d97706;
+      font-weight: 700;
+      padding: 12px;
+      border-radius: 12px;
+    }
+
+    .ht-link-display {
+      background: var(--ht-input-bg);
+      border: 1.5px solid rgba(0, 0, 0, 0.06);
+      border-radius: var(--ht-radius);
+      padding: 14px;
+      margin: 16px 0;
+      font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+      font-size: 0.8rem;
+      color: var(--ht-text-primary);
+      word-break: break-all;
+      text-align: center;
+      line-height: 1.4;
+      display: none;
+    }
+
+    .ht-btn {
+      width: 100%;
+      padding: 16px 20px;
+      border-radius: var(--ht-radius);
+      border: none;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-bottom: 12px;
+    }
+
+    .ht-btn-primary {
+      background: linear-gradient(180deg, var(--ht-navy-light), var(--ht-navy));
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(47, 67, 110, 0.2);
+    }
+
+    .ht-btn-primary:hover:not(:disabled) {
+      background: linear-gradient(180deg, var(--ht-navy), var(--ht-navy-dark));
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(47, 67, 110, 0.3);
+    }
+
+    .ht-btn-primary:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(47, 67, 110, 0.2);
+    }
+
+    .ht-btn-pay {
+      padding: 18px 20px;
+      font-size: 1.0625rem;
+      border-radius: 14px;
+    }
+
+    .ht-btn-secondary {
+      background: rgba(0, 0, 0, 0.04);
+      color: var(--ht-text-primary);
+      border: 1.5px solid rgba(0, 0, 0, 0.08);
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .ht-btn-secondary:not(:disabled) {
+      background: linear-gradient(180deg, var(--ht-navy-light), var(--ht-navy));
+      color: #FFFFFF;
+      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(47, 67, 110, 0.2);
+    }
+
+    .ht-btn-secondary:hover:not(:disabled) {
+      background: linear-gradient(180deg, var(--ht-navy), var(--ht-navy-dark));
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(47, 67, 110, 0.3);
+    }
+
+    .ht-btn-secondary:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(47, 67, 110, 0.2);
+    }
+
+    .ht-btn-secondary:disabled {
+      background: rgba(0, 0, 0, 0.04);
+      color: var(--ht-text-secondary);
+      border: 1.5px solid rgba(0, 0, 0, 0.08);
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .ht-btn-action {
+      background: #FFFFFF;
+      color: var(--ht-text-primary);
+      border: 1.5px solid rgba(0, 0, 0, 0.08);
+      font-weight: 600;
+    }
+
+    .ht-btn-action:hover:not(:disabled) {
+      background: rgba(0, 0, 0, 0.04);
+      transform: translateY(-1px);
+      border-color: rgba(0, 0, 0, 0.12);
+    }
+
+    .ht-btn-action:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .ht-btn-small {
+      padding: 14px 18px;
+      font-size: 0.875rem;
+      margin-bottom: 0;
+      border-radius: 10px;
+    }
+
+    .ht-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .spinner {
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: currentColor;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .ht-helper-text {
+      margin-top: 12px;
+      margin-bottom: 10px;
+      color: var(--ht-text-secondary);
+      font-size: 0.8125rem;
+      font-weight: 400;
+      line-height: 1.4;
+    }
+
+    .ht-helper-text.reusable-info {
+      margin-top: 8px;
+      margin-bottom: 0;
+      color: var(--ht-text-secondary);
+      font-size: 0.8125rem;
+      line-height: 1.4;
+    }
+
+    .toast {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      padding: 14px 20px;
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      z-index: 1000;
+      animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      max-width: 320px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1.5px solid rgba(0, 0, 0, 0.08);
+    }
+
+    @keyframes slideInRight {
+      from {
+        transform: translateX(400px) scale(0.9);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0) scale(1);
+        opacity: 1;
+      }
+    }
+
+    .toast-success {
+      border-color: rgba(16, 185, 129, 0.3);
+      background: rgba(16, 185, 129, 0.05);
+      color: #059669;
+    }
+
+    .toast-error {
+      border-color: rgba(239, 68, 68, 0.3);
+      background: rgba(239, 68, 68, 0.05);
+      color: #dc2626;
+    }
+
+    .toast-info {
+      border-color: rgba(79, 109, 235, 0.3);
+      background: rgba(79, 109, 235, 0.05);
+      color: #4f6deb;
+    }
+
+    .toast-icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .toast.removing {
+      animation: slideOutRight 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+    }
+
+    @keyframes slideOutRight {
+      to {
+        transform: translateX(400px) scale(0.9);
+        opacity: 0;
+      }
+    }
+
+    .ht-powered-by {
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 0.8125rem;
+      color: #4b596d;
+      font-weight: 400;
+    }
+
+    .ht-powered-by img {
+      height: 50px;
+    }
+
+    .ht-description {
+      background: rgba(0, 0, 0, 0.02);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: var(--ht-radius);
+      padding: 18px 20px;
+      margin: 20px 0;
+      text-align: center;
+      display: none;
+    }
+
+    .ht-description.active {
+      display: block;
+    }
+
+    .ht-description-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--ht-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    #payerDescriptionText,
+    #creatorDescriptionText {
+      font-size: 1rem;
+      color: var(--ht-text-primary);
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 0;
+        align-items: flex-start;
+      }
+
+      .ht-card {
+        width: calc(100% - 20px);
+        max-width: 100%;
+        padding: 32px 24px 28px 24px;
+        margin: 10px;
+        border-radius: 20px;
+        min-height: auto;
+      }
+
+      .ht-logo-area {
+        margin-bottom: 10px;
+      }
+
+      .ht-title img {
+        max-width: 200px;
+      }
+
+      .ht-subtitle {
+        font-size: 0.875rem;
+        margin: 10px 0 0 0;
+      }
+
+      .ht-account-display {
+        padding: 10px 14px;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+
+      .ht-account-display-left {
+        gap: 8px;
+      }
+
+      .ht-account-id {
+        font-size: 0.875rem;
+        line-height: 1.4;
+        word-spacing: 0.15em;
+      }
+
+      .ht-disconnect-btn {
+        padding: 5px 10px;
+        font-size: 0.75rem;
+      }
+
+      .ht-result-amount {
+        font-size: 2rem;
+        margin: 16px 0 12px 0;
+      }
+
+      .ht-result-status-link {
+        margin-bottom: 20px;
+      }
+
+      .ht-qr-card {
+        padding: 16px;
+        max-width: 260px;
+        margin: 0 auto 20px auto;
+      }
+
+      .ht-qr-trust {
+        margin-top: 12px;
+        font-size: 0.75rem;
+      }
+
+      .ht-result-description {
+        padding: 16px 18px;
+        margin: 16px 0;
+      }
+
+      .ht-result-actions {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        margin: 20px 0;
+      }
+
+      .ht-result-secondary-action {
+        margin-top: 16px;
+        padding-top: 16px;
+      }
+
+      .ht-powered-by {
+        margin-top: 16px;
+      }
+
+      .ht-btn {
+        padding: 14px 18px;
+        font-size: 0.9375rem;
+      }
+
+      .ht-btn-small {
+        padding: 12px 16px;
+        font-size: 0.875rem;
+      }
+
+      .invoice-card {
+        padding: 16px;
+      }
+
+      .invoice-description {
+        font-size: 0.65rem;
+        padding: 6px 8px;
+      }
+
+      .invoice-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .invoice-action-primary {
+        grid-column: 1;
+      }
+
+      .toast {
+        max-width: calc(100vw - 32px);
+        right: 16px;
+        top: 16px;
+        font-size: 0.8125rem;
+        padding: 12px 16px;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .ht-card {
+        padding: 32px 20px;
+      }
+
+      .ht-title img {
+        max-width: 180px;
+      }
+
+      .ht-result-amount {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="ht-card">
+    <div class="ht-logo-area">
+      <h1 class="ht-title">
+        <img src="/logo.png" alt="HashToll">
+      </h1>
+      <p class="ht-subtitle" id="subtitle">Create a payment link in seconds</p>
+      <p class="ht-subsubtitle" id="subsubtitle">Send securely via HashPack</p>
+    </div>
+
+    <div class="ht-account-display" id="accountDisplay">
+      <div class="ht-account-display-left">
+        <span class="ht-check-icon">✓</span>
+        <span class="ht-account-id">Connected · <span id="accountId">0.0.0</span></span>
+      </div>
+      <button class="ht-disconnect-btn" onclick="disconnectWallet()">Disconnect</button>
+    </div>
+
+    <div class="ht-form-section" id="formSection">
+      <div class="ht-input-group">
+        <label class="ht-label">Payment Type</label>
+        <div class="ht-payment-type-toggle">
+          <label class="ht-radio-option">
+            <input type="radio" name="paymentType" value="onetime" checked>
+            <span class="ht-radio-label">One-time payment</span>
+          </label>
+          <label class="ht-radio-option">
+            <input type="radio" name="paymentType" value="reusable">
+            <span class="ht-radio-label">Multiple payments</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="ht-input-group">
+        <label class="ht-label">USD Amount</label>
+        <div class="ht-input-wrapper">
+          <span class="ht-input-prefix">$</span>
+          <input type="number" class="ht-input" id="amountInput" placeholder="Enter Amount" step="0.01" min="0">
+        </div>
+      </div>
+
+      <div class="ht-input-group">
+        <label class="ht-label">Payment Description <span style="color: var(--ht-text-secondary); font-weight: 400;">(optional)</span></label>
+        <div class="ht-input-wrapper">
+          <input 
+            type="text" 
+            class="ht-input no-prefix" 
+            id="descriptionInput" 
+            placeholder="What is this payment for?" 
+            maxlength="100">
+        </div>
+      </div>
+
+      <button class="ht-btn ht-btn-primary" id="connectBtn">Connect Wallet</button>
+      <button class="ht-btn ht-btn-secondary" id="generateBtn" disabled>Generate Payment Link</button>
+      
+      <div class="ht-helper-text" style="text-align: center; margin-top: 16px;">
+        Secure · Non-custodial · Trusted <strong>Gateway</strong>
+      </div>
+    </div>
+
+    <div class="ht-result-section" id="resultSection">
+     <div class="ht-result-amount" id="resultAmountLine">$60.00 in HBAR</div>
+      
+      <div class="ht-result-status-link">
+        <a href="#" id="statusPageLink">→ View payment status</a>
+      </div>
+
+      <div class="ht-qr-card">
+        <div class="ht-qr-container" id="qrContainer"></div>
+        <div class="ht-qr-trust">
+          Secure · Non-custodial · Trusted <strong>Gateway</strong>
+        </div>
+      </div>
+
+      <div class="ht-result-description" id="creatorDescription">
+        <span class="ht-result-description-label">Description</span>
+        <div class="ht-result-description-text" id="creatorDescriptionText"></div>
+      </div>
+
+      <div class="ht-result-actions">
+        <button class="ht-btn ht-btn-primary ht-btn-small" id="copyBtn">Share Link</button>
+        <button class="ht-btn ht-btn-action ht-btn-small" id="dashboardBtn">Dashboard</button>
+      </div>
+
+      <div class="ht-result-secondary-action">
+        <a href="#" id="createAnotherBtn">Create another payment</a>
+      </div>
+    </div>
+
+    <div class="ht-payer-section" id="payerSection">
+      <div class="payer-account-row">
+        <div class="payer-account-id" id="payerReceiverAccount">0.0.000000</div>
+        <button class="payer-copy-btn" id="copyReceiverBtn" title="Copy receiver account">⧉</button>
+      </div>
+
+      <div id="payerAmountContainer"></div>
+
+      <div class="ht-description" id="payerDescription">
+        <span class="ht-description-label">Payment For</span>
+        <div id="payerDescriptionText"></div>
+      </div>
+
+      <div class="payment-receipt" id="paymentReceipt">
+        <div class="payment-receipt-title">✅ Payment Confirmed</div>
+        <div class="payment-receipt-row">
+          <span class="payment-receipt-label">Amount Sent:</span>
+          <span class="payment-receipt-value" id="receiptAmount">0 HBAR</span>
+        </div>
+        <div class="payment-receipt-row">
+          <span class="payment-receipt-label">To Account:</span>
+          <span class="payment-receipt-value" id="receiptReceiver">0.0.0</span>
+        </div>
+        <div class="payment-receipt-tx">
+          <a href="#" id="receiptTxLink" target="_blank" rel="noopener noreferrer">
+            View on HashScan →
+          </a>
+        </div>
+      </div>
+
+      <button class="ht-btn ht-btn-primary ht-btn-pay" id="payNowBtn">Pay Now</button>
+      <button class="ht-btn ht-btn-secondary" id="iPaidBtn">✅ I Paid (Notify Receiver)</button>
+      <div class="ht-helper-text">After you pay, tap "I Paid" to confirm.</div>
+
+      <div class="ht-status payer-status-hidden" id="payerStatus">⏳ Waiting for payment...</div>
+    </div>
+
+    <div class="ht-status-section" id="statusSection">
+      <div class="status-header">
+        <div class="status-header-left">
+          <div class="status-header-title">Connected Wallet</div>
+          <div class="status-wallet-id" id="statusWalletId">0.0.000000</div>
+        </div>
+        <button class="status-disconnect-btn" onclick="disconnectWallet()" title="Disconnect">×</button>
+      </div>
+
+      <button class="ht-btn ht-btn-primary" id="createNewFromStatus" style="margin-bottom: 24px;">
+        + Create New Invoice
+      </button>
+
+      <button class="ht-btn ht-btn-action" id="manageBtn" style="margin-bottom: 16px;">
+        🔒 Unlock Manage
+      </button>
+
+      <div id="invoiceList"></div>
+    </div>
+
+    <div class="ht-powered-by">
+      <span>Powered by</span>
+      <img src="/hedera.png" alt="Hedera">
+    </div>
+  </div>
+
+  <!-- PIN MODAL -->
+  <div id="pinModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:2000; align-items:center; justify-content:center; padding:16px;">
+    <div style="width:100%; max-width:420px; background:#fff; border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,0.25); padding:20px;">
+      <div style="font-weight:800; font-size:1.1rem; margin-bottom:6px;" id="pinModalTitle">Set your 4-digit PIN</div>
+      <div style="color:#64748B; font-size:0.9rem; line-height:1.4; margin-bottom:14px;" id="pinModalSubtitle">
+        This unlocks Manage controls on your invoice dashboard.
+      </div>
+
+      <div id="pinSetupFields">
+        <label style="display:block; font-size:0.85rem; font-weight:700; margin:10px 0 6px;">PIN</label>
+        <input id="pinA" inputmode="numeric" maxlength="4" class="ht-input no-prefix" placeholder="4 digits" style="padding:0 16px;" />
+        <label style="display:block; font-size:0.85rem; font-weight:700; margin:10px 0 6px;">Confirm PIN</label>
+        <input id="pinB" inputmode="numeric" maxlength="4" class="ht-input no-prefix" placeholder="4 digits" style="padding:0 16px;" />
+      </div>
+
+      <div id="pinUnlockFields" style="display:none;">
+        <label style="display:block; font-size:0.85rem; font-weight:700; margin:10px 0 6px;">Enter PIN</label>
+        <input id="pinOnly" inputmode="numeric" maxlength="4" class="ht-input no-prefix" placeholder="4 digits" style="padding:0 16px;" />
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button id="pinCancelBtn" class="ht-btn ht-btn-action ht-btn-small" style="width:40%;">Cancel</button>
+        <button id="pinOkBtn" class="ht-btn ht-btn-primary ht-btn-small" style="width:60%;">Save PIN</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <!-- MODULE SCRIPT - WalletConnect Logic -->
+  <script type="module">
+  import {
+    LedgerId,
+    AccountId,
+    Hbar,
+    TransferTransaction,
+    TransactionId
+  } from "https://esm.sh/@hashgraph/sdk@2.78.0";
+
+  import {
+    DAppConnector,
+    HederaJsonRpcMethod,
+    HederaSessionEvent,
+    HederaChainId
+  } from "https://esm.sh/@hashgraph/hedera-wallet-connect@2.0.4?deps=@hashgraph/sdk@2.78.0";
+
+  import QRCode from "https://esm.sh/qrcode@1.5.3";
+
+  const PROJECT_ID = "1acd173110297b885db0bad6276e6868";
+
+  const metadata = {
+    name: "HashToll Pay",
+    description: "Create Hedera Payment Links",
+    url: window.location.origin,
+    icons: [`${window.location.origin}/favicon.png`]
+  };
+
+  const dAppConnector = new DAppConnector(
+    metadata,
+    LedgerId.MAINNET,
+    PROJECT_ID,
+    Object.values(HederaJsonRpcMethod),
+    Object.values(HederaSessionEvent),
+    [HederaChainId.Mainnet]
+  );
+
+  let initialized = false;
+
+  async function ensureInitialized() {
+    if (initialized) return;
+    await dAppConnector.init({ logger: "error" });
+    initialized = true;
+  }
+
+  function getSessionAccountId() {
+    const sessions = dAppConnector.walletConnectClient?.session?.getAll?.() ?? [];
+    if (!sessions.length) return null;
+
+    const accounts = sessions[0]?.namespaces?.hedera?.accounts ?? [];
+    if (!accounts.length) return null;
+
+    return accounts[0].split(":")[2] || null;
+  }
+
+  function bytesToBase64(bytes) {
+    let binary = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  }
+
+  const hederaConnect = {
+    dAppConnector,
+    accountId: null,
+
+    isConnected() {
+      return !!this.accountId;
+    },
+
+    async restoreSession() {
+      await ensureInitialized();
+      const acct = getSessionAccountId();
+      if (acct) {
+        this.accountId = acct;
+        return acct;
+      }
+      this.accountId = null;
+      return null;
+    },
+
+    async connect() {
+      await ensureInitialized();
+
+      if (this.accountId) return this.accountId;
+
+      const restored = await this.restoreSession();
+      if (restored) return restored;
+
+      const cleanup = () => document.body.classList.remove("walletconnect-open");
+
+      try {
+        document.body.classList.add("walletconnect-open");
+        dAppConnector.openModal();
+
+        return await new Promise((resolve, reject) => {
+          let modalEverVisible = false;
+
+          const poll = setInterval(() => {
+            const acct = getSessionAccountId();
+
+            if (acct) {
+              clearInterval(poll);
+              cleanup();
+              this.accountId = acct;
+              resolve(acct);
+              return;
+            }
+
+            const modal = document.querySelector(
+              "wcm-modal, w3m-modal, [data-testid='wui-modal'], [data-testid='wcm-modal']"
+            );
+
+            if (modal) {
+              const isVisible = getComputedStyle(modal).display !== "none";
+              if (isVisible) modalEverVisible = true;
+
+              if (!isVisible && modalEverVisible) {
+                clearInterval(poll);
+                cleanup();
+                reject(new Error("User closed wallet modal"));
+              }
+            }
+          }, 350);
+
+          setTimeout(() => {
+            clearInterval(poll);
+            cleanup();
+            reject(new Error("Connection timeout"));
+          }, 90000);
+        });
+
+      } catch (err) {
+        cleanup();
+        throw err;
+      }
+    },
+
+    disconnect() {
+      this.accountId = null;
+      try { dAppConnector.disconnectAll(); } catch (e) {}
+    },
+
+    async sendHbar(receiverAccountId, amountHbar, memo = "HashToll Pay") {
+      await ensureInitialized();
+
+      if (!this.accountId) {
+        throw new Error("Wallet not connected");
+      }
+
+      const sender = AccountId.fromString(this.accountId);
+      const receiver = AccountId.fromString(receiverAccountId);
+      const node = AccountId.fromString("0.0.3");
+
+      const tx = new TransferTransaction()
+        .addHbarTransfer(sender, new Hbar(-Number(amountHbar)))
+        .addHbarTransfer(receiver, new Hbar(Number(amountHbar)))
+        .setTransactionMemo(memo)
+        .setTransactionId(TransactionId.generate(sender))
+        .setNodeAccountIds([node])
+        .freeze();
+
+      const base64Tx = bytesToBase64(tx.toBytes());
+      const signerCaip = `hedera:mainnet:${this.accountId}`;
+
+      const result = await dAppConnector.signAndExecuteTransaction({
+        signerAccountId: signerCaip,
+        transactionList: base64Tx
+      });
+
+      const txId =
+        result?.transactionId?.toString?.() ??
+        result?.transactionId ??
+        result?.txId ??
+        null;
+
+      if (!txId) {
+        console.log("Wallet result:", result);
+        throw new Error("No transactionId returned from wallet");
+      }
+
+      return { ...result, transactionId: txId };
+    }
+  };
+
+  window.hederaConnect = hederaConnect;
+  window.QRCode = QRCode;
+
+  window.hederaReady = (async () => {
+    await ensureInitialized();
+    await hederaConnect.restoreSession().catch(() => {});
+    return hederaConnect.accountId;
+  })();
+</script>
+
+  <!-- MAIN SCRIPT - App Logic -->
+  <script>
+    const SUPABASE_URL = 'https://pvtoczsnwamailsjjnfn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2dG9jenNud2FtYWlsc2pqbmZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NjE1MTksImV4cCI6MjA4MzEzNzUxOX0.3mDZ3RUo7aHi25r1X1axYj0EppgXFKEY7xGvqdhDSbM';
+
+    window.supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ✅ USD to HBAR Price Converter
+    let cachedHbarPrice = null;
+    let priceLastFetched = 0;
+    const PRICE_CACHE_DURATION = 30000; // 30 seconds
+
+    async function fetchHbarPrice() {
+      const now = Date.now();
+      
+      if (cachedHbarPrice && (now - priceLastFetched) < PRICE_CACHE_DURATION) {
+        return cachedHbarPrice;
+      }
+
+      try {
+        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=hedera-hashgraph&vs_currencies=usd');
+        
+        if (!res.ok) throw new Error('Price fetch failed');
+        
+        const data = await res.json();
+        const price = data?.['hedera-hashgraph']?.usd;
+        
+        if (!price || !Number.isFinite(price) || price <= 0) {
+          throw new Error('Invalid price data');
+        }
+        
+        cachedHbarPrice = price;
+        priceLastFetched = now;
+        
+        return price;
+      } catch (err) {
+        console.error('Failed to fetch HBAR price:', err);
+        return null;
+      }
+    }
+
+    function usdToHbar(usdAmount) {
+      if (!cachedHbarPrice || cachedHbarPrice <= 0) return null;
+      return Number((Number(usdAmount) / cachedHbarPrice).toFixed(8));
+    }
+
+    function asBool(v) {
+      if (v === true) return true;
+      if (v === false) return false;
+      if (typeof v === "number") return v === 1;
+      if (typeof v === "string") {
+        const s = v.trim().toLowerCase();
+        return s === "true" || s === "1" || s === "yes" || s === "on";
+      }
+      return false;
+    }
+
+    function asNum(v) {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function isAmountMissing(v) {
+      return !Number(v) || Number(v) <= 0;
+    }
+
+    function isReusableInvoice(inv) {
+      return asBool(inv?.is_reusable) || isAmountMissing(inv?.requested_amount_hbar);
+    }
+
+    // PIN SYSTEM GLOBALS
+    let manageToken = null;
+    let manageTokenExpiresAt = null;
+
+    const pinModal = document.getElementById("pinModal");
+    const pinModalTitle = document.getElementById("pinModalTitle");
+    const pinModalSubtitle = document.getElementById("pinModalSubtitle");
+    const pinSetupFields = document.getElementById("pinSetupFields");
+    const pinUnlockFields = document.getElementById("pinUnlockFields");
+    const pinCancelBtn = document.getElementById("pinCancelBtn");
+    const pinOkBtn = document.getElementById("pinOkBtn");
+    const pinA = document.getElementById("pinA");
+    const pinB = document.getElementById("pinB");
+    const pinOnly = document.getElementById("pinOnly");
+    const manageBtn = document.getElementById("manageBtn");
+
+    const paymentReceipt = document.getElementById("paymentReceipt");
+    const receiptAmount = document.getElementById("receiptAmount");
+    const receiptReceiver = document.getElementById("receiptReceiver");
+    const receiptTxLink = document.getElementById("receiptTxLink");
+
+    function openPinModal(mode) {
+      pinA.value = ""; pinB.value = ""; pinOnly.value = "";
+      pinModal.style.display = "flex";
+
+      if (mode === "setup") {
+        pinModalTitle.textContent = "Set your 4-digit PIN";
+        pinModalSubtitle.textContent = "This unlocks Manage controls on your invoice dashboard.";
+        pinSetupFields.style.display = "block";
+        pinUnlockFields.style.display = "none";
+        pinOkBtn.textContent = "Save PIN";
+      } else {
+        pinModalTitle.textContent = "Unlock Manage";
+        pinModalSubtitle.textContent = "Enter your PIN to edit invoice statuses.";
+        pinSetupFields.style.display = "none";
+        pinUnlockFields.style.display = "block";
+        pinOkBtn.textContent = "Unlock";
+      }
+    }
+
+    function closePinModal() {
+      pinModal.style.display = "none";
+    }
+
+    pinCancelBtn.addEventListener("click", () => closePinModal());
+
+    function is4(pin) { return /^[0-9]{4}$/.test(String(pin || "")); }
+
+    async function callFn(name, body) {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "apikey": SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify(body)
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || `${name} failed`);
+      return json;
+    }
+
+    function saveManageToken(walletId, token, expiresAt) {
+      try {
+        localStorage.setItem(`ht_manage_${walletId}`, JSON.stringify({
+          token,
+          expires_at: expiresAt
+        }));
+      } catch (e) {
+        console.warn("Failed to save manage token:", e);
+      }
+    }
+
+    function loadManageToken(walletId) {
+      try {
+        const stored = localStorage.getItem(`ht_manage_${walletId}`);
+        if (!stored) return null;
+
+        const { token, expires_at } = JSON.parse(stored);
+        
+        if (new Date(expires_at) <= new Date()) {
+          clearManageToken(walletId);
+          return null;
+        }
+
+        return { token, expires_at };
+      } catch (e) {
+        console.warn("Failed to load manage token:", e);
+        return null;
+      }
+    }
+
+    function clearManageToken(walletId) {
+      try {
+        localStorage.removeItem(`ht_manage_${walletId}`);
+      } catch (e) {
+        console.warn("Failed to clear manage token:", e);
+      }
+    }
+
+    let isReusableMode = false;
+
+    let currentInvoiceData = null;
+    let statusRealtimeStartedFor = null;
+
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+
+      const icons = { success: '✓', error: '✕', info: 'ℹ' };
+
+      const icon = document.createElement('span');
+      icon.className = 'toast-icon';
+      icon.textContent = icons[type] || icons.info;
+
+      const text = document.createElement('span');
+      text.textContent = message;
+
+      toast.appendChild(icon);
+      toast.appendChild(text);
+
+      document.getElementById('toast-container').appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.add('removing');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function hbarToTinybars(hbar) {
+      return Math.round(Number(hbar) * 100000000);
+    }
+
+    function tinybarsToHbar(tb) {
+      return (Number(tb) / 100000000).toFixed(7);
+    }
+
+    function getInvoiceSlugFromUrl() {
+      const path = window.location.pathname;
+      const match = path.match(/^\/invoice\/([a-zA-Z0-9_-]+)$/);
+      return match ? match[1] : null;
+    }
+
+    function getWalletIdFromUrl() {
+      const path = window.location.pathname;
+      const match = path.match(/^\/(\d+\.\d+\.\d+)$/);
+      return match ? match[1] : null;
+    }
+
+    function isInvoicePage() {
+      return !!getInvoiceSlugFromUrl();
+    }
+
+    function isStatusPage() {
+      return !!getWalletIdFromUrl();
+    }
+
+    let accountId = null;
+    let isWalletConnected = false;
+    let currentCreatorAccount = null;
+
+    let currentPaymentLink = null;
+    let currentAmount = null;
+    let currentInvoiceSlug = null;
+
+    const input = document.getElementById('amountInput');
+    const descriptionInput = document.getElementById('descriptionInput');
+
+    const creatorDescription = document.getElementById('creatorDescription');
+    const creatorDescriptionText = document.getElementById('creatorDescriptionText');
+    const payerDescription = document.getElementById('payerDescription');
+    const payerDescriptionText = document.getElementById('payerDescriptionText');
+
+    function setVhUnit() {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+
+    (function initVhFix() {
+      document.body.classList.add('use-vh-fallback');
+      setVhUnit();
+      window.addEventListener('resize', setVhUnit);
+      window.addEventListener('orientationchange', () => setTimeout(setVhUnit, 250));
+    })();
+
+    function isIOS() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    [input, descriptionInput].forEach(el => {
+      el.addEventListener('focus', () => {
+        if (!isIOS()) return;
+        document.body.classList.add('keyboard-open');
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 250);
+      });
+
+      el.addEventListener('blur', () => {
+        if (!isIOS()) return;
+        document.body.classList.remove('keyboard-open');
+        setTimeout(setVhUnit, 150);
+      });
+    });
+
+    const connectBtn = document.getElementById('connectBtn');
+    const generateBtn = document.getElementById('generateBtn');
+    const accountDisplay = document.getElementById('accountDisplay');
+    const accountIdSpan = document.getElementById('accountId');
+    const formSection = document.getElementById('formSection');
+    const resultSection = document.getElementById('resultSection');
+    const qrContainer = document.getElementById('qrContainer');
+    const copyBtn = document.getElementById('copyBtn');
+    const dashboardBtn = document.getElementById('dashboardBtn');
+    const createAnotherBtn = document.getElementById('createAnotherBtn');
+
+    const subtitle = document.getElementById('subtitle');
+    const subsubtitle = document.getElementById('subsubtitle');
+
+    const payerSection = document.getElementById('payerSection');
+    const payerReceiverAccount = document.getElementById('payerReceiverAccount');
+    const copyReceiverBtn = document.getElementById('copyReceiverBtn');
+    const payNowBtn = document.getElementById('payNowBtn');
+    const iPaidBtn = document.getElementById('iPaidBtn');
+    const payerStatus = document.getElementById('payerStatus');
+
+    const statusSection = document.getElementById('statusSection');
+    const statusWalletId = document.getElementById('statusWalletId');
+    const invoiceList = document.getElementById('invoiceList');
+    const createNewFromStatus = document.getElementById('createNewFromStatus');
+
+    const statusPageLink = document.getElementById('statusPageLink');
+
+    const paymentTypeRadios = document.querySelectorAll('input[name="paymentType"]');
+
+    paymentTypeRadios.forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        isReusableMode = e.target.value === 'reusable';
+        
+        if (isReusableMode) {
+          input.disabled = true;
+          input.value = '';
+          input.placeholder = 'Buyer enters amount';
+          input.classList.add('disabled');
+          
+          let helperText = document.querySelector('.reusable-info');
+          if (!helperText) {
+            helperText = document.createElement('div');
+            helperText.className = 'ht-helper-text reusable-info';
+            helperText.textContent = 'Best for tips, donations, events, and public QR codes';
+            input.parentElement.parentElement.appendChild(helperText);
+          }
+          
+          if (isWalletConnected) {
+            generateBtn.disabled = false;
+          }
+        } else {
+          input.disabled = false;
+          input.placeholder = 'Enter Amount';
+          input.classList.remove('disabled');
+          
+          const helperText = document.querySelector('.reusable-info');
+          if (helperText) helperText.remove();
+          
+          updateGenerateButton();
+        }
+      });
+    });
+
+    // =============================
+// ✅ Reusable Payments Viewer
+// =============================
+
+// Create a simple modal once
+(function initPaymentsModal() {
+  if (document.getElementById("paymentsModal")) return;
+
+  const overlay = document.createElement("div");
+  overlay.id = "paymentsModal";
+  overlay.style.cssText = `
+    display:none; position:fixed; inset:0; z-index:3000;
+    background:rgba(0,0,0,0.45); padding:16px;
+    align-items:center; justify-content:center;
+  `;
+
+  overlay.innerHTML = `
+    <div style="
+      width:100%; max-width:640px; background:#fff; border-radius:16px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.25); overflow:hidden;
+      border:1px solid rgba(0,0,0,0.10);
+    ">
+      <div style="
+        display:flex; align-items:center; justify-content:space-between;
+        padding:14px 16px; border-bottom:1px solid rgba(0,0,0,0.08);
+        background:rgba(47,67,110,0.04);
+      ">
+        <div>
+          <div id="paymentsModalTitle" style="font-weight:800; font-size:1rem; color:#0F172A;">Payments</div>
+          <div id="paymentsModalSub" style="font-size:0.85rem; color:#64748B; margin-top:2px;">Loading...</div>
+        </div>
+
+        <button id="paymentsModalClose" style="
+          width:36px; height:36px; border-radius:10px; border:1px solid rgba(0,0,0,0.10);
+          background:#fff; cursor:pointer; font-size:18px; line-height:1;
+        " title="Close">×</button>
+      </div>
+
+      <div id="paymentsModalBody" style="padding:14px 16px; max-height:70vh; overflow:auto;">
+        <div style="color:#64748B; font-size:0.95rem;">Loading...</div>
+      </div>
+
+      <div style="
+        padding:12px 16px; border-top:1px solid rgba(0,0,0,0.08);
+        display:flex; justify-content:flex-end; gap:10px; background:#fff;
+      ">
+        <button id="paymentsModalCopyAll" style="
+          padding:10px 12px; border-radius:10px; border:1px solid rgba(0,0,0,0.10);
+          background:rgba(0,0,0,0.04); cursor:pointer; font-weight:700;
+        ">Copy JSON</button>
+        <button id="paymentsModalDone" style="
+          padding:10px 14px; border-radius:10px; border:none;
+          background:linear-gradient(180deg, #4A5F8E, #2F436E);
+          color:#fff; cursor:pointer; font-weight:800;
+        ">Done</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const close = () => (overlay.style.display = "none");
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+
+  overlay.querySelector("#paymentsModalClose").addEventListener("click", close);
+  overlay.querySelector("#paymentsModalDone").addEventListener("click", close);
+
+  overlay.querySelector("#paymentsModalCopyAll").addEventListener("click", async () => {
+    try {
+      const raw = overlay.dataset.rawJson || "{}";
+      await navigator.clipboard.writeText(raw);
+      showToast("Copied payments JSON ✅", "success");
+    } catch (e) {
+      showToast("Copy failed", "error");
+    }
+  });
+})();
+
+function openPaymentsModal({ title, sub, bodyHtml, rawJson }) {
+  const overlay = document.getElementById("paymentsModal");
+  overlay.style.display = "flex";
+  overlay.querySelector("#paymentsModalTitle").textContent = title || "Payments";
+  overlay.querySelector("#paymentsModalSub").textContent = sub || "";
+  overlay.querySelector("#paymentsModalBody").innerHTML = bodyHtml || "";
+  overlay.dataset.rawJson = rawJson || "{}";
+}
+
+function shortStr(s, keepStart = 10, keepEnd = 8) {
+  s = String(s || "");
+  if (s.length <= keepStart + keepEnd + 3) return s;
+  return `${s.slice(0, keepStart)}…${s.slice(-keepEnd)}`;
+}
+
+function fmtDate(iso) {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleString();
+  } catch {
+    return String(iso);
+  }
+}
+
+async function fetchReusablePayments(slug, limit = 50) {
+  const url =
+    `${SUPABASE_URL}/functions/v1/notify-paid` +
+    `?action=payments&slug=${encodeURIComponent(slug)}&limit=${encodeURIComponent(limit)}`;
+
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      "apikey": SUPABASE_ANON_KEY
+    }
+  });
+
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.error || "Failed to load payments");
+  return json;
+}
+
+// ✅ THIS is what your button is calling:
+window.viewReusablePayments = async function (slug) {
+  try {
+    if (!slug) return showToast("Missing invoice slug", "error");
+
+    showToast("Loading payments…", "info");
+
+    const data = await fetchReusablePayments(slug, 100);
+    const payments = data?.payments || [];
+    const inv = data?.invoice || null;
+
+    const total = inv?.total_received_hbar != null ? Number(inv.total_received_hbar).toFixed(2) : null;
+    const count = inv?.payment_count != null ? Number(inv.payment_count) : payments.length;
+
+    if (!payments.length) {
+      openPaymentsModal({
+        title: `#${slug} • Payments`,
+        sub: `No payments yet`,
+        bodyHtml: `
+          <div style="padding:18px; border:1px dashed rgba(0,0,0,0.15); border-radius:12px; color:#64748B;">
+            No payments recorded for this invoice yet.
+          </div>
+        `,
+        rawJson: JSON.stringify(data, null, 2)
+      });
+      return;
+    }
+
+    const rows = payments.map((p) => {
+      const hbar = (p.amount_hbar != null) ? `${Number(p.amount_hbar).toFixed(8).replace(/0+$/,"").replace(/\.$/,"")} HBAR` : "—";
+      const usd = (p.amount_usd != null) ? `$${Number(p.amount_usd).toFixed(2)}` : "—";
+      const payer = p.payer_account || "—";
+      const when = fmtDate(p.paid_at || p.created_at);
+      const tx = p.tx_id || "—";
+      const memo = p.memo || "";
+
+      const hashscan = tx && tx !== "—"
+        ? `https://hashscan.io/mainnet/transaction/${encodeURIComponent(tx)}`
+        : null;
+
+      return `
+        <div style="
+          border:1px solid rgba(0,0,0,0.08);
+          border-radius:12px;
+          padding:12px 12px;
+          margin-bottom:10px;
+          background:#fff;
+        ">
+          <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <div style="font-weight:900; color:#0F172A;">${hbar} <span style="font-weight:700; color:#64748B;">(${usd})</span></div>
+            <div style="color:#64748B; font-size:0.85rem; font-weight:700;">${when}</div>
+          </div>
+
+          <div style="margin-top:8px; font-family: SF Mono, Monaco, 'Courier New', monospace; font-size:0.85rem; color:#334155;">
+            <div><strong>Payer:</strong> ${payer}</div>
+            <div><strong>TX:</strong> ${shortStr(tx)}</div>
+            ${memo ? `<div><strong>Memo:</strong> ${memo}</div>` : ""}
+          </div>
+
+          <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+            <button style="
+              padding:8px 10px; border-radius:10px; border:1px solid rgba(0,0,0,0.10);
+              background:rgba(0,0,0,0.04); cursor:pointer; font-weight:800;
+            " onclick="navigator.clipboard.writeText('${String(tx).replace(/'/g,"\\'")}'); showToast('TX copied ✅','success')">
+              Copy TX
+            </button>
+
+            ${hashscan ? `
+              <a href="${hashscan}" target="_blank" rel="noopener noreferrer" style="
+                padding:8px 10px; border-radius:10px; text-decoration:none;
+                background:linear-gradient(180deg, #4A5F8E, #2F436E);
+                color:#fff; font-weight:900;
+              ">Open HashScan →</a>
+            ` : ""}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    openPaymentsModal({
+      title: `#${slug} • Payments`,
+      sub: `${count} payment(s)${total ? ` • ${total} HBAR total` : ""}`,
+      bodyHtml: rows,
+      rawJson: JSON.stringify(data, null, 2)
+    });
+
+  } catch (err) {
+    console.error("viewReusablePayments ERROR:", err);
+    showToast(String(err?.message || err || "Failed to load payments"), "error");
+  }
+};
+
+
+    function enterHomeMode() {
+      if (isWalletConnected && accountId) {
+        accountDisplay.classList.add('active');
+        accountIdSpan.textContent = accountId;
+      } else {
+        accountDisplay.classList.remove('active');
+      }
+      payerSection.classList.remove('active');
+      resultSection.classList.remove('active');
+      statusSection.classList.remove('active');
+      formSection.classList.remove('hidden');
+
+      subsubtitle.classList.remove('active');
+      subtitle.textContent = 'Create a payment link in seconds';
+    }
+
+    function enterCreatorResultMode() {
+      accountDisplay.classList.remove('active');
+      payerSection.classList.remove('active');
+      statusSection.classList.remove('active');
+      formSection.classList.add('hidden');
+      resultSection.classList.add('active');
+
+      subsubtitle.classList.remove('active');
+      subtitle.textContent = 'Your payment link is ready!';
+    }
+
+    function enterInvoiceMode() {
+      accountDisplay.classList.remove('active');
+      formSection.classList.add('hidden');
+      resultSection.classList.remove('active');
+      statusSection.classList.remove('active');
+      payerSection.classList.add('active');
+
+      subsubtitle.classList.add('active');
+    }
+
+    function enterStatusMode() {
+      accountDisplay.classList.remove('active');
+      formSection.classList.add('hidden');
+      resultSection.classList.remove('active');
+      payerSection.classList.remove('active');
+      statusSection.classList.add('active');
+
+      subsubtitle.classList.remove('active');
+      subtitle.textContent = 'My Invoices';
+    }
+
+    async function renderQrInto(containerEl, url) {
+      containerEl.innerHTML = '';
+
+      if (!window.QRCode) {
+        showToast('QR code library not loaded', 'error');
+        return;
+      }
+
+      const isMobile = window.innerWidth <= 600;
+      const qrSize = isMobile ? Math.min(240, window.innerWidth - 120) : 260;
+
+      window.QRCode.toCanvas(url, {
+        width: qrSize,
+        margin: 2,
+        errorCorrectionLevel: 'H',
+        color: { dark: '#000000', light: '#FFFFFF' }
+      }, (err, canvas) => {
+        if (err) {
+          console.error(err);
+          showToast('Failed to generate QR', 'error');
+          return;
+        }
+
+        canvas.style.borderRadius = '12px';
+        containerEl.appendChild(canvas);
+      });
+    }
+
+    function setPayerStatus(text, type = 'default') {
+      payerStatus.classList.remove('payer-status-hidden');
+      payerStatus.textContent = text;
+      payerStatus.classList.remove('paid', 'warn');
+
+      if (type === 'paid') payerStatus.classList.add('paid');
+      if (type === 'warn') payerStatus.classList.add('warn');
+    }
+
+    function setPayButtonsState({ paid, modeText } = { paid: false, modeText: null }) {
+      if (paid) {
+        payNowBtn.disabled = true;
+        payNowBtn.innerHTML = modeText || "✅ Paid";
+        payNowBtn.style.opacity = "0.55";
+        payNowBtn.style.cursor = "not-allowed";
+
+        iPaidBtn.disabled = true;
+        iPaidBtn.innerHTML = "✅ Payment Confirmed";
+        iPaidBtn.style.opacity = "0.55";
+        iPaidBtn.style.cursor = "not-allowed";
+        return;
+      }
+
+      payNowBtn.disabled = false;
+      payNowBtn.innerHTML = "Pay Now";
+      payNowBtn.style.opacity = "";
+      payNowBtn.style.cursor = "";
+
+      iPaidBtn.disabled = false;
+      iPaidBtn.innerHTML = "✅ I Paid (Notify Receiver)";
+      iPaidBtn.style.opacity = "";
+      iPaidBtn.style.cursor = "";
+    }
+
+    async function loadInvoice(slug) {
+      const { data, error } = await window.supabaseClient
+        .from("invoices")
+        .select(
+          "slug, creator_account, receiver_account, requested_amount_usd, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
+        )
+        .eq("slug", slug)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error("Invoice not found");
+
+      return data;
+    }
+
+    // ✅ UPDATED: loadInvoiceAndRenderPayer
+    async function loadInvoiceAndRenderPayer(slug) {
+      currentInvoiceSlug = slug;
+
+      try {
+        enterInvoiceMode();
+
+        payerReceiverAccount.textContent = 'Loading...';
+        const payerAmountContainer = document.getElementById('payerAmountContainer');
+        payerAmountContainer.innerHTML = '<div class="ht-usd-worth">Loading...</div>';
+        payerDescription.classList.remove('active');
+        payerStatus.classList.add('payer-status-hidden');
+        paymentReceipt.classList.remove('active');
+
+        const inv = await loadInvoice(slug);
+        currentInvoiceData = inv;
+        currentCreatorAccount = inv.creator_account;
+
+        const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
+        currentPaymentLink = invoiceUrl;
+
+        subtitle.innerHTML = `<a href="/${inv.creator_account}" style="color: var(--ht-navy); text-decoration: none;">→ Check Payment Status</a>`;
+
+        payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
+
+        const reusable = isReusableInvoice(inv);
+
+        iPaidBtn.style.display = 'none';
+        const helper = payerSection.querySelector('.ht-helper-text');
+        if (helper) helper.style.display = 'none';
+
+        const hbarPrice = await fetchHbarPrice();
+
+        payerAmountContainer.innerHTML = `
+          <div class="ht-input-group" style="text-align: left;">
+            <label class="ht-label">Enter Amount (USD)</label>
+            <div class="ht-input-wrapper">
+              <span class="ht-input-prefix">$</span>
+              <input
+                type="number"
+                class="ht-input"
+                id="payerUsdInput"
+                placeholder="Enter USD amount"
+                step="0.01"
+                min="0.01"
+                inputmode="decimal"
+              >
+            </div>
+            <div class="exchange-rate-info ${hbarPrice ? '' : 'error'}" id="exchangeRateInfo">
+              ${hbarPrice 
+                ? `1 HBAR ≈ $${hbarPrice.toFixed(4)} USD` 
+                : '⚠️ Price unavailable'
+              }
+            </div>
+          </div>
+        `;
+
+        const payerUsdInput = document.getElementById('payerUsdInput');
+        const exchangeRateInfo = document.getElementById('exchangeRateInfo');
+        let calculatedHbar = null;
+
+        payNowBtn.disabled = true;
+
+        const priceUpdateInterval = setInterval(async () => {
+          const newPrice = await fetchHbarPrice();
+          if (newPrice && hbarPrice !== newPrice) {
+            exchangeRateInfo.classList.remove('error');
+            exchangeRateInfo.textContent = `1 HBAR ≈ $${newPrice.toFixed(4)} USD`;
+            
+            const usdVal = Number(payerUsdInput.value);
+            if (usdVal > 0) {
+              calculatedHbar = usdToHbar(usdVal);
+              if (calculatedHbar) {
+                payNowBtn.disabled = false;
+              }
+            }
+          }
+        }, 30000);
+
+        window.addEventListener('beforeunload', () => clearInterval(priceUpdateInterval));
+
+        payerUsdInput.addEventListener('input', () => {
+          const usdAmount = Number(payerUsdInput.value);
+          
+          if (!usdAmount || usdAmount <= 0) {
+            payNowBtn.disabled = true;
+            calculatedHbar = null;
+            if (hbarPrice) {
+              exchangeRateInfo.classList.remove('error');
+              exchangeRateInfo.textContent = `1 HBAR ≈ $${hbarPrice.toFixed(4)} USD`;
+            }
+            return;
+          }
+
+          calculatedHbar = usdToHbar(usdAmount);
+          
+          if (calculatedHbar) {
+            payNowBtn.disabled = false;
+            exchangeRateInfo.classList.remove('error');
+            exchangeRateInfo.textContent = `≈ ${calculatedHbar.toFixed(4)} HBAR (1 HBAR = $${hbarPrice.toFixed(4)})`;
+          } else {
+            payNowBtn.disabled = true;
+            exchangeRateInfo.classList.add('error');
+            exchangeRateInfo.textContent = '⚠️ Price unavailable';
+          }
+        });
+
+        // ✅ PREFILL USD FOR ONE-TIME INVOICES
+        if (!reusable && inv.requested_amount_usd) {
+          const usdAmount = Number(inv.requested_amount_usd);
+          payerUsdInput.value = usdAmount.toFixed(2);
+          
+          calculatedHbar = usdToHbar(usdAmount);
+          
+          if (calculatedHbar && hbarPrice) {
+            payNowBtn.disabled = false;
+            exchangeRateInfo.classList.remove('error');
+            exchangeRateInfo.textContent = `≈ ${calculatedHbar.toFixed(4)} HBAR (1 HBAR = $${hbarPrice.toFixed(4)})`;
+          }
+        }
+
+        payNowBtn.onclick = async () => {
+          if (!calculatedHbar) {
+            showToast('Please enter a valid amount', 'error');
+            return;
+          }
+          
+          await payNow(calculatedHbar);
+        };
+
+        currentAmount = null;
+        setPayerStatus('Enter an amount to continue', 'default');
+
+        if (inv.description && inv.description.trim()) {
+          payerDescriptionText.textContent = inv.description;
+          payerDescription.classList.add('active');
+        }
+
+        const isPaid = inv.status === 'paid';
+        
+        if (!reusable) {
+          setPayButtonsState({ 
+            paid: isPaid, 
+            modeText: isPaid ? "✅ Paid" : null 
+          });
+
+          if (isPaid) {
+            setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+          }
+
+          const saved = localStorage.getItem(`ht_paid_${slug}`);
+          if (saved) {
+            try {
+              const j = JSON.parse(saved);
+              if (j?.paid) {
+                setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+                setPayButtonsState({ paid: true, modeText: "✅ Paid" });
+              }
+            } catch {}
+          }
+
+          startPayerRealtime(slug);
+        }
+
+      } catch (err) {
+        console.error(err);
+        showToast('Invoice not found', 'error');
+        enterHomeMode();
+      }
+    }
+
+    // ✅ UPDATED: loadStatusPage
+   async function loadStatusPage(walletId) {
+  try {
+    enterStatusMode();
+
+    const stored = loadManageToken(walletId);
+    if (stored) {
+      manageToken = stored.token;
+      manageTokenExpiresAt = stored.expires_at;
+    } else {
+      manageToken = null;
+      manageTokenExpiresAt = null;
+    }
+
+    statusWalletId.textContent = walletId;
+    invoiceList.innerHTML =
+      '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
+
+    // 1) One-time invoices
+    const { data: oneTimeInvoices, error: error1 } = await window.supabaseClient
+      .from("invoices")
+      .select(
+        "slug, receiver_account, requested_amount_usd, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
+      )
+      .eq("creator_account", walletId)
+      .eq("is_reusable", false)
+      .order("created_at", { ascending: false });
+
+    if (error1) throw error1;
+
+    // 2) Reusable invoices (FIX: define reusableInvoices and use it below)
+    const { data: reusableInvoices, error: error2 } = await window.supabaseClient
+      .from("invoices")
+      .select(
+        "slug, receiver_account, requested_amount_usd, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
+      )
+      .eq("creator_account", walletId)
+      .eq("is_reusable", true)
+      .order("created_at", { ascending: false });
+
+    if (error2) throw error2;
+
+    // ✅ FIX: merge uses reusableInvoices (NOT paidReusableInvoices)
+    let invoices = [
+      ...(oneTimeInvoices || []),
+      ...(reusableInvoices || [])
+    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    if (!invoices || invoices.length === 0) {
+      invoiceList.innerHTML = `
+        <div class="no-invoices">
+          <div class="no-invoices-icon">📭</div>
+          No invoices found for this wallet.<br>
+          Create your first payment link above!
+        </div>
+      `;
+      setupManageButton(walletId);
+      return;
+    }
+
+    invoiceList.innerHTML = "";
+    const unlocked = !!manageToken;
+
+    invoices.forEach((inv) => {
+      const card = document.createElement("div");
+      card.className = "invoice-card";
+
+      const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
+      let badge = "";
+      let actionBtn = "";
+      let amountDisplay;
+      let statsDisplay = "";
+
+      const isReusable = asBool(inv.is_reusable);
+
+      if (isReusable) {
+        amountDisplay = `${asNum(inv.total_received_hbar).toFixed(2)} HBAR collected`;
+        badge = '<span class="invoice-badge reusable">Active</span>';
+
+        // ✅ FIX: button opens the payments list for that reusable QR
+        actionBtn = `
+          <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary"
+                  onclick="viewReusablePayments('${inv.slug}')">
+            📜 View Payments
+          </button>
+        `;
+
+        const totalReceived = asNum(inv.total_received_hbar).toFixed(2);
+        const paymentCount = asNum(inv.payment_count);
+        const lastPayment = inv.last_payment_at
+          ? new Date(inv.last_payment_at).toLocaleDateString()
+          : "Never";
+
+        statsDisplay = `
+          <div class="invoice-stats">
+            <strong>Total:</strong> ${totalReceived} HBAR &nbsp;•&nbsp;
+            <strong>Payments:</strong> ${paymentCount} &nbsp;•&nbsp;
+            <strong>Last:</strong> ${lastPayment}
+          </div>
+        `;
+      } else {
+        const usdAmount = inv.requested_amount_usd
+          ? `$${asNum(inv.requested_amount_usd).toFixed(2)}`
+          : `${asNum(inv.requested_amount_hbar).toFixed(2)} HBAR`;
+
+        amountDisplay = usdAmount;
+
+        if (inv.confirmed_by_creator) {
+          badge = '<span class="invoice-badge confirmed">Confirmed</span>';
+          actionBtn = `<button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>✓ Confirmed (Final)</button>`;
+        } else if (String(inv.status || "").toLowerCase() === "paid") {
+          badge = '<span class="invoice-badge paid">Paid</span>';
+
+          if (unlocked) {
+            actionBtn = `<button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary" onclick="confirmInvoicePayment('${inv.slug}')">Confirm Payment</button>`;
+          } else {
+            actionBtn = `<button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>🔒 Unlock Manage to confirm</button>`;
+          }
+        } else {
+          badge = '<span class="invoice-badge unpaid">Unpaid</span>';
+          actionBtn = `<button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>Waiting...</button>`;
+        }
+      }
+
+      card.innerHTML = `
+        <div class="invoice-header">
+          <div class="invoice-header-left">
+            <div class="invoice-slug">#${inv.slug}</div>
+            <div class="invoice-amount">${amountDisplay}</div>
+            ${statsDisplay}
+          </div>
+          ${badge}
+        </div>
+
+        <div class="invoice-url">${invoiceUrl}</div>
+
+        <div class="invoice-actions">
+          ${actionBtn}
+          <button class="ht-btn ht-btn-action ht-btn-small" onclick="copyInvoiceLink('${invoiceUrl}')">Copy</button>
+          <button class="ht-btn ht-btn-action ht-btn-small" onclick="shareInvoiceLink('${invoiceUrl}', ${inv.requested_amount_usd || inv.requested_amount_hbar || 0})">Share</button>
+        </div>
+      `;
+
+      if (inv.description && String(inv.description).trim()) {
+        const descDiv = document.createElement("div");
+        descDiv.className = "invoice-description";
+        descDiv.textContent = String(inv.description).trim();
+
+        const urlDiv = card.querySelector(".invoice-url");
+        card.insertBefore(descDiv, urlDiv);
+      }
+
+      invoiceList.appendChild(card);
+    });
+
+    if (statusRealtimeStartedFor !== walletId) {
+      startStatusPageRealtime(walletId);
+      statusRealtimeStartedFor = walletId;
+    }
+
+    setupManageButton(walletId);
+  } catch (err) {
+    console.error("loadStatusPage ERROR", err);
+    showToast("Failed to load invoices", "error");
+    invoiceList.innerHTML = `
+      <div class="no-invoices">
+        <div class="no-invoices-icon">⚠️</div>
+        Error loading invoices.<br>
+        Please try again.
+      </div>
+    `;
+  }
+}
+
+    function setupManageButton(walletId) {
+      const unlocked = !!manageToken;
+
+      if (unlocked) {
+        manageBtn.textContent = "🔓 Lock Manage";
+        manageBtn.onclick = () => {
+          clearManageToken(walletId);
+          manageToken = null;
+          manageTokenExpiresAt = null;
+          showToast("Manage locked 🔒", "info");
+          loadStatusPage(walletId);
+        };
+      } else {
+        manageBtn.textContent = "🔒 Unlock Manage";
+        manageBtn.onclick = () => {
+          openPinModal("unlock");
+
+          pinOkBtn.onclick = async () => {
+            const p = pinOnly.value.trim();
+            if (!is4(p)) return showToast("PIN must be 4 digits", "error");
+
+            pinOkBtn.disabled = true;
+            pinOkBtn.innerHTML = '<span class="spinner"></span>Unlocking...';
+
+            try {
+              const r = await callFn("unlock-manage", {
+                creator_account: walletId,
+                pin: p,
+              });
+
+              manageToken = r.manage_token;
+              manageTokenExpiresAt = r.expires_at;
+
+              saveManageToken(walletId, manageToken, manageTokenExpiresAt);
+
+              showToast("Manage unlocked ✅", "success");
+              closePinModal();
+
+              await loadStatusPage(walletId);
+            } catch (e) {
+              showToast(String(e?.message || e), "error");
+            } finally {
+              pinOkBtn.disabled = false;
+              pinOkBtn.textContent = "Unlock";
+            }
+          };
+        };
+      }
+    }
+
+    window.confirmInvoicePayment = async function (slug) {
+      try {
+        const walletId = getWalletIdFromUrl();
+        if (!walletId) return;
+        
+        const stored = loadManageToken(walletId);
+        if (!stored) {
+          manageToken = null;
+          manageTokenExpiresAt = null;
+          showToast("Manage session expired — tap Manage and enter PIN again", "info");
+          await loadStatusPage(walletId);
+          return;
+        }
+        
+        manageToken = stored.token;
+        manageTokenExpiresAt = stored.expires_at;
+        
+        if (!manageToken) {
+          showToast("Tap Manage and enter PIN first", "info");
+          return;
+        }
+
+        await callFn("seller-update-status", {
+          slug,
+          manage_token: manageToken,
+          action: "confirm_paid",
+        });
+
+        showToast("Payment confirmed! ✅", "success");
+
+        if (walletId) await loadStatusPage(walletId);
+      } catch (err) {
+        console.error(err);
+        const msg = err?.message || err?.error || "Failed to confirm payment";
+        showToast(String(msg), "error");
+      }
+    };
+
+    window.copyInvoiceLink = async function (url) {
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast("Link copied! ✅", "success");
+      } catch (e) {
+        console.error(e);
+        showToast("Copy failed", "error");
+      }
+    };
+
+    window.shareInvoiceLink = async function (url, amount) {
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: amount ? `Pay $${amount}` : 'Pay with HBAR',
+            text: amount ? `Send $${amount} via HashToll:` : 'Send payment via HashToll:',
+            url,
+          });
+          showToast("Shared!", "success");
+        } catch (e) {
+          if (e?.name !== "AbortError") {
+            await navigator.clipboard.writeText(url);
+            showToast("Link copied!", "success");
+          }
+        }
+      } else {
+        await navigator.clipboard.writeText(url);
+        showToast("Link copied!", "success");
+      }
+    };
+
+    // ✅ UPDATED: payNow function
+    async function payNow(amountHbar) {
+      const originalText = "Pay Now";
+
+      try {
+        payNowBtn.disabled = true;
+
+        if (!amountHbar || amountHbar <= 0) {
+          throw new Error("Please enter a valid amount");
+        }
+
+        payNowBtn.innerHTML = '<span class="spinner"></span>Connect wallet...';
+        const payerAccount = await window.hederaConnect.connect();
+
+        if (!payerAccount) throw new Error("Wallet not connected");
+
+        await new Promise(r => setTimeout(r, 250));
+
+        payNowBtn.innerHTML = '<span class="spinner"></span>Check HashPack to approve...';
+
+        const result = await window.hederaConnect.sendHbar(
+          currentInvoiceData.receiver_account,
+          amountHbar,
+          `HT:${currentInvoiceData.slug}`
+        );
+
+        const tx_id = result?.transactionId || result?.transaction_id || result?.txId;
+
+        // ✅ UPDATED: Send amount_hbar to notify-paid
+        const notifyRes = await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+            "apikey": SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({
+            slug: currentInvoiceData.slug,
+            tx_id,
+            payer_account: window.hederaConnect.accountId || null,
+            amount_hbar: Number(amountHbar), // ✅ Send HBAR instead of USD
+            memo: `HT:${currentInvoiceData.slug}`
+          })
+        });
+
+        if (!notifyRes.ok) {
+          const errData = await notifyRes.json().catch(() => ({}));
+          console.error("notify-paid failed:", errData);
+        }
+
+        setPayerStatus('✅ Payment sent successfully!', 'paid');
+        showToast('Payment sent ✅', 'success');
+
+        receiptAmount.textContent = `${amountHbar} HBAR`;
+        receiptReceiver.textContent = currentInvoiceData.receiver_account;
+        if (tx_id) {
+          receiptTxLink.href = `https://hashscan.io/mainnet/transaction/${tx_id}`;
+          receiptTxLink.style.display = 'inline-flex';
+        } else {
+          receiptTxLink.style.display = 'none';
+        }
+        paymentReceipt.classList.add('active');
+
+        const isReusable = isReusableInvoice(currentInvoiceData);
+        if (isReusable) {
+          setTimeout(() => {
+            payNowBtn.innerHTML = "Pay Now";
+            const input = document.getElementById('payerUsdInput');
+            if (input) input.value = "";
+            payNowBtn.disabled = true;
+            paymentReceipt.classList.remove('active');
+            setPayerStatus('Enter an amount to continue', 'default');
+          }, 2500);
+        } else {
+          setPayButtonsState({ paid: true, modeText: "✅ Paid" });
+          localStorage.setItem(`ht_paid_${currentInvoiceData.slug}`, JSON.stringify({
+            paid: true,
+            at: Date.now()
+          }));
+        }
+
+      } catch (err) {
+        console.error('Payment failed:', err);
+        const msg = String(err?.message || err);
+
+        if (
+          msg.toLowerCase().includes("reject") ||
+          msg.toLowerCase().includes("denied") ||
+          msg.toLowerCase().includes("closed") ||
+          msg.toLowerCase().includes("modal")
+        ) {
+          showToast('Transaction cancelled', 'info');
+        } else {
+          showToast(msg || 'Payment failed', 'error');
+        }
+
+        payNowBtn.disabled = false;
+        payNowBtn.innerHTML = originalText;
+      }
+    }
+
+    async function copyText(text, successMsg = 'Copied!') {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast(successMsg, 'success');
+      } catch (e) {
+        console.error(e);
+        showToast('Copy failed', 'error');
+      }
+    }
+
+    async function navigateToDashboard() {
+      if (!currentCreatorAccount && !accountId) {
+        showToast('No account connected', 'error');
+        return;
+      }
+
+      const targetAccount = currentCreatorAccount || accountId;
+      window.location.href = `/${targetAccount}`;
+    }
+
+    let realtimeChannel = null;
+    let fallbackPollInterval = null;
+
+    function stopRealtime() {
+      try {
+        if (realtimeChannel) {
+          window.supabaseClient.removeChannel(realtimeChannel);
+          realtimeChannel = null;
+        }
+        if (fallbackPollInterval) {
+          clearInterval(fallbackPollInterval);
+          fallbackPollInterval = null;
+        }
+        statusRealtimeStartedFor = null;
+      } catch (e) {
+        console.warn("Error stopping realtime:", e);
+      }
+    }
+
+    async function fallbackPollInvoiceStatus(slug) {
+      try {
+        const inv = await loadInvoice(slug);
+        
+        if (inv.status === "paid") {
+          const link = statusPageLink;
+          link.href = `/${inv.creator_account}`;
+          link.textContent = "✅ Payment marked — Check status";
+          showToast("Payment marked paid ✅", "success");
+          stopRealtime();
+        }
+      } catch (err) {
+        console.warn("Fallback poll error:", err);
+      }
+    }
+
+    function startCreatorRealtime(slug) {
+      stopRealtime();
+
+      let realtimeEventReceived = false;
+
+      realtimeChannel = window.supabaseClient
+        .channel(`invoice-status-${slug}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "invoices",
+            filter: `slug=eq.${slug}`
+          },
+          (payload) => {
+            console.log("Realtime update received:", payload);
+            realtimeEventReceived = true;
+            
+            const newStatus = payload?.new?.status;
+
+            if (newStatus === "paid") {
+              const link = statusPageLink;
+              link.href = `/${payload.new.creator_account}`;
+              link.textContent = "✅ Payment marked — Check status";
+              showToast("Payment marked paid ✅", "success");
+              stopRealtime();
+            }
+          }
+        )
+        .subscribe((status) => {
+          console.log("Realtime subscription status:", status);
+        });
+
+      setTimeout(() => {
+        if (!realtimeEventReceived && !fallbackPollInterval) {
+          console.log("No realtime events received, starting fallback polling");
+          fallbackPollInterval = setInterval(() => fallbackPollInvoiceStatus(slug), 3000);
+        }
+      }, 5000);
+    }
+
+    function startPayerRealtime(slug) {
+      stopRealtime();
+
+      realtimeChannel = window.supabaseClient
+        .channel(`payer-invoice-${slug}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "invoices",
+            filter: `slug=eq.${slug}`
+          },
+          (payload) => {
+            console.log("Payer realtime update:", payload);
+            
+            const newStatus = payload?.new?.status;
+            
+            if (newStatus === "paid") {
+              setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+              setPayButtonsState({ paid: true, modeText: "✅ Paid" });
+            } else if (newStatus === "unpaid") {
+              setPayerStatus('⏳ Waiting for payment...', 'default');
+              setPayButtonsState({ paid: false });
+            }
+          }
+        )
+        .subscribe();
+    }
+
+    function startStatusPageRealtime(walletId) {
+      stopRealtime();
+
+      realtimeChannel = window.supabaseClient
+        .channel(`status-wallet-${walletId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "invoices"
+          },
+          async (payload) => {
+            if (payload?.new?.creator_account !== walletId) return;
+
+            console.log("Status page invoice update:", payload.new.slug, payload.new.status);
+
+            await loadStatusPage(walletId);
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "invoice_payments"
+          },
+          async () => {
+            console.log("Status page invoice_payments INSERT detected");
+            await loadStatusPage(walletId);
+          }
+        )
+        .subscribe((status) => {
+          console.log("Status realtime subscription:", status);
+        });
+    }
+
+    // ✅ UPDATED: createInvoiceViaEdge
+    async function createInvoiceViaEdge({ receiver_account, requested_amount_usd, description, is_reusable }) {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-invoice`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "apikey": SUPABASE_ANON_KEY
+        },
+        body: JSON.stringify({
+          receiver_account,
+          requested_amount_usd: is_reusable ? null : requested_amount_usd,
+          description: description || null,
+          is_reusable: is_reusable || false
+        })
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "create-invoice failed");
+      return json;
+    }
+
+    // ✅ UPDATED: generatePaymentLink
+    async function generatePaymentLink() {
+      const requestedAmountUsd = isReusableMode ? null : Number(input.value);
+      const description = descriptionInput.value.trim();
+
+      if (!isReusableMode && (!requestedAmountUsd || requestedAmountUsd <= 0)) {
+        showToast("Please enter a valid amount", "error");
+        return;
+      }
+
+      if (!isWalletConnected || !accountId) {
+        showToast("Please connect your wallet first", "error");
+        return;
+      }
+
+      try {
+        generateBtn.innerHTML = '<span class="spinner"></span>Generating...';
+        generateBtn.disabled = true;
+
+        let inv;
+        
+        if (isReusableMode) {
+          inv = await createInvoiceViaEdge({
+            receiver_account: accountId,
+            requested_amount_usd: null,
+            description: description || null,
+            is_reusable: true
+          });
+        } else {
+          inv = await createInvoiceViaEdge({
+            receiver_account: accountId,
+            requested_amount_usd: requestedAmountUsd,
+            description: description || null,
+            is_reusable: false
+          });
+        }
+
+        const paymentLink = `${window.location.origin}/invoice/${inv.slug}`;
+        currentPaymentLink = paymentLink;
+        currentAmount = requestedAmountUsd;
+        currentCreatorAccount = accountId;
+
+        const resultAmountLine = document.getElementById('resultAmountLine');
+
+        if (isReusableMode) {
+          resultAmountLine.textContent = "Reusable QR • Buyer chooses amount";
+        } else {
+          resultAmountLine.textContent = `$${requestedAmountUsd.toFixed(2)} in HBAR`;
+        }
+
+        if (description) {
+          creatorDescriptionText.textContent = description;
+          creatorDescription.classList.add('active');
+        } else {
+          creatorDescription.classList.remove('active');
+        }
+
+        enterCreatorResultMode();
+        statusPageLink.href = `/${accountId}`;
+        await renderQrInto(qrContainer, paymentLink);
+
+        showToast(isReusableMode ? "Reusable QR created! 🎉" : "Invoice created! 🎉", "success");
+
+        if (!isReusableMode) {
+          startCreatorRealtime(inv.slug);
+        }
+
+        try {
+          const r = await callFn("has-creator-pin", { creator_account: accountId });
+
+          if (r?.has_pin) {
+            localStorage.setItem(`ht_has_pin_${accountId}`, "1");
+          } else {
+            openPinModal("setup");
+
+            pinOkBtn.onclick = async () => {
+              const a = pinA.value.trim();
+              const b = pinB.value.trim();
+              if (!is4(a) || !is4(b)) return showToast("PIN must be 4 digits", "error");
+              if (a !== b) return showToast("PINs do not match", "error");
+
+              pinOkBtn.disabled = true;
+              pinOkBtn.innerHTML = '<span class="spinner"></span>Saving...';
+
+              try {
+                const r2 = await callFn("set-creator-pin", { creator_account: accountId, pin: a });
+
+                if (r2?.already_set) showToast("PIN already exists ✅", "info");
+                else showToast("PIN saved ✅", "success");
+
+                localStorage.setItem(`ht_has_pin_${accountId}`, "1");
+                closePinModal();
+              } catch (e) {
+                showToast(String(e?.message || e), "error");
+              } finally {
+                pinOkBtn.disabled = false;
+                pinOkBtn.textContent = "Save PIN";
+              }
+            };
+          }
+        } catch (e) {
+          console.warn("has-creator-pin failed:", e);
+        }
+
+      } catch (err) {
+        console.error(err);
+        showToast("Failed to create invoice", "error");
+        generateBtn.innerHTML = "Generate Payment Link";
+        generateBtn.disabled = false;
+      }
+    }
+
+    function showFormView() {
+      stopRealtime();
+
+      formSection.classList.remove('hidden');
+      resultSection.classList.remove('active');
+      payerSection.classList.remove('active');
+      statusSection.classList.remove('active');
+
+      subsubtitle.classList.remove('active');
+      subtitle.textContent = 'Create a payment link in seconds';
+
+      generateBtn.innerHTML = 'Generate Payment Link';
+      updateGenerateButton();
+    }
+
+    function createAnother() {
+      stopRealtime();
+      
+      input.value = '';
+      descriptionInput.value = '';
+      currentPaymentLink = null;
+      currentAmount = null;
+      creatorDescription.classList.remove('active');
+      
+      document.querySelector('input[name="paymentType"][value="onetime"]').checked = true;
+      isReusableMode = false;
+      input.disabled = false;
+      input.classList.remove('disabled');
+      input.placeholder = 'Enter Amount';
+      const helperText = document.querySelector('.reusable-info');
+      if (helperText) helperText.remove();
+      
+      showFormView();
+    }
+
+    function updateGenerateButton() {
+      if (isReusableMode) {
+        generateBtn.disabled = !isWalletConnected;
+      } else {
+        if (isWalletConnected && input.value && Number(input.value) > 0) {
+          generateBtn.disabled = false;
+        } else {
+          generateBtn.disabled = true;
+        }
+      }
+    }
+
+    async function connectWallet() {
+      if (isInvoicePage() || isStatusPage()) {
+        showToast('Wallet connection is not required on this page', 'info');
+        return;
+      }
+      
+      if (isWalletConnected) return;
+
+      try {
+        connectBtn.innerHTML = '<span class="spinner"></span>Connecting...';
+        connectBtn.disabled = true;
+
+        if (!window.hederaConnect) throw new Error('WalletConnect not loaded yet');
+
+        accountId = await window.hederaConnect.connect();
+
+        isWalletConnected = true;
+        
+        connectBtn.style.display = 'none';
+
+        accountIdSpan.textContent = accountId;
+        accountDisplay.classList.add('active');
+
+        updateGenerateButton();
+      } catch (error) {
+        console.error('Connection failed:', error);
+        let errorMsg = error.message || 'Unknown error';
+        if (String(errorMsg).includes('closed')) errorMsg = 'Connection cancelled';
+
+        showToast('Failed to connect: ' + errorMsg, 'error');
+
+        connectBtn.innerHTML = 'Connect Wallet';
+        connectBtn.disabled = false;
+      }
+    }
+
+    function disconnectWallet() {
+      if (!window.hederaConnect) return;
+
+      window.hederaConnect.disconnect();
+
+      isWalletConnected = false;
+      const oldAccountId = accountId;
+      accountId = null;
+
+      if (oldAccountId) {
+        clearManageToken(oldAccountId);
+      }
+      manageToken = null;
+      manageTokenExpiresAt = null;
+
+      connectBtn.style.display = 'block';
+      connectBtn.innerHTML = 'Connect Wallet';
+      connectBtn.disabled = false;
+
+      accountDisplay.classList.remove('active');
+
+      if (isStatusPage()) {
+        window.location.href = '/';
+        return;
+      }
+
+      showFormView();
+
+      generateBtn.disabled = true;
+      input.value = '';
+      descriptionInput.value = '';
+
+      showToast('Wallet disconnected', 'info');
+    }
+
+    window.disconnectWallet = disconnectWallet;
+
+    const placeholderText = 'Enter Amount';
+    let charIndex = 0;
+    let isTyping = true;
+
+    function typePlaceholder() {
+      if (document.activeElement === input) return;
+      if (input.disabled) return;
+
+      if (isTyping) {
+        if (charIndex < placeholderText.length) {
+          input.placeholder = placeholderText.substring(0, charIndex + 1);
+          charIndex++;
+        } else {
+          isTyping = false;
+          setTimeout(typePlaceholder, 2000);
+          return;
+        }
+      } else {
+        if (charIndex > 0) {
+          input.placeholder = placeholderText.substring(0, charIndex - 1);
+          charIndex--;
+        } else {
+          isTyping = true;
+          setTimeout(typePlaceholder, 1000);
+          return;
+        }
+      }
+
+      setTimeout(typePlaceholder, isTyping ? 100 : 50);
+    }
+
+    setTimeout(typePlaceholder, 500);
+    input.addEventListener('focus', () => { if (!input.value && !input.disabled) input.placeholder = 'Enter Amount'; });
+
+    connectBtn.addEventListener('click', connectWallet);
+    generateBtn.addEventListener('click', generatePaymentLink);
+    createAnotherBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      createAnother();
+    });
+    createNewFromStatus.addEventListener('click', () => {
+      window.location.href = '/';
+    });
+    input.addEventListener('input', updateGenerateButton);
+
+    copyBtn.addEventListener('click', async () => {
+      if (!currentPaymentLink) return;
+      await copyText(currentPaymentLink, 'Link copied!');
+    });
+    
+    dashboardBtn.addEventListener('click', navigateToDashboard);
+
+    copyReceiverBtn.addEventListener('click', async () => {
+      const acct = payerReceiverAccount.textContent?.trim();
+      if (!acct || acct === 'Loading...') return;
+      await copyText(acct, 'Receiver account copied!');
+    });
+
+    window.addEventListener('beforeunload', stopRealtime);
+
+    window.addEventListener('load', async () => {
+      const slug = getInvoiceSlugFromUrl();
+      const walletId = getWalletIdFromUrl();
+
+      if (slug) {
+        formSection.classList.add('hidden');
+        accountDisplay.classList.remove('active');
+        await loadInvoiceAndRenderPayer(slug);
+        return;
+      }
+
+      if (walletId) {
+        formSection.classList.add('hidden');
+        accountDisplay.classList.remove('active');
+        await loadStatusPage(walletId);
+        return;
+      }
+
+      enterHomeMode();
+
+      try {
+        await window.hederaReady;
+
+        if (window.hederaConnect?.accountId) {
+          accountId = window.hederaConnect.accountId;
+          isWalletConnected = true;
+
+          connectBtn.style.display = 'none';
+          accountIdSpan.textContent = accountId;
+          accountDisplay.classList.add('active');
+
+          updateGenerateButton();
+        }
+      } catch (err) {
+        console.warn('Session restore failed:', err);
+      }
+    });
+
+    document.addEventListener("visibilitychange", async () => {
+      if (document.visibilityState !== "visible") return;
+      if (!window.hederaConnect) return;
+
+      await window.hederaConnect.restoreSession().catch(() => {});
+      
+      if (window.hederaConnect.accountId) {
+        accountId = window.hederaConnect.accountId;
+        isWalletConnected = true;
+        connectBtn.style.display = 'none';
+        accountIdSpan.textContent = accountId;
+        accountDisplay.classList.add('active');
+        updateGenerateButton();
+      }
+    });
+  </script>
+</body>
+
+</html>
 
