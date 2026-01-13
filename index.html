@@ -2348,13 +2348,13 @@
 
         if (error1) throw error1;
 
-        const { data: paidReusableInvoices, error: error2 } = await window.supabaseClient
-          .from("invoices")
-          .select("slug, receiver_account, requested_amount_usd, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at")
-          .eq("creator_account", walletId)
-          .eq("is_reusable", true)
-          .eq("status", "paid")
-          .order("created_at", { ascending: false });
+        const { data: reusableInvoices, error: error2 } = await window.supabaseClient
+  .from("invoices")
+  .select("slug, receiver_account, requested_amount_usd, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at")
+  .eq("creator_account", walletId)
+  .eq("is_reusable", true)
+  .order("created_at", { ascending: false });
+
 
         if (error2) throw error2;
 
