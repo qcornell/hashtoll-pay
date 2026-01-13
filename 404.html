@@ -336,6 +336,24 @@
       color: var(--ht-text-muted);
     }
 
+    /* ✅ NEW: Exchange rate display */
+    .exchange-rate-info {
+      margin-top: 8px;
+      font-size: 0.8125rem;
+      color: var(--ht-text-secondary);
+      text-align: left;
+      font-weight: 500;
+    }
+
+    .exchange-rate-info.loading {
+      color: var(--ht-text-muted);
+      font-style: italic;
+    }
+
+    .exchange-rate-info.error {
+      color: #ef4444;
+    }
+
     .ht-result-section {
       display: none;
       transition: all 0.4s ease;
@@ -1675,6 +1693,45 @@
 
     window.supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // ✅ USD to HBAR Price Converter
+    let cachedHbarPrice = null;
+    let priceLastFetched = 0;
+    const PRICE_CACHE_DURATION = 30000; // 30 seconds
+
+    async function fetchHbarPrice() {
+      const now = Date.now();
+      
+      if (cachedHbarPrice && (now - priceLastFetched) < PRICE_CACHE_DURATION) {
+        return cachedHbarPrice;
+      }
+
+      try {
+        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=hedera-hashgraph&vs_currencies=usd');
+        
+        if (!res.ok) throw new Error('Price fetch failed');
+        
+        const data = await res.json();
+        const price = data?.['hedera-hashgraph']?.usd;
+        
+        if (!price || !Number.isFinite(price) || price <= 0) {
+          throw new Error('Invalid price data');
+        }
+        
+        cachedHbarPrice = price;
+        priceLastFetched = now;
+        
+        return price;
+      } catch (err) {
+        console.error('Failed to fetch HBAR price:', err);
+        return null;
+      }
+    }
+
+    function usdToHbar(usdAmount) {
+      if (!cachedHbarPrice || cachedHbarPrice <= 0) return null;
+      return Number((Number(usdAmount) / cachedHbarPrice).toFixed(4));
+    }
+
     // ✅ HELPER FUNCTIONS FOR ROBUST TYPE CHECKING
     function asBool(v) {
       if (v === true) return true;
@@ -1692,7 +1749,6 @@
       return Number.isFinite(n) ? n : 0;
     }
 
-    // ✅ GPT HELPERS
     function isAmountMissing(v) {
       return !Number(v) || Number(v) <= 0;
     }
@@ -2116,7 +2172,7 @@
       return data;
     }
 
-    // ✅ UPDATED loadInvoiceAndRenderPayer
+    // ✅ UPDATED loadInvoiceAndRenderPayer WITH USD → HBAR CONVERTER
     async function loadInvoiceAndRenderPayer(slug) {
       currentInvoiceSlug = slug;
 
@@ -2141,50 +2197,121 @@
 
         payerReceiverAccount.textContent = inv.receiver_account || 'Unknown';
 
-        // ✅ DETERMINE IF REUSABLE
         const reusable = isReusableInvoice(inv);
 
-        // Hide old "I Paid" UX
         iPaidBtn.style.display = 'none';
         const helper = payerSection.querySelector('.ht-helper-text');
         if (helper) helper.style.display = 'none';
 
-        // Clear and render input field
+        // ✅ FETCH HBAR PRICE
+        const hbarPrice = await fetchHbarPrice();
+
+        // ✅ RENDER USD INPUT WITH LIVE CONVERSION
         payerAmountContainer.innerHTML = `
           <div class="ht-input-group" style="text-align: left;">
-            <label class="ht-label">Enter Amount (HBAR)</label>
+            <label class="ht-label">Enter Amount (USD)</label>
             <div class="ht-input-wrapper">
-              <span class="ht-input-prefix">ℏ</span>
+              <span class="ht-input-prefix">$</span>
               <input
                 type="number"
                 class="ht-input"
-                id="payerAmountInput"
-                placeholder="Enter amount"
+                id="payerUsdInput"
+                placeholder="Enter USD amount"
                 step="0.01"
                 min="0.01"
                 inputmode="decimal"
               >
             </div>
-            <div class="ht-helper-text" style="text-align:left; margin-top:10px;">
-              Type an amount, then tap <strong>Pay Now</strong>.
+            <div class="exchange-rate-info ${hbarPrice ? '' : 'error'}" id="exchangeRateInfo">
+              ${hbarPrice 
+                ? `1 HBAR ≈ $${hbarPrice.toFixed(4)} USD` 
+                : '⚠️ Price unavailable — enter HBAR directly below'
+              }
             </div>
           </div>
         `;
 
-        const payerAmountInput = document.getElementById('payerAmountInput');
+        const payerUsdInput = document.getElementById('payerUsdInput');
+        const exchangeRateInfo = document.getElementById('exchangeRateInfo');
+        let calculatedHbar = null;
 
-        // Enable button when user types
         payNowBtn.disabled = true;
-        payerAmountInput.addEventListener('input', () => {
-          const amount = Number(payerAmountInput.value);
-          payNowBtn.disabled = !(amount > 0);
+
+        // ✅ AUTO-UPDATE EXCHANGE RATE EVERY 30s
+        const priceUpdateInterval = setInterval(async () => {
+          const newPrice = await fetchHbarPrice();
+          if (newPrice && hbarPrice !== newPrice) {
+            exchangeRateInfo.classList.remove('error');
+            exchangeRateInfo.textContent = `1 HBAR ≈ $${newPrice.toFixed(4)} USD`;
+            
+            // Re-calculate if user has entered USD amount
+            const usdVal = Number(payerUsdInput.value);
+            if (usdVal > 0) {
+              calculatedHbar = usdToHbar(usdVal);
+              if (calculatedHbar) {
+                payNowBtn.disabled = false;
+              }
+            }
+          }
+        }, 30000);
+
+        // Clean up interval when leaving page
+        window.addEventListener('beforeunload', () => clearInterval(priceUpdateInterval));
+
+        // ✅ USD INPUT LISTENER
+        payerUsdInput.addEventListener('input', () => {
+          const usdAmount = Number(payerUsdInput.value);
+          
+          if (!usdAmount || usdAmount <= 0) {
+            payNowBtn.disabled = true;
+            calculatedHbar = null;
+            if (hbarPrice) {
+              exchangeRateInfo.classList.remove('error');
+              exchangeRateInfo.textContent = `1 HBAR ≈ $${hbarPrice.toFixed(4)} USD`;
+            }
+            return;
+          }
+
+          calculatedHbar = usdToHbar(usdAmount);
+          
+          if (calculatedHbar) {
+            payNowBtn.disabled = false;
+            exchangeRateInfo.classList.remove('error');
+            exchangeRateInfo.textContent = `≈ ${calculatedHbar.toFixed(4)} HBAR (1 HBAR = $${hbarPrice.toFixed(4)})`;
+          } else {
+            payNowBtn.disabled = true;
+            exchangeRateInfo.classList.add('error');
+            exchangeRateInfo.textContent = '⚠️ Price unavailable — try again in a moment';
+          }
         });
 
-        // ✅ CRITICAL: Prefill for one-time invoices
+        // ✅ PREFILL FOR ONE-TIME INVOICES
         if (!reusable && !isAmountMissing(inv.requested_amount_hbar)) {
-          payerAmountInput.value = String(Number(inv.requested_amount_hbar));
-          payNowBtn.disabled = false;
+          const hbarAmount = Number(inv.requested_amount_hbar);
+          
+          if (hbarPrice) {
+            const usdEquivalent = (hbarAmount * hbarPrice).toFixed(2);
+            payerUsdInput.value = usdEquivalent;
+            calculatedHbar = hbarAmount;
+            exchangeRateInfo.classList.remove('error');
+            exchangeRateInfo.textContent = `≈ ${hbarAmount.toFixed(4)} HBAR (1 HBAR = $${hbarPrice.toFixed(4)})`;
+            payNowBtn.disabled = false;
+          } else {
+            // Fallback: Show HBAR amount directly
+            calculatedHbar = hbarAmount;
+            payNowBtn.disabled = false;
+          }
         }
+
+        // ✅ STORE HBAR AMOUNT FOR PAYMENT
+        payNowBtn.onclick = async () => {
+          if (!calculatedHbar) {
+            showToast('Please enter a valid amount', 'error');
+            return;
+          }
+          
+          await payNow(calculatedHbar);
+        };
 
         currentAmount = null;
         setPayerStatus('Enter an amount to continue', 'default');
@@ -2195,27 +2322,29 @@
         }
 
         const isPaid = inv.status === 'paid';
-        setPayButtonsState({ 
-          paid: isPaid, 
-          modeText: isPaid ? "✅ Paid" : null 
-        });
-
-        if (isPaid && !reusable) {
-          setPayerStatus('✅ PAID — Receiver notified!', 'paid');
-        }
-
-        const saved = localStorage.getItem(`ht_paid_${slug}`);
-        if (saved && !reusable) {
-          try {
-            const j = JSON.parse(saved);
-            if (j?.paid) {
-              setPayerStatus('✅ PAID — Receiver notified!', 'paid');
-              setPayButtonsState({ paid: true, modeText: "✅ Paid" });
-            }
-          } catch {}
-        }
-
+        
+        // ✅ DON'T LOCK REUSABLE INVOICES
         if (!reusable) {
+          setPayButtonsState({ 
+            paid: isPaid, 
+            modeText: isPaid ? "✅ Paid" : null 
+          });
+
+          if (isPaid) {
+            setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+          }
+
+          const saved = localStorage.getItem(`ht_paid_${slug}`);
+          if (saved) {
+            try {
+              const j = JSON.parse(saved);
+              if (j?.paid) {
+                setPayerStatus('✅ PAID — Receiver notified!', 'paid');
+                setPayButtonsState({ paid: true, modeText: "✅ Paid" });
+              }
+            } catch {}
+          }
+
           startPayerRealtime(slug);
         }
 
@@ -2226,11 +2355,7 @@
       }
     }
 
-    // ✅ FIX #2: Updated loadStatusPage with PROPER filtering
     async function loadStatusPage(walletId) {
-      const DEBUG_TAG = "🔥 loadStatusPage v4";
-      console.log(DEBUG_TAG, "START", { walletId });
-
       try {
         enterStatusMode();
 
@@ -2246,7 +2371,6 @@
         statusWalletId.textContent = walletId;
         invoiceList.innerHTML = '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
 
-        // ✅ Query 1: ALL one-time invoices
         const { data: oneTimeInvoices, error: error1 } = await window.supabaseClient
           .from("invoices")
           .select("slug, receiver_account, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at")
@@ -2256,7 +2380,6 @@
 
         if (error1) throw error1;
 
-        // ✅ Query 2: ONLY paid reusable invoices
         const { data: paidReusableInvoices, error: error2 } = await window.supabaseClient
           .from("invoices")
           .select("slug, receiver_account, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at")
@@ -2267,17 +2390,10 @@
 
         if (error2) throw error2;
 
-        // ✅ Combine and sort
         let invoices = [
           ...(oneTimeInvoices || []),
           ...(paidReusableInvoices || [])
         ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-        console.log(DEBUG_TAG, "FINAL INVOICES", {
-          total: invoices.length,
-          oneTime: (oneTimeInvoices || []).length,
-          reusable: (paidReusableInvoices || []).length
-        });
 
         if (!invoices || invoices.length === 0) {
           invoiceList.innerHTML = `
@@ -2379,7 +2495,7 @@
         setupManageButton(walletId);
 
       } catch (err) {
-        console.error("🔥 loadStatusPage ERROR", err);
+        console.error("loadStatusPage ERROR", err);
         showToast("Failed to load invoices", "error");
         invoiceList.innerHTML = `
           <div class="no-invoices">
@@ -2479,46 +2595,6 @@
       }
     };
 
-    window.toggleInvoiceStatus = async function (slug, newStatus) {
-      try {
-        const walletId = getWalletIdFromUrl();
-        if (!walletId) return;
-        
-        const stored = loadManageToken(walletId);
-        if (!stored) {
-          manageToken = null;
-          manageTokenExpiresAt = null;
-          showToast("Manage session expired — tap Manage and enter PIN again", "info");
-          await loadStatusPage(walletId);
-          return;
-        }
-        
-        manageToken = stored.token;
-        manageTokenExpiresAt = stored.expires_at;
-
-        if (!manageToken) {
-          showToast("Tap Manage and enter PIN first", "info");
-          return;
-        }
-
-        const action = newStatus === "unpaid" ? "mark_unpaid" : "confirm_paid";
-
-        await callFn("seller-update-status", {
-          slug,
-          manage_token: manageToken,
-          action,
-        });
-
-        showToast("Status updated ✅", "success");
-
-        if (walletId) await loadStatusPage(walletId);
-      } catch (err) {
-        console.error(err);
-        const msg = err?.message || err?.error || "Failed to update status";
-        showToast(String(msg), "error");
-      }
-    };
-
     window.copyInvoiceLink = async function (url) {
       try {
         await navigator.clipboard.writeText(url);
@@ -2550,51 +2626,14 @@
       }
     };
 
-    async function notifyPaidOnce(slug) {
-      try {
-        iPaidBtn.disabled = true;
-        iPaidBtn.innerHTML = '<span class="spinner"></span>Marking paid...';
-
-        setPayerStatus('📩 Marking as PAID...', 'default');
-
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
-          method: 'POST',
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-            "apikey": SUPABASE_ANON_KEY
-          },
-          body: JSON.stringify({ slug })
-        });
-
-        const result = await res.json();
-        if (!res.ok) throw new Error(result?.error || "Notify failed");
-
-        setPayerStatus('✅ PAID — Receiver notified!', 'paid');
-        showToast('Marked as paid ✅', 'success');
-
-      } catch (err) {
-        console.error(err);
-        setPayerStatus('⚠️ Could not mark paid — try again', 'warn');
-        showToast('Mark paid failed', 'error');
-      } finally {
-        iPaidBtn.disabled = false;
-        iPaidBtn.innerHTML = '✅ I Paid (Notify Receiver)';
-      }
-    }
-
-    // ✅ UPDATED payNow() FUNCTION
-    async function payNow() {
+    // ✅ UPDATED payNow() - ACCEPTS HBAR AMOUNT DIRECTLY
+    async function payNow(amountHbar) {
       const originalText = "Pay Now";
 
       try {
         payNowBtn.disabled = true;
 
-        // ✅ ALWAYS read from input field
-        const payerAmountInput = document.getElementById('payerAmountInput');
-        const amountToSend = Number(payerAmountInput?.value);
-
-        if (!amountToSend || amountToSend <= 0) {
+        if (!amountHbar || amountHbar <= 0) {
           throw new Error("Please enter a valid amount");
         }
 
@@ -2609,13 +2648,12 @@
 
         const result = await window.hederaConnect.sendHbar(
           currentInvoiceData.receiver_account,
-          amountToSend,
+          amountHbar,
           `HT:${currentInvoiceData.slug}`
         );
 
         const tx_id = result?.transactionId || result?.transaction_id || result?.txId;
 
-        // Notify backend
         const notifyRes = await fetch(`${SUPABASE_URL}/functions/v1/notify-paid`, {
           method: "POST",
           headers: {
@@ -2627,7 +2665,7 @@
             slug: currentInvoiceData.slug,
             tx_id,
             payer_account: window.hederaConnect.accountId || null,
-            amount_hbar: Number(amountToSend),
+            amount_hbar: Number(amountHbar),
             memo: `HT:${currentInvoiceData.slug}`
           })
         });
@@ -2635,14 +2673,12 @@
         if (!notifyRes.ok) {
           const errData = await notifyRes.json().catch(() => ({}));
           console.error("notify-paid failed:", errData);
-          showToast(`Payment sent, but tracking failed: ${errData?.error || 'Unknown error'}`, "error");
         }
 
         setPayerStatus('✅ Payment sent successfully!', 'paid');
         showToast('Payment sent ✅', 'success');
 
-        // Update receipt
-        receiptAmount.textContent = `${amountToSend} HBAR`;
+        receiptAmount.textContent = `${amountHbar} HBAR`;
         receiptReceiver.textContent = currentInvoiceData.receiver_account;
         if (tx_id) {
           receiptTxLink.href = `https://hashscan.io/mainnet/transaction/${tx_id}`;
@@ -2652,19 +2688,19 @@
         }
         paymentReceipt.classList.add('active');
 
-        // ✅ Reusable: Allow pay again
+        // ✅ REUSABLE: RESET AFTER 2.5s
         const isReusable = isReusableInvoice(currentInvoiceData);
         if (isReusable) {
           setTimeout(() => {
             payNowBtn.innerHTML = "Pay Now";
-            const input = document.getElementById('payerAmountInput');
+            const input = document.getElementById('payerUsdInput');
             if (input) input.value = "";
             payNowBtn.disabled = true;
             paymentReceipt.classList.remove('active');
             setPayerStatus('Enter an amount to continue', 'default');
           }, 2500);
         } else {
-          // One-time: Lock buttons
+          // ONE-TIME: LOCK
           setPayButtonsState({ paid: true, modeText: "✅ Paid" });
           localStorage.setItem(`ht_paid_${currentInvoiceData.slug}`, JSON.stringify({
             paid: true,
@@ -3171,13 +3207,6 @@
       const acct = payerReceiverAccount.textContent?.trim();
       if (!acct || acct === 'Loading...') return;
       await copyText(acct, 'Receiver account copied!');
-    });
-
-    payNowBtn.addEventListener('click', payNow);
-    
-    iPaidBtn.addEventListener('click', async () => {
-      if (!currentInvoiceSlug) return;
-      await notifyPaidOnce(currentInvoiceSlug);
     });
 
     window.addEventListener('beforeunload', stopRealtime);
