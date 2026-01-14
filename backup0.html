@@ -212,6 +212,7 @@
 
     .ht-form-section {
       transition: all 0.4s ease;
+      display: none;
     }
 
     .ht-form-section.hidden {
@@ -1668,18 +1669,41 @@
 
 <!-- MAIN SCRIPT - App Logic -->
   <script>
+      (function() {
+    const path = window.location.pathname;
+    
+    // Check what page we're on
+    const isInvoice = /^\/invoice\/[a-zA-Z0-9_-]+$/.test(path);
+    const isStatus = /^\/\d+\.\d+\.\d+$/.test(path);
+    
+    // Show the right section ASAP
+    if (isInvoice) {
+      document.getElementById('payerSection').style.display = 'block';
+    } else if (isStatus) {
+      document.getElementById('statusSection').style.display = 'block';
+    } else {
+      document.getElementById('formSection').style.display = 'block';
+    }
+  })();
+    
     const SUPABASE_URL = 'https://pvtoczsnwamailsjjnfn.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2dG9jenNud2FtYWlsc2pqbmZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NjE1MTksImV4cCI6MjA4MzEzNzUxOX0.3mDZ3RUo7aHi25r1X1axYj0EppgXFKEY7xGvqdhDSbM';
 
     window.supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // FIX #2: Price caching variables - now properly scoped and updated
     let cachedHbarPrice = null;
     let priceLastFetched = 0;
     const PRICE_CACHE_DURATION = 30000;
 
+    // FIX #3: Array to track active price update intervals
+    let activePriceIntervals = [];
+
+    // FIX #2: Fixed fetchHbarPrice to properly update cache
     async function fetchHbarPrice() {
       const now = Date.now();
       
+      // Return cached price if still valid
       if (cachedHbarPrice && (now - priceLastFetched) < PRICE_CACHE_DURATION) {
         return cachedHbarPrice;
       }
@@ -1692,17 +1716,25 @@
         const data = await res.json();
         const price = data?.['hedera-hashgraph']?.usd;
         
+        // FIX #5: Validate price is a number before using it
         if (!price || !Number.isFinite(price) || price <= 0) {
           throw new Error('Invalid price data');
         }
         
+        // FIX #2: Update both cache and timestamp AFTER validation
         cachedHbarPrice = price;
         priceLastFetched = now;
         
         return price;
       } catch (err) {
         console.error('Failed to fetch HBAR price:', err);
-        return null;
+        
+        // FIX #7: Show warning if QR/price fails
+        if (!cachedHbarPrice) {
+          console.warn('No cached price available and fetch failed');
+        }
+        
+        return cachedHbarPrice; // Return cached price even if expired, better than nothing
       }
     }
 
@@ -1727,8 +1759,10 @@
       return Number.isFinite(n) ? n : 0;
     }
 
+    // FIX #5: Improved validation
     function isAmountMissing(v) {
-      return !Number(v) || Number(v) <= 0;
+      const num = Number(v);
+      return !Number.isFinite(num) || num <= 0;
     }
 
     function isReusableInvoice(inv) {
@@ -1840,7 +1874,19 @@
     let currentInvoiceData = null;
     let statusRealtimeStartedFor = null;
 
+    // FIX #4: Create toast container if it doesn't exist
+    function ensureToastContainer() {
+      if (!document.getElementById('toast-container')) {
+        const container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+      }
+    }
+
+    // FIX #4: Updated showToast to create container if needed
     function showToast(message, type = 'info') {
+      ensureToastContainer();
+      
       const toast = document.createElement('div');
       toast.className = `toast toast-${type}`;
 
@@ -2127,6 +2173,7 @@ window.viewReusablePayments = async function (slug) {
     const total = inv?.total_received_hbar != null ? Number(inv.total_received_hbar).toFixed(2) : null;
     const count = inv?.payment_count != null ? Number(inv.payment_count) : payments.length;
 
+    // FIX #6: Show proper "no payments" message instead of "Loading..."
     if (!payments.length) {
       openPaymentsModal({
         title: `#${slug} • Payments`,
@@ -2257,29 +2304,32 @@ window.viewReusablePayments = async function (slug) {
     async function renderQrInto(containerEl, url) {
       containerEl.innerHTML = '';
 
+      // FIX #7: Check if QRCode library loaded
       if (!window.QRCode) {
-        showToast('QR code library not loaded', 'error');
+        console.error('QR code library not loaded');
+        showToast('QR code unavailable', 'error');
+        containerEl.innerHTML = '<div style="color:#64748B; padding:20px;">QR code could not be generated</div>';
         return;
       }
 
       const isMobile = window.innerWidth <= 600;
       const qrSize = isMobile ? Math.min(240, window.innerWidth - 120) : 260;
 
-      window.QRCode.toCanvas(url, {
-        width: qrSize,
-        margin: 2,
-        errorCorrectionLevel: 'H',
-        color: { dark: '#000000', light: '#FFFFFF' }
-      }, (err, canvas) => {
-        if (err) {
-          console.error(err);
-          showToast('Failed to generate QR', 'error');
-          return;
-        }
-
-        canvas.style.borderRadius = '12px';
-        containerEl.appendChild(canvas);
-      });
+      try {
+        await window.QRCode.toCanvas(url, {
+          width: qrSize,
+          margin: 2,
+          errorCorrectionLevel: 'H',
+          color: { dark: '#000000', light: '#FFFFFF' }
+        }).then((canvas) => {
+          canvas.style.borderRadius = '12px';
+          containerEl.appendChild(canvas);
+        });
+      } catch (err) {
+        console.error('QR generation failed:', err);
+        showToast('Failed to generate QR', 'error');
+        containerEl.innerHTML = '<div style="color:#64748B; padding:20px;">QR code error</div>';
+      }
     }
 
     function setPayerStatus(text, type = 'default') {
@@ -2331,7 +2381,16 @@ window.viewReusablePayments = async function (slug) {
       return data;
     }
 
+    // FIX #3: Clean up intervals when leaving page
+    function cleanupPriceIntervals() {
+      activePriceIntervals.forEach(intervalId => clearInterval(intervalId));
+      activePriceIntervals = [];
+    }
+
     async function loadInvoiceAndRenderPayer(slug) {
+      // FIX #3: Clear old intervals when loading new invoice
+      cleanupPriceIntervals();
+      
       currentInvoiceSlug = slug;
 
       try {
@@ -2433,9 +2492,10 @@ window.viewReusablePayments = async function (slug) {
 
           payNowBtn.disabled = true;
 
+          // FIX #3: Track interval and clean up properly
           const priceUpdateInterval = setInterval(async () => {
             const newPrice = await fetchHbarPrice();
-            if (newPrice && hbarPrice !== newPrice) {
+            if (newPrice && newPrice !== cachedHbarPrice) {
               exchangeRateInfo.classList.remove('error');
               exchangeRateInfo.textContent = `1 HBAR ≈ $${newPrice.toFixed(4)} USD`;
               
@@ -2450,7 +2510,7 @@ window.viewReusablePayments = async function (slug) {
             }
           }, 30000);
 
-          window.addEventListener('beforeunload', () => clearInterval(priceUpdateInterval));
+          activePriceIntervals.push(priceUpdateInterval);
 
           payerUsdInput.addEventListener('input', () => {
             const usdAmount = Number(payerUsdInput.value);
@@ -2627,14 +2687,12 @@ window.viewReusablePayments = async function (slug) {
           </div>
         `;
 } else {
-  // ONE-TIME INVOICE
   const usdAmount = inv.requested_amount_usd
     ? `$${asNum(inv.requested_amount_usd).toFixed(2)}`
     : `${asNum(inv.requested_amount_hbar).toFixed(2)} HBAR`;
 
   amountDisplay = usdAmount;
 
-  // Set badge based on status
   if (inv.confirmed_by_creator) {
     badge = '<span class="invoice-badge confirmed">Confirmed</span>';
   } else if (String(inv.status || "").toLowerCase() === "paid") {
@@ -2643,7 +2701,6 @@ window.viewReusablePayments = async function (slug) {
     badge = '<span class="invoice-badge unpaid">Unpaid</span>';
   }
 
-  // Use the same View Payments button for all one-time invoices
   actionBtn = `
     <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary"
             onclick="viewReusablePayments('${inv.slug}')">
@@ -2955,6 +3012,9 @@ window.viewReusablePayments = async function (slug) {
           fallbackPollInterval = null;
         }
         statusRealtimeStartedFor = null;
+        
+        // FIX #3: Also cleanup price intervals when stopping realtime
+        cleanupPriceIntervals();
       } catch (e) {
         console.warn("Error stopping realtime:", e);
       }
@@ -3391,7 +3451,11 @@ window.viewReusablePayments = async function (slug) {
       await copyText(acct, 'Receiver account copied!');
     });
 
-    window.addEventListener('beforeunload', stopRealtime);
+    // FIX #3: Clean up on page unload
+    window.addEventListener('beforeunload', () => {
+      stopRealtime();
+      cleanupPriceIntervals();
+    });
 
     window.addEventListener('load', async () => {
       const slug = getInvoiceSlugFromUrl();
