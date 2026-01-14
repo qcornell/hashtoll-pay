@@ -1674,7 +1674,7 @@
     
     // Check what page we're on
     const isInvoice = /^\/invoice\/[a-zA-Z0-9_-]+$/.test(path);
-    const isStatus = /^\d+\.\d+\.\d+$/.test(path);
+    const isStatus = /^\/\d+\.\d+\.\d+$/.test(path);
     
     // Show the right section ASAP
     if (isInvoice) {
