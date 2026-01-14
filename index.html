@@ -674,7 +674,7 @@
       padding: 8px 14px;
       border-radius: 10px;
       font-size: 0.75rem;
-      font-weight: 700;
+      /* font-weight: 700; */
       letter-spacing: 0.03em;
       text-transform: uppercase;
       white-space: nowrap;
@@ -714,9 +714,9 @@
     }
 
     .invoice-badge.reusable {
-      background: rgba(168, 85, 247, 0.1);
-      border: 1.5px solid rgba(168, 85, 247, 0.3);
-      color: #7c3aed;
+      /* background: rgba(168, 85, 247, 0.1); */
+      /* border: 1.5px solid rgba(168, 85, 247, 0.3); */
+      color: #4a5f8e;
     }
 
     .invoice-badge.reusable::before {
@@ -1363,7 +1363,7 @@
       <button class="ht-btn ht-btn-secondary" id="generateBtn" disabled>Generate Payment Link</button>
       
       <div class="ht-helper-text" style="text-align: center; margin-top: 16px;">
-        Secure · Non-custodial · Trusted <strong>Gateway</strong>
+        Secure · Non-custodial · Trusted Gateway 
       </div>
     </div>
 
@@ -1377,7 +1377,7 @@
       <div class="ht-qr-card">
         <div class="ht-qr-container" id="qrContainer"></div>
         <div class="ht-qr-trust">
-          Secure · Non-custodial · Trusted <strong>Gateway</strong>
+          Secure · Non-custodial · Trusted Gateway
         </div>
       </div>
 
@@ -2627,7 +2627,7 @@ window.viewReusablePayments = async function (slug) {
         actionBtn = `
           <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary"
                   onclick="viewReusablePayments('${inv.slug}')">
-            📜 View Payments
+             View Payments
           </button>
         `;
 
@@ -3166,7 +3166,7 @@ window.viewReusablePayments = async function (slug) {
         const resultAmountLine = document.getElementById('resultAmountLine');
 
         if (isReusableMode) {
-          resultAmountLine.textContent = "Reusable QR • Buyer chooses amount";
+          resultAmountLine.textContent = "Reusable QR";
         } else {
           resultAmountLine.textContent = `$${requestedAmountUsd.toFixed(2)} in HBAR`;
         }
