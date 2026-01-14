@@ -3166,10 +3166,6 @@ window.viewReusablePayments = async function (slug) {
 
         showToast(isReusableMode ? "Reusable QR created! 🎉" : "Invoice created! 🎉", "success");
 
-        if (!isReusableMode) {
-          startCreatorRealtime(inv.slug);
-        }
-
         try {
           const r = await callFn("has-creator-pin", { creator_account: accountId });
 
