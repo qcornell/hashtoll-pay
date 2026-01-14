@@ -674,7 +674,6 @@
       padding: 8px 14px;
       border-radius: 10px;
       font-size: 0.75rem;
-      /* font-weight: 700; */
       letter-spacing: 0.03em;
       text-transform: uppercase;
       white-space: nowrap;
@@ -714,8 +713,6 @@
     }
 
     .invoice-badge.reusable {
-      /* background: rgba(168, 85, 247, 0.1); */
-      /* border: 1.5px solid rgba(168, 85, 247, 0.3); */
       color: #4a5f8e;
     }
 
@@ -903,21 +900,6 @@
       font-weight: 700;
       padding: 12px;
       border-radius: 12px;
-    }
-
-    .ht-link-display {
-      background: var(--ht-input-bg);
-      border: 1.5px solid rgba(0, 0, 0, 0.06);
-      border-radius: var(--ht-radius);
-      padding: 14px;
-      margin: 16px 0;
-      font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
-      font-size: 0.8rem;
-      color: var(--ht-text-primary);
-      word-break: break-all;
-      text-align: center;
-      line-height: 1.4;
-      display: none;
     }
 
     .ht-btn {
@@ -1487,7 +1469,6 @@
   </div>
 
   <div id="toast-container"></div>
-
   <!-- MODULE SCRIPT - WalletConnect Logic -->
   <script type="module">
   import {
@@ -1684,6 +1665,7 @@
     return hederaConnect.accountId;
   })();
 </script>
+
 <!-- MAIN SCRIPT - App Logic -->
   <script>
     const SUPABASE_URL = 'https://pvtoczsnwamailsjjnfn.supabase.co';
