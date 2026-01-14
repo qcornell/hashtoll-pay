@@ -2626,29 +2626,31 @@ window.viewReusablePayments = async function (slug) {
             <strong>Last:</strong> ${lastPayment}
           </div>
         `;
-      } else {
-        const usdAmount = inv.requested_amount_usd
-          ? `$${asNum(inv.requested_amount_usd).toFixed(2)}`
-          : `${asNum(inv.requested_amount_hbar).toFixed(2)} HBAR`;
+} else {
+  // ONE-TIME INVOICE
+  const usdAmount = inv.requested_amount_usd
+    ? `$${asNum(inv.requested_amount_usd).toFixed(2)}`
+    : `${asNum(inv.requested_amount_hbar).toFixed(2)} HBAR`;
 
-        amountDisplay = usdAmount;
+  amountDisplay = usdAmount;
 
-        if (inv.confirmed_by_creator) {
-          badge = '<span class="invoice-badge confirmed">Confirmed</span>';
-          actionBtn = `<button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>✓ Confirmed (Final)</button>`;
-        } else if (String(inv.status || "").toLowerCase() === "paid") {
-          badge = '<span class="invoice-badge paid">Paid</span>';
+  // Set badge based on status
+  if (inv.confirmed_by_creator) {
+    badge = '<span class="invoice-badge confirmed">Confirmed</span>';
+  } else if (String(inv.status || "").toLowerCase() === "paid") {
+    badge = '<span class="invoice-badge paid">Paid</span>';
+  } else {
+    badge = '<span class="invoice-badge unpaid">Unpaid</span>';
+  }
 
-          if (unlocked) {
-            actionBtn = `<button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary" onclick="confirmInvoicePayment('${inv.slug}')">Confirm Payment</button>`;
-          } else {
-            actionBtn = `<button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>🔒 Unlock Manage to confirm</button>`;
-          }
-        } else {
-          badge = '<span class="invoice-badge unpaid">Unpaid</span>';
-          actionBtn = `<button class="ht-btn ht-btn-secondary ht-btn-small invoice-action-primary" disabled>Waiting...</button>`;
-        }
-      }
+  // Use the same View Payments button for all one-time invoices
+  actionBtn = `
+    <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary"
+            onclick="viewReusablePayments('${inv.slug}')">
+       View Payments
+    </button>
+  `;
+}
 
       card.innerHTML = `
         <div class="invoice-header">
