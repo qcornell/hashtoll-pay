@@ -212,6 +212,7 @@
 
     .ht-form-section {
       transition: all 0.4s ease;
+      display: none;
     }
 
     .ht-form-section.hidden {
@@ -1668,6 +1669,23 @@
 
 <!-- MAIN SCRIPT - App Logic -->
   <script>
+      (function() {
+    const path = window.location.pathname;
+    
+    // Check what page we're on
+    const isInvoice = /^\/invoice\/[a-zA-Z0-9_-]+$/.test(path);
+    const isStatus = /^\d+\.\d+\.\d+$/.test(path);
+    
+    // Show the right section ASAP
+    if (isInvoice) {
+      document.getElementById('payerSection').style.display = 'block';
+    } else if (isStatus) {
+      document.getElementById('statusSection').style.display = 'block';
+    } else {
+      document.getElementById('formSection').style.display = 'block';
+    }
+  })();
+    
     const SUPABASE_URL = 'https://pvtoczsnwamailsjjnfn.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2dG9jenNud2FtYWlsc2pqbmZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NjE1MTksImV4cCI6MjA4MzEzNzUxOX0.3mDZ3RUo7aHi25r1X1axYj0EppgXFKEY7xGvqdhDSbM';
 
