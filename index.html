@@ -212,7 +212,6 @@
 
     .ht-form-section {
       transition: all 0.4s ease;
-      display: none;
     }
 
     .ht-form-section.hidden {
@@ -355,7 +354,6 @@
     }
 
     .ht-result-section {
-      display: none;
       transition: all 0.4s ease;
     }
 
@@ -485,7 +483,6 @@
     }
 
     .ht-payer-section {
-      display: none;
       animation: fadeInUp 0.4s ease;
     }
 
@@ -494,7 +491,6 @@
     }
 
     .ht-status-section {
-      display: none;
       animation: fadeInUp 0.4s ease;
     }
 
@@ -1307,7 +1303,8 @@
       <button class="ht-disconnect-btn" onclick="disconnectWallet()">Disconnect</button>
     </div>
 
-    <div class="ht-form-section" id="formSection">
+    <!-- ✅ FIX: Added inline style="display: none" -->
+    <div class="ht-form-section" id="formSection" style="display: none">
       <div class="ht-input-group">
         <label class="ht-label">Payment Type</label>
         <div class="ht-payment-type-toggle">
@@ -1350,7 +1347,8 @@
       </div>
     </div>
 
-    <div class="ht-result-section" id="resultSection">
+    <!-- ✅ FIX: Added inline style="display: none" -->
+    <div class="ht-result-section" id="resultSection" style="display: none">
      <div class="ht-result-amount" id="resultAmountLine">$60.00 in HBAR</div>
       
       <div class="ht-result-status-link">
@@ -1379,7 +1377,8 @@
       </div>
     </div>
 
-    <div class="ht-payer-section" id="payerSection">
+    <!-- ✅ FIX: Added inline style="display: none" -->
+    <div class="ht-payer-section" id="payerSection" style="display: none">
       <div class="payer-account-row">
         <div class="payer-account-id" id="payerReceiverAccount">0.0.000000</div>
         <button class="payer-copy-btn" id="copyReceiverBtn" title="Copy receiver account">⧉</button>
@@ -1416,7 +1415,8 @@
       <div class="ht-status payer-status-hidden" id="payerStatus">⏳ Waiting for payment...</div>
     </div>
 
-    <div class="ht-status-section" id="statusSection">
+    <!-- ✅ FIX: Added inline style="display: none" -->
+    <div class="ht-status-section" id="statusSection" style="display: none">
       <div class="status-header">
         <div class="status-header-left">
           <div class="status-header-title">Connected Wallet</div>
@@ -1441,6 +1441,24 @@
       <img src="/hedera.png" alt="Hedera">
     </div>
   </div>
+
+  <!-- ✅ IMMEDIATE SCRIPT - Runs right after sections exist -->
+  <script>
+    (function() {
+      const path = window.location.pathname;
+      const isInvoice = /^\/invoice\/[a-zA-Z0-9_-]+$/.test(path);
+      const isStatus = /^\/\d+\.\d+\.\d+$/.test(path);
+      
+      // Show the correct section immediately
+      if (isInvoice) {
+        document.getElementById('payerSection').style.display = 'block';
+      } else if (isStatus) {
+        document.getElementById('statusSection').style.display = 'block';
+      } else {
+        document.getElementById('formSection').style.display = 'block';
+      }
+    })();
+  </script>
 
   <!-- PIN MODAL -->
   <div id="pinModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:2000; align-items:center; justify-content:center; padding:16px;">
@@ -1470,6 +1488,7 @@
   </div>
 
   <div id="toast-container"></div>
+
   <!-- MODULE SCRIPT - WalletConnect Logic -->
   <script type="module">
   import {
@@ -1667,25 +1686,8 @@
   })();
 </script>
 
-<!-- MAIN SCRIPT - App Logic -->
-  <script>
-      (function() {
-    const path = window.location.pathname;
-    
-    // Check what page we're on
-    const isInvoice = /^\/invoice\/[a-zA-Z0-9_-]+$/.test(path);
-    const isStatus = /^\/\d+\.\d+\.\d+$/.test(path);
-    
-    // Show the right section ASAP
-    if (isInvoice) {
-      document.getElementById('payerSection').style.display = 'block';
-    } else if (isStatus) {
-      document.getElementById('statusSection').style.display = 'block';
-    } else {
-      document.getElementById('formSection').style.display = 'block';
-    }
-  })();
-    
+<!-- MAIN SCRIPT - Rest of the app logic continues here with all your existing code... -->
+<script>
     const SUPABASE_URL = 'https://pvtoczsnwamailsjjnfn.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2dG9jenNud2FtYWlsc2pqbmZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NjE1MTksImV4cCI6MjA4MzEzNzUxOX0.3mDZ3RUo7aHi25r1X1axYj0EppgXFKEY7xGvqdhDSbM';
 
