@@ -2908,7 +2908,7 @@ window.viewReusablePayments = async function (slug) {
             payNowBtn.disabled = true;
             paymentReceipt.classList.remove('active');
             setPayerStatus('Enter an amount to continue', 'default');
-          }, 2500);
+          }, 25000);
         } else {
           setPayButtonsState({ paid: true, modeText: "✅ Paid" });
           localStorage.setItem(`ht_paid_${currentInvoiceData.slug}`, JSON.stringify({
