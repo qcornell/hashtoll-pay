@@ -2920,36 +2920,42 @@
           console.error("notify-paid failed:", errData);
         }
 
-        setPayerStatus('✅ Payment sent successfully!', 'paid');
-        showToast('Payment sent ✅', 'success');
+      // ✅ FIX: Immediately update button text to stop spinner
+payNowBtn.innerHTML = "✅ Payment Confirmed";
+payNowBtn.disabled = true;
 
-        receiptAmount.textContent = `${amountHbar} HBAR`;
-        receiptReceiver.textContent = currentInvoiceData.receiver_account;
-        if (tx_id) {
-          receiptTxLink.href = `https://hashscan.io/mainnet/transaction/${tx_id}`;
-          receiptTxLink.style.display = 'inline-flex';
-        } else {
-          receiptTxLink.style.display = 'none';
-        }
-        paymentReceipt.classList.add('active');
+setPayerStatus('✅ Payment sent successfully!', 'paid');
+showToast('Payment sent ✅', 'success');
 
-        const isReusable = isReusableInvoice(currentInvoiceData);
-        if (isReusable) {
-          setTimeout(() => {
-            payNowBtn.innerHTML = "Pay Now";
-            const input = document.getElementById('payerUsdInput');
-            if (input) input.value = "";
-            payNowBtn.disabled = true;
-            paymentReceipt.classList.remove('active');
-            setPayerStatus('Enter an amount to continue', 'default');
-          }, 25000);
-        } else {
-          setPayButtonsState({ paid: true, modeText: "✅ Paid" });
-          localStorage.setItem(`ht_paid_${currentInvoiceData.slug}`, JSON.stringify({
-            paid: true,
-            at: Date.now()
-          }));
-        }
+receiptAmount.textContent = `${amountHbar} HBAR`;
+receiptReceiver.textContent = currentInvoiceData.receiver_account;
+if (tx_id) {
+  receiptTxLink.href = `https://hashscan.io/mainnet/transaction/${tx_id}`;
+  receiptTxLink.style.display = 'inline-flex';
+} else {
+  receiptTxLink.style.display = 'none';
+}
+paymentReceipt.classList.add('active');
+
+const isReusable = isReusableInvoice(currentInvoiceData);
+if (isReusable) {
+  // For reusable: Reset after 25 seconds
+  setTimeout(() => {
+    payNowBtn.innerHTML = "Pay Now";
+    payNowBtn.disabled = true;
+    const input = document.getElementById('payerUsdInput');
+    if (input) input.value = "";
+    paymentReceipt.classList.remove('active');
+    setPayerStatus('Enter an amount to continue', 'default');
+  }, 25000);
+} else {
+  // For one-time: Keep "Payment Confirmed" state
+  setPayButtonsState({ paid: true, modeText: "✅ Payment Confirmed" });
+  localStorage.setItem(`ht_paid_${currentInvoiceData.slug}`, JSON.stringify({
+    paid: true,
+    at: Date.now()
+  }));
+}
 
       } catch (err) {
         console.error('Payment failed:', err);
