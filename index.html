@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>HashToll Pay - Hedera Payment Links</title>
   <link rel="icon" type="image/png" href="/favicon.png" />
 
@@ -2297,17 +2297,22 @@
       subtitle.textContent = 'Create a payment link in seconds';
     }
 
-    function enterCreatorResultMode() {
-      accountDisplay.classList.remove('active');
+  function enterCreatorResultMode() {
+  accountDisplay.classList.remove('active');
 
-      formSection.classList.remove('active');
-      resultSection.classList.add('active');
-      payerSection.classList.remove('active');
-      statusSection.classList.remove('active');
+  formSection.classList.remove('active');
+  resultSection.classList.add('active');
+  payerSection.classList.remove('active');
+  statusSection.classList.remove('active');
 
-      subsubtitle.classList.remove('active');
-      subtitle.textContent = 'Your payment link is ready!';
-    }
+  subsubtitle.classList.remove('active');
+  subtitle.textContent = 'Your payment link is ready!';
+  
+  // ✅ FIX: Scroll to top on mobile after generating QR
+  setTimeout(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, 100);
+}
 
     function enterInvoiceMode() {
       accountDisplay.classList.remove('active');
