@@ -1,29 +1,36 @@
 <!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Redirecting...</title>
-    <script>
-      // segmentCount:
-      // 0 = custom domain / user site (pay.hashtoll.com or username.github.io)
-      // 1 = project site (username.github.io/repo-name)
-      var segmentCount = 0;
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-      var l = window.location;
-      var base = l.pathname.split("/").slice(0, 1 + segmentCount).join("/");
-      var path = l.pathname.split("/").slice(1 + segmentCount).join("/");
+  <title>HashToll Pay - Instant Hedera Payment</title>
+  <link rel="icon" type="image/png" href="/favicon.png" />
 
-      l.replace(
-        l.protocol +
-          "//" +
-          l.host +
-          base +
-          "/?/" +
-          path +
-          (l.search ? l.search.replace("?", "&") : "") +
-          l.hash
-      );
-    </script>
-  </head>
-  <body></body>
+  <!-- Open Graph / Social -->
+  <meta property="og:title" content="HashToll Pay - Instant Hedera Payment" />
+  <meta property="og:description" content="Send me HBAR instantly with this payment link. Powered by Hedera." />
+  <meta property="og:image" content="https://pay.hashtoll.com/og-image.png" />
+  <meta property="og:url" content="https://pay.hashtoll.com" />
+  <meta property="og:type" content="website" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="HashToll Pay - Instant Hedera Payment" />
+  <meta name="twitter:description" content="Send me HBAR instantly with this payment link. Powered by Hedera." />
+  <meta name="twitter:image" content="https://pay.hashtoll.com/og-image.png" />
+
+  <!-- SPA redirect for real browsers (FB won't run this, but it will read tags above) -->
+  <script>
+    (function (l) {
+      var redirect =
+        "/?/" + l.pathname.slice(1) +
+        (l.search ? "&" + l.search.slice(1) : "") +
+        l.hash;
+      l.replace(l.origin + redirect);
+    })(window.location);
+  </script>
+</head>
+<body>
+  <noscript>Redirecting…</noscript>
+</body>
 </html>
