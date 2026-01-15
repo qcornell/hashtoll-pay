@@ -2696,7 +2696,7 @@
             amountDisplay = usdAmount;
 
             if (inv.confirmed_by_creator) {
-              badge = '<span class="invoice-badge confirmed">Confirmed</span>';
+              badge = '<span class="invoice-badge confirmed">Paid</span>';
             } else if (String(inv.status || "").toLowerCase() === "paid") {
               badge = '<span class="invoice-badge paid">Paid</span>';
             } else {
