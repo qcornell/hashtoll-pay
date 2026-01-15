@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>HashToll Pay - Hedera Payment Links</title>
   <link rel="icon" type="image/png" href="/favicon.png" />
 
@@ -18,8 +18,20 @@
   <meta name="twitter:description" content="Send me HBAR instantly with this payment link. Powered by Hedera." />
   <meta name="twitter:image" content="https://pay.hashtoll.com/og-image.png" />
 
+<script>
+  (function (l) {
+    if (l.search.startsWith("?/")) {
+      const parts = l.search.slice(2).split("&"); // after "?/"
+      const pathPart = parts.shift() || "";
+      const queryPart = parts.length ? "?" + parts.join("&") : "";
+      window.history.replaceState(null, null, "/" + pathPart + queryPart + l.hash);
+    }
+  })(window.location);
+</script>
+
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 
   <style>
     /* --- CSS VARIABLES --- */
@@ -42,6 +54,10 @@
       --ht-radius: 12px;
       --ht-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
     }
+
+    /* FIX #1: Hide page until route is determined */
+    html:not(.ht-ready) body { visibility: hidden; }
+    html.ht-ready body { visibility: visible; }
 
     body {
       margin: 0;
@@ -210,17 +226,18 @@
       transform: scale(0.98);
     }
 
+    /* FIX #1: Make form section behave like other sections with .active */
     .ht-form-section {
-      transition: all 0.4s ease;
       display: none;
+      transition: all 0.4s ease;
+    }
+
+    .ht-form-section.active {
+      display: block;
     }
 
     .ht-form-section.hidden {
-      opacity: 0;
-      transform: translateY(-20px);
-      pointer-events: none;
-      position: absolute;
-      width: calc(100% - 96px);
+      display: none;
     }
 
     .ht-input-group {
@@ -1206,10 +1223,10 @@
       }
 
       .ht-qr-card {
-        padding: 16px;
-        max-width: 260px;
-        margin: 0 auto 20px auto;
-      }
+       padding: 14px;
+       max-width: 210px;
+       margin: 0 auto 18px auto;
+       }
 
       .ht-qr-trust {
         margin-top: 12px;
@@ -1470,6 +1487,33 @@
   </div>
 
   <div id="toast-container"></div>
+
+  <!-- FIX #1: Class-based boot router runs immediately -->
+  <script>
+    (function bootRoute() {
+      const path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+
+      const isInvoice = /^\/invoice\/[a-zA-Z0-9_-]+$/.test(path);
+      const isStatus  = /^\/\d+\.\d+\.\d+$/.test(path);
+
+      const form   = document.getElementById("formSection");
+      const payer  = document.getElementById("payerSection");
+      const status = document.getElementById("statusSection");
+      const result = document.getElementById("resultSection");
+
+      [form, payer, status, result].forEach(el => {
+        if (!el) return;
+        el.classList.remove("active", "hidden");
+      });
+
+      if (isInvoice) payer.classList.add("active");
+      else if (isStatus) status.classList.add("active");
+      else form.classList.add("active");
+
+      document.documentElement.classList.add("ht-ready");
+    })();
+  </script>
+
   <!-- MODULE SCRIPT - WalletConnect Logic -->
   <script type="module">
   import {
@@ -1666,44 +1710,21 @@
     return hederaConnect.accountId;
   })();
 </script>
-
 <!-- MAIN SCRIPT - App Logic -->
   <script>
-      (function() {
-    const path = window.location.pathname;
-    
-    // Check what page we're on
-    const isInvoice = /^\/invoice\/[a-zA-Z0-9_-]+$/.test(path);
-    const isStatus = /^\/\d+\.\d+\.\d+$/.test(path);
-    
-    // Show the right section ASAP
-    if (isInvoice) {
-      document.getElementById('payerSection').style.display = 'block';
-    } else if (isStatus) {
-      document.getElementById('statusSection').style.display = 'block';
-    } else {
-      document.getElementById('formSection').style.display = 'block';
-    }
-  })();
-    
     const SUPABASE_URL = 'https://pvtoczsnwamailsjjnfn.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB2dG9jenNud2FtYWlsc2pqbmZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NjE1MTksImV4cCI6MjA4MzEzNzUxOX0.3mDZ3RUo7aHi25r1X1axYj0EppgXFKEY7xGvqdhDSbM';
 
     window.supabaseClient = window.supabaseClient || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // FIX #2: Price caching variables - now properly scoped and updated
     let cachedHbarPrice = null;
     let priceLastFetched = 0;
     const PRICE_CACHE_DURATION = 30000;
-
-    // FIX #3: Array to track active price update intervals
     let activePriceIntervals = [];
 
-    // FIX #2: Fixed fetchHbarPrice to properly update cache
     async function fetchHbarPrice() {
       const now = Date.now();
       
-      // Return cached price if still valid
       if (cachedHbarPrice && (now - priceLastFetched) < PRICE_CACHE_DURATION) {
         return cachedHbarPrice;
       }
@@ -1716,12 +1737,10 @@
         const data = await res.json();
         const price = data?.['hedera-hashgraph']?.usd;
         
-        // FIX #5: Validate price is a number before using it
         if (!price || !Number.isFinite(price) || price <= 0) {
           throw new Error('Invalid price data');
         }
         
-        // FIX #2: Update both cache and timestamp AFTER validation
         cachedHbarPrice = price;
         priceLastFetched = now;
         
@@ -1729,12 +1748,11 @@
       } catch (err) {
         console.error('Failed to fetch HBAR price:', err);
         
-        // FIX #7: Show warning if QR/price fails
         if (!cachedHbarPrice) {
           console.warn('No cached price available and fetch failed');
         }
         
-        return cachedHbarPrice; // Return cached price even if expired, better than nothing
+        return cachedHbarPrice;
       }
     }
 
@@ -1759,7 +1777,6 @@
       return Number.isFinite(n) ? n : 0;
     }
 
-    // FIX #5: Improved validation
     function isAmountMissing(v) {
       const num = Number(v);
       return !Number.isFinite(num) || num <= 0;
@@ -1870,11 +1887,9 @@
     }
 
     let isReusableMode = false;
-
     let currentInvoiceData = null;
     let statusRealtimeStartedFor = null;
 
-    // FIX #4: Create toast container if it doesn't exist
     function ensureToastContainer() {
       if (!document.getElementById('toast-container')) {
         const container = document.createElement('div');
@@ -1883,32 +1898,46 @@
       }
     }
 
-    // FIX #4: Updated showToast to create container if needed
-    function showToast(message, type = 'info') {
-      ensureToastContainer();
-      
-      const toast = document.createElement('div');
-      toast.className = `toast toast-${type}`;
+    const TOAST_MODE = "error-and-copy";
 
-      const icons = { success: '✓', error: '✕', info: 'ℹ' };
+   function showToast(message, type = 'info') {
+  const msg = String(message || "").toLowerCase();
 
-      const icon = document.createElement('span');
-      icon.className = 'toast-icon';
-      icon.textContent = icons[type] || icons.info;
+  // Only allow: errors + copy-related success/info
+  if (TOAST_MODE === "error-and-copy") {
+    const isError = type === "error";
+    const isCopy =
+      msg.includes("copied") ||
+      msg.includes("copy");
 
-      const text = document.createElement('span');
-      text.textContent = message;
+    if (!isError && !isCopy) return;
+  }
 
-      toast.appendChild(icon);
-      toast.appendChild(text);
+  ensureToastContainer();
 
-      document.getElementById('toast-container').appendChild(toast);
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
 
-      setTimeout(() => {
-        toast.classList.add('removing');
-        setTimeout(() => toast.remove(), 300);
-      }, 3500);
-    }
+  const icons = { success: '✓', error: '✕', info: 'ℹ' };
+
+  const icon = document.createElement('span');
+  icon.className = 'toast-icon';
+  icon.textContent = icons[type] || icons.info;
+
+  const text = document.createElement('span');
+  text.textContent = message;
+
+  toast.appendChild(icon);
+  toast.appendChild(text);
+
+  document.getElementById('toast-container').appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add('removing');
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+
 
     function getInvoiceSlugFromUrl() {
       const path = window.location.pathname;
@@ -1933,14 +1962,12 @@
     let accountId = null;
     let isWalletConnected = false;
     let currentCreatorAccount = null;
-
     let currentPaymentLink = null;
     let currentAmount = null;
     let currentInvoiceSlug = null;
 
     const input = document.getElementById('amountInput');
     const descriptionInput = document.getElementById('descriptionInput');
-
     const creatorDescription = document.getElementById('creatorDescription');
     const creatorDescriptionText = document.getElementById('creatorDescriptionText');
     const payerDescription = document.getElementById('payerDescription');
@@ -1989,24 +2016,19 @@
     const copyBtn = document.getElementById('copyBtn');
     const dashboardBtn = document.getElementById('dashboardBtn');
     const createAnotherBtn = document.getElementById('createAnotherBtn');
-
     const subtitle = document.getElementById('subtitle');
     const subsubtitle = document.getElementById('subsubtitle');
-
     const payerSection = document.getElementById('payerSection');
     const payerReceiverAccount = document.getElementById('payerReceiverAccount');
     const copyReceiverBtn = document.getElementById('copyReceiverBtn');
     const payNowBtn = document.getElementById('payNowBtn');
     const iPaidBtn = document.getElementById('iPaidBtn');
     const payerStatus = document.getElementById('payerStatus');
-
     const statusSection = document.getElementById('statusSection');
     const statusWalletId = document.getElementById('statusWalletId');
     const invoiceList = document.getElementById('invoiceList');
     const createNewFromStatus = document.getElementById('createNewFromStatus');
-
     const statusPageLink = document.getElementById('statusPageLink');
-
     const paymentTypeRadios = document.querySelectorAll('input[name="paymentType"]');
 
     paymentTypeRadios.forEach(radio => {
@@ -2043,215 +2065,220 @@
       });
     });
 
-(function initPaymentsModal() {
-  if (document.getElementById("paymentsModal")) return;
+    (function initPaymentsModal() {
+      if (document.getElementById("paymentsModal")) return;
 
-  const overlay = document.createElement("div");
-  overlay.id = "paymentsModal";
-  overlay.style.cssText = `
-    display:none; position:fixed; inset:0; z-index:3000;
-    background:rgba(0,0,0,0.45); padding:16px;
-    align-items:center; justify-content:center;
-  `;
+      const overlay = document.createElement("div");
+      overlay.id = "paymentsModal";
+      overlay.style.cssText = `
+        display:none; position:fixed; inset:0; z-index:3000;
+        background:rgba(0,0,0,0.45); padding:16px;
+        align-items:center; justify-content:center;
+      `;
 
-  overlay.innerHTML = `
-    <div style="
-      width:100%; max-width:640px; background:#fff; border-radius:16px;
-      box-shadow:0 20px 60px rgba(0,0,0,0.25); overflow:hidden;
-      border:1px solid rgba(0,0,0,0.10);
-    ">
-      <div style="
-        display:flex; align-items:center; justify-content:space-between;
-        padding:14px 16px; border-bottom:1px solid rgba(0,0,0,0.08);
-        background:rgba(47,67,110,0.04);
-      ">
-        <div>
-          <div id="paymentsModalTitle" style="font-weight:800; font-size:1rem; color:#0F172A;">Payments</div>
-          <div id="paymentsModalSub" style="font-size:0.85rem; color:#64748B; margin-top:2px;">Loading...</div>
-        </div>
-
-        <button id="paymentsModalClose" style="
-          width:36px; height:36px; border-radius:10px; border:1px solid rgba(0,0,0,0.10);
-          background:#fff; cursor:pointer; font-size:18px; line-height:1;
-        " title="Close">×</button>
-      </div>
-
-      <div id="paymentsModalBody" style="padding:14px 16px; max-height:70vh; overflow:auto;">
-        <div style="color:#64748B; font-size:0.95rem;">Loading...</div>
-      </div>
-
-      <div style="
-        padding:12px 16px; border-top:1px solid rgba(0,0,0,0.08);
-        display:flex; justify-content:flex-end; gap:10px; background:#fff;
-      ">
-        <button id="paymentsModalCopyAll" style="
-          padding:10px 12px; border-radius:10px; border:1px solid rgba(0,0,0,0.10);
-          background:rgba(0,0,0,0.04); cursor:pointer; font-weight:700;
-        ">Copy JSON</button>
-        <button id="paymentsModalDone" style="
-          padding:10px 14px; border-radius:10px; border:none;
-          background:linear-gradient(180deg, #4A5F8E, #2F436E);
-          color:#fff; cursor:pointer; font-weight:800;
-        ">Done</button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
-
-  const close = () => (overlay.style.display = "none");
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) close();
-  });
-
-  overlay.querySelector("#paymentsModalClose").addEventListener("click", close);
-  overlay.querySelector("#paymentsModalDone").addEventListener("click", close);
-
-  overlay.querySelector("#paymentsModalCopyAll").addEventListener("click", async () => {
-    try {
-      const raw = overlay.dataset.rawJson || "{}";
-      await navigator.clipboard.writeText(raw);
-      showToast("Copied payments JSON ✅", "success");
-    } catch (e) {
-      showToast("Copy failed", "error");
-    }
-  });
-})();
-
-function openPaymentsModal({ title, sub, bodyHtml, rawJson }) {
-  const overlay = document.getElementById("paymentsModal");
-  overlay.style.display = "flex";
-  overlay.querySelector("#paymentsModalTitle").textContent = title || "Payments";
-  overlay.querySelector("#paymentsModalSub").textContent = sub || "";
-  overlay.querySelector("#paymentsModalBody").innerHTML = bodyHtml || "";
-  overlay.dataset.rawJson = rawJson || "{}";
-}
-
-function shortStr(s, keepStart = 10, keepEnd = 8) {
-  s = String(s || "");
-  if (s.length <= keepStart + keepEnd + 3) return s;
-  return `${s.slice(0, keepStart)}…${s.slice(-keepEnd)}`;
-}
-
-function fmtDate(iso) {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString();
-  } catch {
-    return String(iso);
-  }
-}
-
-async function fetchReusablePayments(slug, limit = 50) {
-  const url =
-    `${SUPABASE_URL}/functions/v1/notify-paid` +
-    `?action=payments&slug=${encodeURIComponent(slug)}&limit=${encodeURIComponent(limit)}`;
-
-  const res = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-      "apikey": SUPABASE_ANON_KEY
-    }
-  });
-
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json?.error || "Failed to load payments");
-  return json;
-}
-
-window.viewReusablePayments = async function (slug) {
-  try {
-    if (!slug) return showToast("Missing invoice slug", "error");
-
-    showToast("Loading payments…", "info");
-
-    const data = await fetchReusablePayments(slug, 100);
-    const payments = data?.payments || [];
-    const inv = data?.invoice || null;
-
-    const total = inv?.total_received_hbar != null ? Number(inv.total_received_hbar).toFixed(2) : null;
-    const count = inv?.payment_count != null ? Number(inv.payment_count) : payments.length;
-
-    // FIX #6: Show proper "no payments" message instead of "Loading..."
-    if (!payments.length) {
-      openPaymentsModal({
-        title: `#${slug} • Payments`,
-        sub: `No payments yet`,
-        bodyHtml: `
-          <div style="padding:18px; border:1px dashed rgba(0,0,0,0.15); border-radius:12px; color:#64748B;">
-            No payments recorded for this invoice yet.
-          </div>
-        `,
-        rawJson: JSON.stringify(data, null, 2)
-      });
-      return;
-    }
-
-    const rows = payments.map((p) => {
-      const hbar = (p.amount_hbar != null) ? `${Number(p.amount_hbar).toFixed(8).replace(/0+$/,"").replace(/\.$/,"")} HBAR` : "—";
-      const usd = (p.amount_usd != null) ? `$${Number(p.amount_usd).toFixed(2)}` : "—";
-      const payer = p.payer_account || "—";
-      const when = fmtDate(p.paid_at || p.created_at);
-      const tx = p.tx_id || "—";
-      const memo = p.memo || "";
-
-      const hashscan = tx && tx !== "—"
-        ? `https://hashscan.io/mainnet/transaction/${encodeURIComponent(tx)}`
-        : null;
-
-      return `
+      overlay.innerHTML = `
         <div style="
-          border:1px solid rgba(0,0,0,0.08);
-          border-radius:12px;
-          padding:12px 12px;
-          margin-bottom:10px;
-          background:#fff;
+          width:100%; max-width:640px; background:#fff; border-radius:16px;
+          box-shadow:0 20px 60px rgba(0,0,0,0.25); overflow:hidden;
+          border:1px solid rgba(0,0,0,0.10);
         ">
-          <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-            <div style="font-weight:900; color:#0F172A;">${hbar} <span style="font-weight:700; color:#64748B;">(${usd})</span></div>
-            <div style="color:#64748B; font-size:0.85rem; font-weight:700;">${when}</div>
+          <div style="
+            display:flex; align-items:center; justify-content:space-between;
+            padding:14px 16px; border-bottom:1px solid rgba(0,0,0,0.08);
+            background:rgba(47,67,110,0.04);
+          ">
+            <div>
+              <div id="paymentsModalTitle" style="font-weight:800; font-size:1rem; color:#0F172A;">Payments</div>
+              <div id="paymentsModalSub" style="font-size:0.85rem; color:#64748B; margin-top:2px;">Loading...</div>
+            </div>
+
+            <button id="paymentsModalClose" style="
+              width:36px; height:36px; border-radius:10px; border:1px solid rgba(0,0,0,0.10);
+              background:#fff; cursor:pointer; font-size:18px; line-height:1;
+            " title="Close">×</button>
           </div>
 
-          <div style="margin-top:8px; font-family: SF Mono, Monaco, 'Courier New', monospace; font-size:0.85rem; color:#334155;">
-            <div><strong>Payer:</strong> ${payer}</div>
-            <div><strong>TX:</strong> ${shortStr(tx)}</div>
-            ${memo ? `<div><strong>Memo:</strong> ${memo}</div>` : ""}
+          <div id="paymentsModalBody" style="padding:14px 16px; max-height:70vh; overflow:auto;">
+            <div style="color:#64748B; font-size:0.95rem;">Loading...</div>
           </div>
 
-          <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
-            <button style="
-              padding:8px 10px; border-radius:10px; border:1px solid rgba(0,0,0,0.10);
-              background:rgba(0,0,0,0.04); cursor:pointer; font-weight:800;
-            " onclick="navigator.clipboard.writeText('${String(tx).replace(/'/g,"\\'")}'); showToast('TX copied ✅','success')">
-              Copy TX
-            </button>
-
-            ${hashscan ? `
-              <a href="${hashscan}" target="_blank" rel="noopener noreferrer" style="
-                padding:8px 10px; border-radius:10px; text-decoration:none;
-                background:linear-gradient(180deg, #4A5F8E, #2F436E);
-                color:#fff; font-weight:900;
-              ">Open HashScan →</a>
-            ` : ""}
+          <div style="
+            padding:12px 16px; border-top:1px solid rgba(0,0,0,0.08);
+            display:flex; justify-content:flex-end; gap:10px; background:#fff;
+          ">
+            <button id="paymentsModalCopyAll" style="
+              padding:10px 12px; border-radius:10px; border:1px solid rgba(0,0,0,0.10);
+              background:rgba(0,0,0,0.04); cursor:pointer; font-weight:700;
+            ">Copy JSON</button>
+            <button id="paymentsModalDone" style="
+              padding:10px 14px; border-radius:10px; border:none;
+              background:linear-gradient(180deg, #4A5F8E, #2F436E);
+              color:#fff; cursor:pointer; font-weight:800;
+            ">Done</button>
           </div>
         </div>
       `;
-    }).join("");
 
-    openPaymentsModal({
-      title: `#${slug} • Payments`,
-      sub: `${count} payment(s)${total ? ` • ${total} HBAR total` : ""}`,
-      bodyHtml: rows,
-      rawJson: JSON.stringify(data, null, 2)
-    });
+      document.body.appendChild(overlay);
 
-  } catch (err) {
-    console.error("viewReusablePayments ERROR:", err);
-    showToast(String(err?.message || err || "Failed to load payments"), "error");
-  }
-};
+      const close = () => (overlay.style.display = "none");
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) close();
+      });
 
+      overlay.querySelector("#paymentsModalClose").addEventListener("click", close);
+      overlay.querySelector("#paymentsModalDone").addEventListener("click", close);
+
+      overlay.querySelector("#paymentsModalCopyAll").addEventListener("click", async () => {
+        try {
+          const raw = overlay.dataset.rawJson || "{}";
+          await navigator.clipboard.writeText(raw);
+          showToast("Copied payments JSON ✅", "success");
+        } catch (e) {
+          showToast("Copy failed", "error");
+        }
+      });
+    })();
+
+    function openPaymentsModal({ title, sub, bodyHtml, rawJson }) {
+      const overlay = document.getElementById("paymentsModal");
+      overlay.style.display = "flex";
+      overlay.querySelector("#paymentsModalTitle").textContent = title || "Payments";
+      overlay.querySelector("#paymentsModalSub").textContent = sub || "";
+      overlay.querySelector("#paymentsModalBody").innerHTML = bodyHtml || "";
+      overlay.dataset.rawJson = rawJson || "{}";
+    }
+
+    function shortStr(s, keepStart = 10, keepEnd = 8) {
+      s = String(s || "");
+      if (s.length <= keepStart + keepEnd + 3) return s;
+      return `${s.slice(0, keepStart)}…${s.slice(-keepEnd)}`;
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return "—";
+      try {
+        return new Date(iso).toLocaleString();
+      } catch {
+        return String(iso);
+      }
+    }
+
+    async function fetchReusablePayments(slug, limit = 50) {
+      const url =
+        `${SUPABASE_URL}/functions/v1/notify-paid` +
+        `?action=payments&slug=${encodeURIComponent(slug)}&limit=${encodeURIComponent(limit)}`;
+
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "apikey": SUPABASE_ANON_KEY
+        }
+      });
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || "Failed to load payments");
+      return json;
+    }
+
+  window.viewReusablePayments = async function (slug) {
+  try {
+    if (!manageToken) {
+      showToast("Unlock Manage to view payments 🔒", "info");
+      if (manageBtn) manageBtn.click(); // opens your PIN modal flow
+      return;
+    }
+
+    if (!slug) return showToast("Missing invoice slug", "error");
+
+
+        showToast("Loading payments…", "info");
+
+        const data = await fetchReusablePayments(slug, 100);
+        const payments = data?.payments || [];
+        const inv = data?.invoice || null;
+
+        const total = inv?.total_received_hbar != null ? Number(inv.total_received_hbar).toFixed(2) : null;
+        const count = inv?.payment_count != null ? Number(inv.payment_count) : payments.length;
+
+        if (!payments.length) {
+          openPaymentsModal({
+            title: `#${slug} • Payments`,
+            sub: `No payments yet`,
+            bodyHtml: `
+              <div style="padding:18px; border:1px dashed rgba(0,0,0,0.15); border-radius:12px; color:#64748B;">
+                No payments recorded for this invoice yet.
+              </div>
+            `,
+            rawJson: JSON.stringify(data, null, 2)
+          });
+          return;
+        }
+
+        const rows = payments.map((p) => {
+          const hbar = (p.amount_hbar != null) ? `${Number(p.amount_hbar).toFixed(8).replace(/0+$/,"").replace(/\.$/,"")} HBAR` : "—";
+          const usd = (p.amount_usd != null) ? `$${Number(p.amount_usd).toFixed(2)}` : "—";
+          const payer = p.payer_account || "—";
+          const when = fmtDate(p.paid_at || p.created_at);
+          const tx = p.tx_id || "—";
+          const memo = p.memo || "";
+
+          const hashscan = tx && tx !== "—"
+            ? `https://hashscan.io/mainnet/transaction/${encodeURIComponent(tx)}`
+            : null;
+
+          return `
+            <div style="
+              border:1px solid rgba(0,0,0,0.08);
+              border-radius:12px;
+              padding:12px 12px;
+              margin-bottom:10px;
+              background:#fff;
+            ">
+              <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+                <div style="font-weight:900; color:#0F172A;">${hbar} <span style="font-weight:700; color:#64748B;">(${usd})</span></div>
+                <div style="color:#64748B; font-size:0.85rem; font-weight:700;">${when}</div>
+              </div>
+
+              <div style="margin-top:8px; font-family: SF Mono, Monaco, 'Courier New', monospace; font-size:0.85rem; color:#334155;">
+                <div><strong>Payer:</strong> ${payer}</div>
+                <div><strong>TX:</strong> ${shortStr(tx)}</div>
+                ${memo ? `<div><strong>Memo:</strong> ${memo}</div>` : ""}
+              </div>
+
+              <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+                <button style="
+                  padding:8px 10px; border-radius:10px; border:1px solid rgba(0,0,0,0.10);
+                  background:rgba(0,0,0,0.04); cursor:pointer; font-weight:800;
+                " onclick="navigator.clipboard.writeText('${String(tx).replace(/'/g,"\\'")}'); showToast('TX copied ✅','success')">
+                  Copy TX
+                </button>
+
+                ${hashscan ? `
+                  <a href="${hashscan}" target="_blank" rel="noopener noreferrer" style="
+                    padding:8px 10px; border-radius:10px; text-decoration:none;
+                    background:linear-gradient(180deg, #4A5F8E, #2F436E);
+                    color:#fff; font-weight:900;
+                  ">Open HashScan →</a>
+                ` : ""}
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        openPaymentsModal({
+          title: `#${slug} • Payments`,
+          sub: `${count} payment(s)${total ? ` • ${total} HBAR total` : ""}`,
+          bodyHtml: rows,
+          rawJson: JSON.stringify(data, null, 2)
+        });
+
+      } catch (err) {
+        console.error("viewReusablePayments ERROR:", err);
+        showToast(String(err?.message || err || "Failed to load payments"), "error");
+      }
+    };
 
     function enterHomeMode() {
       if (isWalletConnected && accountId) {
@@ -2260,29 +2287,37 @@ window.viewReusablePayments = async function (slug) {
       } else {
         accountDisplay.classList.remove('active');
       }
-      payerSection.classList.remove('active');
+
+      formSection.classList.add('active');
       resultSection.classList.remove('active');
+      payerSection.classList.remove('active');
       statusSection.classList.remove('active');
-      formSection.classList.remove('hidden');
 
       subsubtitle.classList.remove('active');
       subtitle.textContent = 'Create a payment link in seconds';
     }
 
-    function enterCreatorResultMode() {
-      accountDisplay.classList.remove('active');
-      payerSection.classList.remove('active');
-      statusSection.classList.remove('active');
-      formSection.classList.add('hidden');
-      resultSection.classList.add('active');
+  function enterCreatorResultMode() {
+  accountDisplay.classList.remove('active');
 
-      subsubtitle.classList.remove('active');
-      subtitle.textContent = 'Your payment link is ready!';
-    }
+  formSection.classList.remove('active');
+  resultSection.classList.add('active');
+  payerSection.classList.remove('active');
+  statusSection.classList.remove('active');
+
+  subsubtitle.classList.remove('active');
+  subtitle.textContent = 'Your payment link is ready!';
+  
+  // ✅ FIX: Scroll to top on mobile after generating QR
+  setTimeout(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, 100);
+}
 
     function enterInvoiceMode() {
       accountDisplay.classList.remove('active');
-      formSection.classList.add('hidden');
+
+      formSection.classList.remove('active');
       resultSection.classList.remove('active');
       statusSection.classList.remove('active');
       payerSection.classList.add('active');
@@ -2292,7 +2327,8 @@ window.viewReusablePayments = async function (slug) {
 
     function enterStatusMode() {
       accountDisplay.classList.remove('active');
-      formSection.classList.add('hidden');
+
+      formSection.classList.remove('active');
       resultSection.classList.remove('active');
       payerSection.classList.remove('active');
       statusSection.classList.add('active');
@@ -2304,7 +2340,6 @@ window.viewReusablePayments = async function (slug) {
     async function renderQrInto(containerEl, url) {
       containerEl.innerHTML = '';
 
-      // FIX #7: Check if QRCode library loaded
       if (!window.QRCode) {
         console.error('QR code library not loaded');
         showToast('QR code unavailable', 'error');
@@ -2313,7 +2348,7 @@ window.viewReusablePayments = async function (slug) {
       }
 
       const isMobile = window.innerWidth <= 600;
-      const qrSize = isMobile ? Math.min(240, window.innerWidth - 120) : 260;
+      const qrSize = isMobile ? Math.min(180, window.innerWidth - 140) : 260;
 
       try {
         await window.QRCode.toCanvas(url, {
@@ -2381,14 +2416,12 @@ window.viewReusablePayments = async function (slug) {
       return data;
     }
 
-    // FIX #3: Clean up intervals when leaving page
     function cleanupPriceIntervals() {
       activePriceIntervals.forEach(intervalId => clearInterval(intervalId));
       activePriceIntervals = [];
     }
 
     async function loadInvoiceAndRenderPayer(slug) {
-      // FIX #3: Clear old intervals when loading new invoice
       cleanupPriceIntervals();
       
       currentInvoiceSlug = slug;
@@ -2492,7 +2525,6 @@ window.viewReusablePayments = async function (slug) {
 
           payNowBtn.disabled = true;
 
-          // FIX #3: Track interval and clean up properly
           const priceUpdateInterval = setInterval(async () => {
             const newPrice = await fetchHbarPrice();
             if (newPrice && newPrice !== cachedHbarPrice) {
@@ -2591,173 +2623,177 @@ window.viewReusablePayments = async function (slug) {
       }
     }
 
-   async function loadStatusPage(walletId) {
-  try {
-    enterStatusMode();
+    async function loadStatusPage(walletId) {
+      try {
+        enterStatusMode();
 
-    const stored = loadManageToken(walletId);
-    if (stored) {
-      manageToken = stored.token;
-      manageTokenExpiresAt = stored.expires_at;
-    } else {
-      manageToken = null;
-      manageTokenExpiresAt = null;
-    }
+        const stored = loadManageToken(walletId);
+        if (stored) {
+          manageToken = stored.token;
+          manageTokenExpiresAt = stored.expires_at;
+        } else {
+          manageToken = null;
+          manageTokenExpiresAt = null;
+        }
 
-    statusWalletId.textContent = walletId;
-    invoiceList.innerHTML =
-      '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
+        const manageUnlocked = !!manageToken;
 
-    const { data: oneTimeInvoices, error: error1 } = await window.supabaseClient
-      .from("invoices")
-      .select(
-        "slug, receiver_account, requested_amount_usd, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
-      )
-      .eq("creator_account", walletId)
-      .eq("is_reusable", false)
-      .order("created_at", { ascending: false });
 
-    if (error1) throw error1;
+        statusWalletId.textContent = walletId;
+        invoiceList.innerHTML =
+          '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
 
-    const { data: reusableInvoices, error: error2 } = await window.supabaseClient
-      .from("invoices")
-      .select(
-        "slug, receiver_account, requested_amount_usd, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
-      )
-      .eq("creator_account", walletId)
-      .eq("is_reusable", true)
-      .order("created_at", { ascending: false });
+        const { data: oneTimeInvoices, error: error1 } = await window.supabaseClient
+          .from("invoices")
+          .select(
+            "slug, receiver_account, requested_amount_usd, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
+          )
+          .eq("creator_account", walletId)
+          .eq("is_reusable", false)
+          .order("created_at", { ascending: false });
 
-    if (error2) throw error2;
+        if (error1) throw error1;
 
-    let invoices = [
-      ...(oneTimeInvoices || []),
-      ...(reusableInvoices || [])
-    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const { data: reusableInvoices, error: error2 } = await window.supabaseClient
+          .from("invoices")
+          .select(
+            "slug, receiver_account, requested_amount_usd, requested_amount_hbar, status, confirmed_by_creator, description, is_reusable, total_received_hbar, payment_count, last_payment_at, created_at"
+          )
+          .eq("creator_account", walletId)
+          .eq("is_reusable", true)
+          .order("created_at", { ascending: false });
 
-    if (!invoices || invoices.length === 0) {
-      invoiceList.innerHTML = `
-        <div class="no-invoices">
-          <div class="no-invoices-icon">📭</div>
-          No invoices found for this wallet.<br>
-          Create your first payment link above!
-        </div>
-      `;
-      setupManageButton(walletId);
-      return;
-    }
+        if (error2) throw error2;
 
-    invoiceList.innerHTML = "";
-    const unlocked = !!manageToken;
+        let invoices = [
+          ...(oneTimeInvoices || []),
+          ...(reusableInvoices || [])
+        ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-    invoices.forEach((inv) => {
-      const card = document.createElement("div");
-      card.className = "invoice-card";
+        if (!invoices || invoices.length === 0) {
+          invoiceList.innerHTML = `
+            <div class="no-invoices">
+              <div class="no-invoices-icon">📭</div>
+              No invoices found for this wallet.<br>
+              Create your first payment link above!
+            </div>
+          `;
+          setupManageButton(walletId);
+          return;
+        }
 
-      const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
-      let badge = "";
-      let actionBtn = "";
-      let amountDisplay;
-      let statsDisplay = "";
+        invoiceList.innerHTML = "";
 
-      const isReusable = asBool(inv.is_reusable);
+        invoices.forEach((inv) => {
+          const card = document.createElement("div");
+          card.className = "invoice-card";
 
-      if (isReusable) {
-        amountDisplay = `${asNum(inv.total_received_hbar).toFixed(2)} HBAR collected`;
-        badge = '<span class="invoice-badge reusable">Active</span>';
+          const invoiceUrl = `${window.location.origin}/invoice/${inv.slug}`;
+          let badge = "";
+          let actionBtn = "";
+          let amountDisplay;
+          let statsDisplay = "";
 
-        actionBtn = `
-          <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary"
-                  onclick="viewReusablePayments('${inv.slug}')">
+          const isReusable = asBool(inv.is_reusable);
+
+          if (isReusable) {
+            amountDisplay = `${asNum(inv.total_received_hbar).toFixed(2)} HBAR collected`;
+            badge = '<span class="invoice-badge reusable">Reusable</span>';
+
+            actionBtn = manageUnlocked ? `
+           <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary"
+          onclick="viewReusablePayments('${inv.slug}')">
+          View Payments
+        </button>
+`         : ``;
+
+
+            const totalReceived = asNum(inv.total_received_hbar).toFixed(2);
+            const paymentCount = asNum(inv.payment_count);
+            const lastPayment = inv.last_payment_at
+              ? new Date(inv.last_payment_at).toLocaleDateString()
+              : "Never";
+
+            statsDisplay = `
+              <div class="invoice-stats">
+                <strong>Total:</strong> ${totalReceived} HBAR &nbsp;•&nbsp;
+                <strong>Payments:</strong> ${paymentCount} &nbsp;•&nbsp;
+                <strong>Last:</strong> ${lastPayment}
+              </div>
+            `;
+          } else {
+            const usdAmount = inv.requested_amount_usd
+              ? `$${asNum(inv.requested_amount_usd).toFixed(2)}`
+              : `${asNum(inv.requested_amount_hbar).toFixed(2)} HBAR`;
+
+            amountDisplay = usdAmount;
+
+            if (inv.confirmed_by_creator) {
+              badge = '<span class="invoice-badge confirmed">paid</span>';
+            } else if (String(inv.status || "").toLowerCase() === "paid") {
+              badge = '<span class="invoice-badge paid">Paid</span>';
+            } else {
+              badge = '<span class="invoice-badge unpaid">Unpaid</span>';
+            }
+
+           actionBtn = manageUnlocked ? `
+           <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary"
+          onclick="viewReusablePayments('${inv.slug}')">
              View Payments
-          </button>
-        `;
+            </button>
+           ` : ``;
 
-        const totalReceived = asNum(inv.total_received_hbar).toFixed(2);
-        const paymentCount = asNum(inv.payment_count);
-        const lastPayment = inv.last_payment_at
-          ? new Date(inv.last_payment_at).toLocaleDateString()
-          : "Never";
+          }
 
-        statsDisplay = `
-          <div class="invoice-stats">
-            <strong>Total:</strong> ${totalReceived} HBAR &nbsp;•&nbsp;
-            <strong>Payments:</strong> ${paymentCount} &nbsp;•&nbsp;
-            <strong>Last:</strong> ${lastPayment}
+          card.innerHTML = `
+            <div class="invoice-header">
+              <div class="invoice-header-left">
+                <div class="invoice-slug">#${inv.slug}</div>
+                <div class="invoice-amount">${amountDisplay}</div>
+                ${statsDisplay}
+              </div>
+              ${badge}
+            </div>
+
+            <div class="invoice-url">${invoiceUrl}</div>
+
+            <div class="invoice-actions">
+              ${actionBtn}
+              <button class="ht-btn ht-btn-action ht-btn-small" onclick="copyInvoiceLink('${invoiceUrl}')">Copy</button>
+              <button class="ht-btn ht-btn-action ht-btn-small" onclick="shareInvoiceLink('${invoiceUrl}', ${inv.requested_amount_usd || inv.requested_amount_hbar || 0})">Share</button>
+            </div>
+          `;
+
+          if (inv.description && String(inv.description).trim()) {
+            const descDiv = document.createElement("div");
+            descDiv.className = "invoice-description";
+            descDiv.textContent = String(inv.description).trim();
+
+            const urlDiv = card.querySelector(".invoice-url");
+            card.insertBefore(descDiv, urlDiv);
+          }
+
+          invoiceList.appendChild(card);
+        });
+
+        if (statusRealtimeStartedFor !== walletId) {
+          startStatusPageRealtime(walletId);
+          statusRealtimeStartedFor = walletId;
+        }
+
+        setupManageButton(walletId);
+      } catch (err) {
+        console.error("loadStatusPage ERROR", err);
+        showToast("Failed to load invoices", "error");
+        invoiceList.innerHTML = `
+          <div class="no-invoices">
+            <div class="no-invoices-icon">⚠️</div>
+            Error loading invoices.<br>
+            Please try again.
           </div>
         `;
-} else {
-  const usdAmount = inv.requested_amount_usd
-    ? `$${asNum(inv.requested_amount_usd).toFixed(2)}`
-    : `${asNum(inv.requested_amount_hbar).toFixed(2)} HBAR`;
-
-  amountDisplay = usdAmount;
-
-  if (inv.confirmed_by_creator) {
-    badge = '<span class="invoice-badge confirmed">Confirmed</span>';
-  } else if (String(inv.status || "").toLowerCase() === "paid") {
-    badge = '<span class="invoice-badge paid">Paid</span>';
-  } else {
-    badge = '<span class="invoice-badge unpaid">Unpaid</span>';
-  }
-
-  actionBtn = `
-    <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary"
-            onclick="viewReusablePayments('${inv.slug}')">
-       View Payments
-    </button>
-  `;
-}
-
-      card.innerHTML = `
-        <div class="invoice-header">
-          <div class="invoice-header-left">
-            <div class="invoice-slug">#${inv.slug}</div>
-            <div class="invoice-amount">${amountDisplay}</div>
-            ${statsDisplay}
-          </div>
-          ${badge}
-        </div>
-
-        <div class="invoice-url">${invoiceUrl}</div>
-
-        <div class="invoice-actions">
-          ${actionBtn}
-          <button class="ht-btn ht-btn-action ht-btn-small" onclick="copyInvoiceLink('${invoiceUrl}')">Copy</button>
-          <button class="ht-btn ht-btn-action ht-btn-small" onclick="shareInvoiceLink('${invoiceUrl}', ${inv.requested_amount_usd || inv.requested_amount_hbar || 0})">Share</button>
-        </div>
-      `;
-
-      if (inv.description && String(inv.description).trim()) {
-        const descDiv = document.createElement("div");
-        descDiv.className = "invoice-description";
-        descDiv.textContent = String(inv.description).trim();
-
-        const urlDiv = card.querySelector(".invoice-url");
-        card.insertBefore(descDiv, urlDiv);
       }
-
-      invoiceList.appendChild(card);
-    });
-
-    if (statusRealtimeStartedFor !== walletId) {
-      startStatusPageRealtime(walletId);
-      statusRealtimeStartedFor = walletId;
     }
-
-    setupManageButton(walletId);
-  } catch (err) {
-    console.error("loadStatusPage ERROR", err);
-    showToast("Failed to load invoices", "error");
-    invoiceList.innerHTML = `
-      <div class="no-invoices">
-        <div class="no-invoices-icon">⚠️</div>
-        Error loading invoices.<br>
-        Please try again.
-      </div>
-    `;
-  }
-}
 
     function setupManageButton(walletId) {
       const unlocked = !!manageToken;
@@ -2808,44 +2844,6 @@ window.viewReusablePayments = async function (slug) {
         };
       }
     }
-
-    window.confirmInvoicePayment = async function (slug) {
-      try {
-        const walletId = getWalletIdFromUrl();
-        if (!walletId) return;
-        
-        const stored = loadManageToken(walletId);
-        if (!stored) {
-          manageToken = null;
-          manageTokenExpiresAt = null;
-          showToast("Manage session expired — tap Manage and enter PIN again", "info");
-          await loadStatusPage(walletId);
-          return;
-        }
-        
-        manageToken = stored.token;
-        manageTokenExpiresAt = stored.expires_at;
-        
-        if (!manageToken) {
-          showToast("Tap Manage and enter PIN first", "info");
-          return;
-        }
-
-        await callFn("seller-update-status", {
-          slug,
-          manage_token: manageToken,
-          action: "confirm_paid",
-        });
-
-        showToast("Payment confirmed! ✅", "success");
-
-        if (walletId) await loadStatusPage(walletId);
-      } catch (err) {
-        console.error(err);
-        const msg = err?.message || err?.error || "Failed to confirm payment";
-        showToast(String(msg), "error");
-      }
-    };
 
     window.copyInvoiceLink = async function (url) {
       try {
@@ -2927,36 +2925,42 @@ window.viewReusablePayments = async function (slug) {
           console.error("notify-paid failed:", errData);
         }
 
-        setPayerStatus('✅ Payment sent successfully!', 'paid');
-        showToast('Payment sent ✅', 'success');
+      // ✅ FIX: Immediately update button text to stop spinner
+payNowBtn.innerHTML = "✅ Payment Confirmed";
+payNowBtn.disabled = true;
 
-        receiptAmount.textContent = `${amountHbar} HBAR`;
-        receiptReceiver.textContent = currentInvoiceData.receiver_account;
-        if (tx_id) {
-          receiptTxLink.href = `https://hashscan.io/mainnet/transaction/${tx_id}`;
-          receiptTxLink.style.display = 'inline-flex';
-        } else {
-          receiptTxLink.style.display = 'none';
-        }
-        paymentReceipt.classList.add('active');
+setPayerStatus('✅ Payment sent successfully!', 'paid');
+showToast('Payment sent ✅', 'success');
 
-        const isReusable = isReusableInvoice(currentInvoiceData);
-        if (isReusable) {
-          setTimeout(() => {
-            payNowBtn.innerHTML = "Pay Now";
-            const input = document.getElementById('payerUsdInput');
-            if (input) input.value = "";
-            payNowBtn.disabled = true;
-            paymentReceipt.classList.remove('active');
-            setPayerStatus('Enter an amount to continue', 'default');
-          }, 25000);
-        } else {
-          setPayButtonsState({ paid: true, modeText: "✅ Paid" });
-          localStorage.setItem(`ht_paid_${currentInvoiceData.slug}`, JSON.stringify({
-            paid: true,
-            at: Date.now()
-          }));
-        }
+receiptAmount.textContent = `${amountHbar} HBAR`;
+receiptReceiver.textContent = currentInvoiceData.receiver_account;
+if (tx_id) {
+  receiptTxLink.href = `https://hashscan.io/mainnet/transaction/${tx_id}`;
+  receiptTxLink.style.display = 'inline-flex';
+} else {
+  receiptTxLink.style.display = 'none';
+}
+paymentReceipt.classList.add('active');
+
+const isReusable = isReusableInvoice(currentInvoiceData);
+if (isReusable) {
+  // For reusable: Reset after 25 seconds
+  setTimeout(() => {
+    payNowBtn.innerHTML = "Pay Now";
+    payNowBtn.disabled = true;
+    const input = document.getElementById('payerUsdInput');
+    if (input) input.value = "";
+    paymentReceipt.classList.remove('active');
+    setPayerStatus('Enter an amount to continue', 'default');
+  }, 25000);
+} else {
+  // For one-time: Keep "Payment Confirmed" state
+  setPayButtonsState({ paid: true, modeText: "✅ Payment Confirmed" });
+  localStorage.setItem(`ht_paid_${currentInvoiceData.slug}`, JSON.stringify({
+    paid: true,
+    at: Date.now()
+  }));
+}
 
       } catch (err) {
         console.error('Payment failed:', err);
@@ -3013,7 +3017,6 @@ window.viewReusablePayments = async function (slug) {
         }
         statusRealtimeStartedFor = null;
         
-        // FIX #3: Also cleanup price intervals when stopping realtime
         cleanupPriceIntervals();
       } catch (e) {
         console.warn("Error stopping realtime:", e);
@@ -3276,7 +3279,7 @@ window.viewReusablePayments = async function (slug) {
     function showFormView() {
       stopRealtime();
 
-      formSection.classList.remove('hidden');
+      formSection.classList.add('active');
       resultSection.classList.remove('active');
       payerSection.classList.remove('active');
       statusSection.classList.remove('active');
@@ -3451,26 +3454,22 @@ window.viewReusablePayments = async function (slug) {
       await copyText(acct, 'Receiver account copied!');
     });
 
-    // FIX #3: Clean up on page unload
     window.addEventListener('beforeunload', () => {
       stopRealtime();
       cleanupPriceIntervals();
     });
 
-    window.addEventListener('load', async () => {
+    // FIX #4: Changed to DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', async () => {
       const slug = getInvoiceSlugFromUrl();
       const walletId = getWalletIdFromUrl();
 
       if (slug) {
-        formSection.classList.add('hidden');
-        accountDisplay.classList.remove('active');
         await loadInvoiceAndRenderPayer(slug);
         return;
       }
 
       if (walletId) {
-        formSection.classList.add('hidden');
-        accountDisplay.classList.remove('active');
         await loadStatusPage(walletId);
         return;
       }
