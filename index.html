@@ -2167,9 +2167,16 @@
       return json;
     }
 
-    window.viewReusablePayments = async function (slug) {
-      try {
-        if (!slug) return showToast("Missing invoice slug", "error");
+  window.viewReusablePayments = async function (slug) {
+  try {
+    if (!manageToken) {
+      showToast("Unlock Manage to view payments 🔒", "info");
+      if (manageBtn) manageBtn.click(); // opens your PIN modal flow
+      return;
+    }
+
+    if (!slug) return showToast("Missing invoice slug", "error");
+
 
         showToast("Loading payments…", "info");
 
@@ -2609,6 +2616,9 @@
           manageTokenExpiresAt = null;
         }
 
+        const manageUnlocked = !!manageToken;
+
+
         statusWalletId.textContent = walletId;
         invoiceList.innerHTML =
           '<div class="no-invoices"><div class="no-invoices-icon">📭</div>Loading invoices...</div>';
@@ -2670,12 +2680,13 @@
             amountDisplay = `${asNum(inv.total_received_hbar).toFixed(2)} HBAR collected`;
             badge = '<span class="invoice-badge reusable">Reusable</span>';
 
-            actionBtn = `
-              <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary"
-                      onclick="viewReusablePayments('${inv.slug}')">
-                 View Payments
-              </button>
-            `;
+            actionBtn = manageUnlocked ? `
+           <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary"
+          onclick="viewReusablePayments('${inv.slug}')">
+          View Payments
+        </button>
+`         : ``;
+
 
             const totalReceived = asNum(inv.total_received_hbar).toFixed(2);
             const paymentCount = asNum(inv.payment_count);
@@ -2705,12 +2716,13 @@
               badge = '<span class="invoice-badge unpaid">Unpaid</span>';
             }
 
-            actionBtn = `
-              <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary"
-                      onclick="viewReusablePayments('${inv.slug}')">
-                 View Payments
-              </button>
-            `;
+           actionBtn = manageUnlocked ? `
+           <button class="ht-btn ht-btn-primary ht-btn-small invoice-action-primary"
+          onclick="viewReusablePayments('${inv.slug}')">
+             View Payments
+            </button>
+           ` : ``;
+
           }
 
           card.innerHTML = `
