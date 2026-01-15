@@ -1223,10 +1223,10 @@
       }
 
       .ht-qr-card {
-        padding: 16px;
-        max-width: 260px;
-        margin: 0 auto 20px auto;
-      }
+       padding: 14px;
+       max-width: 210px;
+       margin: 0 auto 18px auto;
+       }
 
       .ht-qr-trust {
         margin-top: 12px;
@@ -2343,7 +2343,7 @@
       }
 
       const isMobile = window.innerWidth <= 600;
-      const qrSize = isMobile ? Math.min(240, window.innerWidth - 120) : 260;
+      const qrSize = isMobile ? Math.min(180, window.innerWidth - 140) : 260;
 
       try {
         await window.QRCode.toCanvas(url, {
